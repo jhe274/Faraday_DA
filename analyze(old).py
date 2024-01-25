@@ -9,25 +9,21 @@ class Analyze:
     def __init__(self):
         self.Read = Read()
 
-    def Double_mod_theta(self, lockins_path):
-        """
-        Faraday rotation angles of double modulated measurements
-        """
-        para, lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
+    def Double_mod_theta(self, lock_in_path):
+        # Faraday rotation angles of double modulated measurements
+        para, Lock_in_t, Xdc, Ydc, X2f, Y2f, Xmod, Ymod = self.Read.Lock_ins(lock_in_path)
         Rdc, R2f, theta = [], [], []
 
-        for i in range(len(lockins_path)):
+        for i in range(len(lock_in_path)):
             Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
             R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
             theta.append(R2f[i] / (math.pi * scipy.special.jv(2,2.405) * Rdc[i])) # [rad]
         
-        return para, lockins_t, theta
+        return para, Lock_in_t, theta
 
     
     def Triple_mod_theta(self, lock_in_path):
-        """
-        Faraday rotation angles of triple modulated measurements
-        """
+        # Faraday rotation angles of triple modulated measurements
         para, Lock_in_t, Xdc, Ydc, X2f, Y2f, Xmod, Ymod = self.Read.Lock_ins(lock_in_path)
 
         Rdc, R2f, Rmod, theta = [], [], [], []
@@ -42,8 +38,8 @@ class Analyze:
     
     def check_calib(self, lambd, theta):
         '''
-        Check the timestamp when Bristol starts and ends its self-calibration as calib
-        and the corresponding timestamp in lock-ins as idx1, idx2
+            Check the timestamp when Bristol starts and ends its self-calibration as calib
+            and the corresponding timestamp in lock-ins as idx1, idx2
         '''
         # Bristol wavelength meter has several ways(manual, time, temperature) for self-calibration, every time the instrument calibrates there will be a ~2s blank in the wavelength measurements
         calib = np.where(lambd == 0)[0]
