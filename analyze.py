@@ -28,9 +28,9 @@ class Analyze:
         """
         Faraday rotation angles of triple modulated measurements
         """
-        para, Lock_in_t, Xdc, Ydc, X2f, Y2f, Xmod, Ymod = self.Read.Lock_ins(lock_in_path)
+        para, Lock_in_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.Lock_ins(lock_in_path)
 
-        Rdc, R2f, Rmod, theta = [], [], [], []
+        Rmod, R2f, Rdc, theta = [], [], [], []
         for i in range(len(lock_in_path)):
             Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
             R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
@@ -58,7 +58,7 @@ class Analyze:
     
     def filter_data(self, bristol_t, lambd):
         '''
-            Filtering lambda values based on bounds
+        Filtering lambda values based on bounds
         '''
         try:
             lambda_ubound = 766.72 * 1e-9
@@ -80,7 +80,7 @@ class Analyze:
     
     def trim_data(self, bristol_t, lambd, lock_in_t, theta):
         '''
-            Trimming lock-in or Bristol data based on the shorter measurement
+        Trimming lock-in or Bristol data based on the shorter measurement
         '''
         if lambd[-1] > lock_in_t[-1]:
             end_t = np.argmin(np.abs(bristol_t - lock_in_t[-1]))
@@ -94,7 +94,7 @@ class Analyze:
 
     def calculate_interval_and_indices(self, bristol_t, lock_in_t, time_const, n):
         '''
-            Timestamp matching between lock-ins and Bristol
+        Timestamp matching between lock-ins and Bristol
         '''
         # Data acquisition using ReadFaradayLockinsRealtimeplot.vi typically has a update rate about 100ms per data point, 
         # making it significantly slower than Bristol, where Bristol has a minimum frame rate 20Hz that is 50ms per data point
@@ -116,7 +116,7 @@ class Analyze:
     
     def calculate_averages(self, Bristol_idx, lambd, filtered_lambd, theta):
         '''
-            Average function to match lock-in readings and wavelength measurements
+        Average function to match lock-in readings and wavelength measurements
         '''
         calib, theta = self.check_calib(filtered_lambd, theta)
         averages = []
