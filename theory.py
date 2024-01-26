@@ -2,6 +2,9 @@ import numpy as np
 from constants import Constants as Consts
 
 class Theory:
+    
+    def __init__(self):
+        self.Consts = Consts()
 
     def Kn_density(self, T):
         '''
@@ -14,27 +17,27 @@ class Theory:
         else:
             raise ValueError("Temperature T must be above 25°C")
         
-        return Kp / (Consts.k_B * (273.15 + T))  # [m^-3]
+        return Kp / (self.Consts.k_B * (273.15 + T))  # [m^-3]
 
     def Zeeman_ground(self, B):
         '''
             Zeeman splitting calculations
         '''
-        return Consts.g_G * (1/2) * Consts.mu_B * B
+        return self.Consts.g_G * (1/2) * self.Consts.mu_B * B
 
     def Zeeman_D1(self, B):
-        E_D1 = Consts.g_D1 * (1/2) * Consts.mu_B * B
+        E_D1 = self.Consts.g_D1 * (1/2) * self.Consts.mu_B * B
         Delta_E_D1 = -self.Zeeman_ground(B) - E_D1 - (self.Zeeman_ground(B) + E_D1)
-        Delta_Lambda_D1 = - pow(Consts.Lambda_D1,2) * Delta_E_D1 / (Consts.h * Consts.c)  # [m]
-        Delta_nu_D1 = Consts.Nu_D1 - (Consts.c / (Consts.Lambda_D1 + Delta_Lambda_D1/2))*2  # [Hz]
+        Delta_Lambda_D1 = - pow(self.Consts.Lambda_D1,2) * Delta_E_D1 / (self.Consts.h * self.Consts.c)  # [m]
+        Delta_nu_D1 = self.Consts.Nu_D1 - (self.Consts.c / (self.Consts.Lambda_D1 + Delta_Lambda_D1/2))*2  # [Hz]
 
         return Delta_Lambda_D1, Delta_nu_D1
 
     def Zeeman_D2(self, B):
-        E_D2 = Consts.g_D2 * (3/2) * Consts.mu_B * B
+        E_D2 = self.Consts.g_D2 * (3/2) * self.Consts.mu_B * B
         Delta_E_D2 = -self.Zeeman_ground(B) - E_D2 - (self.Zeeman_ground(B) + E_D2)
-        Delta_Lambda_D2 = - pow(Consts.Lambda_D2,2) * Delta_E_D2 / (Consts.h * Consts.c) # [m]
-        Delta_nu_D2 = Consts.Nu_D2 - (Consts.c / (Consts.Lambda_D2 + Delta_Lambda_D2/2)) * 2  # [Hz]
+        Delta_Lambda_D2 = - pow(self.Consts.Lambda_D2,2) * Delta_E_D2 / (self.Consts.h * self.Consts.c) # [m]
+        Delta_nu_D2 = self.Consts.Nu_D2 - (self.Consts.c / (self.Consts.Lambda_D2 + Delta_Lambda_D2/2)) * 2  # [Hz]
 
         return Delta_Lambda_D2, Delta_nu_D2
     
@@ -48,14 +51,14 @@ class Theory:
         l = (7.5-0.159*2)*1e-2 # [m]
         
         # Faraday rotation contributed from D1 line
-        theta_D1_term1 = 4 * (Lambda**2) / (3 * Consts.c * pow(Lambda-Lambda_D1,2))
-        theta_D1_term2 = -np.sign(B) * Consts.h / (Consts.k_B * (273.15+T) * (Lambda-Lambda_D1))
-        theta_D1 = Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (theta_D1_term1 + theta_D1_term2) # [rad]
+        theta_D1_term1 = 4 * (Lambda**2) / (3 * self.Consts.c * pow(Lambda-Lambda_D1,2))
+        theta_D1_term2 = -np.sign(B) * self.Consts.h / (self.Consts.k_B * (273.15+T) * (Lambda-Lambda_D1))
+        theta_D1 = self.Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (theta_D1_term1 + theta_D1_term2) # [rad]
         
         # Faraday rotation contributed from D2 line
-        theta_D2_term1 = 7 * (Lambda**2) / (3 * Consts.c * pow(Lambda-Lambda_D2,2))
-        theta_D2_term2 = np.sign(B) * Consts.h / (Consts.k_B * (273.15+T) * (Lambda-Lambda_D2))
-        theta_D2 = Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D2**2) * (theta_D2_term1 + theta_D2_term2) # [rad]
+        theta_D2_term1 = 7 * (Lambda**2) / (3 * self.Consts.c * pow(Lambda-Lambda_D2,2))
+        theta_D2_term2 = np.sign(B) * self.Consts.h / (self.Consts.k_B * (273.15+T) * (Lambda-Lambda_D2))
+        theta_D2 = self.Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D2**2) * (theta_D2_term1 + theta_D2_term2) # [rad]
         
         # Addition of Faraday rotation contributed from D1 & D2 line
         theta = theta_D1 + theta_D2 # [rad]
@@ -66,14 +69,14 @@ class Theory:
         l = (7.5-0.159*2)*1e-2 # [m]
 
         # Gradient of Faraday rotation contributed from D1 line
-        grad_D1_term1 = 8 * (Lambda**2/pow(Lambda-Lambda_D1,3) - Lambda/pow(Lambda-Lambda_D1,2)) / (3*Consts.c)
-        grad_D1_term2 = -np.sign(B) * Consts.h / (Consts.k_B * (273.15+T) * pow(Lambda-Lambda_D1,2))
-        grad_D1 = -Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (grad_D1_term1 + grad_D1_term2) * 1e-6 # [microrad/pm]
+        grad_D1_term1 = 8 * (Lambda**2/pow(Lambda-Lambda_D1,3) - Lambda/pow(Lambda-Lambda_D1,2)) / (3*self.Consts.c)
+        grad_D1_term2 = -np.sign(B) * self.Consts.h / (self.Consts.k_B * (273.15+T) * pow(Lambda-Lambda_D1,2))
+        grad_D1 = -self.Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (grad_D1_term1 + grad_D1_term2) * 1e-6 # [microrad/pm]
         
         # Gradient of Faraday rotation contributed from D2 line
-        grad_D2_term1 = 14 * (Lambda**2/pow(Lambda-Lambda_D2,3) - Lambda/pow(Lambda-Lambda_D2,2)) / (3*Consts.c)
-        grad_D2_term2 = np.sign(B) * Consts.h / (Consts.k_B * (273.15+T) * pow(Lambda-Lambda_D2,2))
-        grad_D2 = -Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (grad_D2_term1 + grad_D2_term2) * 1e-6 # [microrad/pm]
+        grad_D2_term1 = 14 * (Lambda**2/pow(Lambda-Lambda_D2,3) - Lambda/pow(Lambda-Lambda_D2,2)) / (3*self.Consts.c)
+        grad_D2_term2 = np.sign(B) * self.Consts.h / (self.Consts.k_B * (273.15+T) * pow(Lambda-Lambda_D2,2))
+        grad_D2 = -self.Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (grad_D2_term1 + grad_D2_term2) * 1e-6 # [microrad/pm]
         
         # Addition of gradient of Faraday rotation contributed from D1 & D2 line
         grad_theta = grad_D1 + grad_D2 # [microrad/pm]
