@@ -2,7 +2,7 @@ import os, glob
 import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from matplotlib.ticker import ScalarFormatter
 from scipy.signal import find_peaks
 from constants import Constants as Consts
 from theory import Theory
@@ -10,10 +10,12 @@ from read import Read
 from analyze import Analyze
 
 fig, ax = plt.subplots()
-# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements', 'K vapor cell')
-dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements', 'K vapor cell')
-Bristol = os.path.join(dir_path, 'Bristol data')
-Lockins = os.path.join(dir_path, 'Lock-ins data')
+dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+K_vapor = os.path.join(dir_path, 'K vapor cell')
+# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements', 'K vapor cell')
+Bristol = os.path.join(K_vapor, 'Bristol data')
+Lockins = os.path.join(K_vapor, 'Lockins data')
+Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
 class Plot:
 
@@ -23,12 +25,55 @@ class Plot:
         self.Read = Read()
         self.Analyze = Analyze()
 
-    def theta_mea_vs_nu(self, lambda_path, lock_in_path, n):
+    def setup_plot(self, xlabel, ylabel, title, x):
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.grid(True)
+        plt.xticks(np.linspace(x[0], x[-1], 10))
+        # plt.xlim(x[0], x[-1])
+        ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True, useOffset=False))
+        # plt.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
+
+    def scatter_plot(self, x, y, label, s=2):
+        ax.scatter(x, y, s=s, label=label)
+
+    def save_plot(self, name, i):
+        plt.savefig(os.path.join(Plots, f'{date}', f'R{name}_{date}_run{i+1}.png'))
+
+    def process_and_plot(self, Bristol_t, Lambda, para, lockins_t, data, i, n, name, xlabel, ylabel, title):
+        Bristol_t[i], Lambda[i], lockins_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], data[i])
+        l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
+        Lambd, R = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], data[i][l_idx])
+
+        self.scatter_plot(Lambd * 1e9, R[1:], name)
+        self.setup_plot(xlabel, ylabel, title, Lambd * 1e9)
+        self.save_plot(name, i)
+        plt.show()
+
+    def R_vs_wvl(self, lambda_path, lockin_path, name, i, n):
+        """
+        Plot function of Lock-in RMS values vs Wavelength
+        """
+        Bristol_t, Lambda = self.Read.Bristol(lambda_path)
+        para, lockins_t, Rmod, R2f, Rdc, _ = self.Analyze.Triple_modu_theta(lockin_path)
+
+        if name == 'mod':
+            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, Rmod, i-1, n, name, 'Wavelength (nm)',
+                                  r'$R_{Mod}$', r'$R_{Mod}$ vs Wavelength, run' + str(i) + ' @'+ str(date))
+        elif name == '2f':
+            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R2f, i-1, n, name, 'Wavelength (nm)',
+                                  r'$R_{2f}$', r'$R_{2f}$ vs Wavelength, run' + str(i) + ' @'+ str(date))
+        elif name == 'dc':
+            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, Rdc, i-1, n, name, 'Wavelength (nm)',
+                                  r'$R_{DC}$', r'$R_{DC}$ vs Wavelength, run' + str(i) + ' @'+ str(date))
+
+    def frequency_detuning(self, lambda_path, lockin_path, n):
         """
         Plot function of measured FR angle vs Frequency
         """
         Bristol_t, Lambda = self.Read.Bristol(lambda_path)
-        para, lockins_t, theta = self.Analyze.Double_mod_theta(lock_in_path)
+        para, lockins_t, R2f, Rdc, theta = self.Analyze.Double_modu_theta(lockin_path)
         xmin, xmax = float('-inf'), float('inf')
         for i in range(6,8):
             Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
@@ -45,10 +90,10 @@ class Plot:
 
             xmin = max(xmin, min(x))
             xmax = min(xmax, max(x))
+
         lambda_theo = np.linspace(766.695*1e-9, 766.705*1e-9, 2000)
         theta_theo = self.Theory.FR_theta(lambda_theo, 0.0718, 5*1e-4, 35, self.Consts.Lambda_D1, self.Consts.Lambda_D2)
         x_theo = self.Consts.c / lambda_theo * 1e-9 - nu0
-        print(x_theo)
         ax.plot(x_theo, theta_theo * 1e3, '--', color='red', label='Theory')
 
         for j, k in enumerate(valleys):
@@ -74,4 +119,5 @@ date_input = '01-25-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.theta_mea_vs_nu(Bristol_path, Lockins_path, 5)
+# plotter.frequency_detuning(Bristol_path, Lockins_path, 5)
+plotter.R_vs_wvl(Bristol_path, Lockins_path, 'dc', 6, 5)

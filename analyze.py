@@ -9,7 +9,7 @@ class Analyze:
     def __init__(self):
         self.Read = Read()
 
-    def Double_mod_theta(self, lockins_path):
+    def Double_modu_theta(self, lockins_path):
         """
         Faraday rotation angles of double modulated measurements
         """
@@ -17,35 +17,34 @@ class Analyze:
         Rdc, R2f, theta = [], [], []
 
         for i in range(len(lockins_path)):
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
             R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
             theta.append(R2f[i] / (math.pi * scipy.special.jv(2,2.405) * Rdc[i])) # [rad]
         
-        return para, lockins_t, theta
+        return para, lockins_t, R2f, Rdc, theta
 
-    
-    def Triple_mod_theta(self, lock_in_path):
+    def Triple_modu_theta(self, lockins_path):
         """
         Faraday rotation angles of triple modulated measurements
         """
-        para, Lock_in_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.Lock_ins(lock_in_path)
+        para, Lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
 
         Rmod, R2f, Rdc, theta = [], [], [], []
-        for i in range(len(lock_in_path)):
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
+        for i in range(len(lockins_path)):
             Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2)) # [V]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
             theta.append(np.sqrt(2) * para[i][3] * Rmod[i]/(10 * math.pi * scipy.special.jv(2,2.405) * Rdc[i])) # [rad]
         
-        return para, Lock_in_t, theta
-    
-    
+        return para, Lockins_t, Rmod, R2f, Rdc, theta
+
     def check_calib(self, lambd, theta):
         '''
         Check the timestamp when Bristol starts and ends its self-calibration as calib
         and the corresponding timestamp in lock-ins as idx1, idx2
         '''
-        # Bristol wavelength meter has several ways(manual, time, temperature) for self-calibration, every time the instrument calibrates there will be a ~2s blank in the wavelength measurements
+        # Bristol wavelength meter has several ways(manual, time, temperature) for self-calibration
+        # every time the instrument calibrates there will be a ~2s blank in the wavelength measurements
         calib = np.where(lambd == 0)[0]
         if calib.size > 0:
             print('Self-calibration in Bristol measurements detected...')
@@ -130,56 +129,3 @@ class Analyze:
                 averages.append(avg_value)
 
         return np.array(averages), theta
-    
-    def interp_theta(self, bristol_t, lock_in_t, theta):
-        # Interpolate polarization rotation measurements to wavelength measurements
-        itp_theta = np.interp(bristol_t, lock_in_t, theta)
-        # Handle NaN and Inf values
-        itp_theta = np.nan_to_num(itp_theta, nan=0.0, posinf=0)
-        
-        return itp_theta
-    
-    def find_peaks_idx(self, x):
-        # Find the peaks of wavelength scan
-        dx = np.diff(x)
-        dx = np.where(dx > 0, 1, -1)
-        ddx = np.diff(dx)
-        i_peaks = (np.where(ddx != 0)[0] + 1,)
-        
-        return i_peaks
-    
-    def modified_sine_wave(self, t, A, f, phi, offset, drift_slope):
-        # Define the modified sine wave function
-        return A * np.sin(2 * np.pi * f * t + phi) + offset + drift_slope * t
-    
-    def alan_variance(self, data):
-        # Calculation of Alan variance
-        n = len(data)
-        mean_diff = np.diff(data).mean()
-        alan_var = np.sum((np.diff(data) - mean_diff) ** 2) / (2 * n)
-        
-        return alan_var
-    
-    def filtered_theta_and_lambda(self, lambda_path, lock_in_path, i, n):
-        # Calculate filterd polarization rotation and wavelength measurements
-        Bristol_t, Lambda = self.Read.read_Bristol(lambda_path)
-        para, Lock_in_t, theta = self.Triple_mod_theta(lock_in_path)
-        Bristol_t[i], Lambda[i], Lock_in_t[i], theta[i] = self.filter_and_trim_data(Bristol_t[i], Lambda[i], Lock_in_t[i], theta[i])
-        # itp_theta = self.interp_theta(Bristol_t[i], Lock_in_t[i], theta[i])
-        Bristol_idx, lock_in_idx = self.calculate_interval_and_indices(Bristol_t[i], Lock_in_t[i], para[i][4], n)
-
-        N = len(lock_in_idx)
-        lambd = Lambda[i][Bristol_idx[0]:] # [m]
-        thet = theta[i][lock_in_idx] # [rad]
-        Lambda_ave = np.average(lambd) # [m]
-        Lambda_std = np.std(lambd, ddof=1.5) # [m], unbiased sample STD
-        Lambda_ste = Lambda_std / np.sqrt(N) # [m]
-        Theta_ave = np.average(thet) # [rad]
-        Theta_std = np.std(thet, ddof=1.5) # [rad], unbiased sample STD
-        Theta_ste = Theta_std / np.sqrt(N) # [rad]
-
-        params, covariance = curve_fit(self.modified_sine_wave, Bristol_t[i][Bristol_idx[0]:], lambd, p0=[Lambda_std*2, 10, 0, Lambda_ave, 0])
-        A_fit, f_fit, phi_fit, offset_fit, drift_slope_fit = params
-        print("Fitted Delta lambda is " + str(round(np.abs(A_fit)*2*1e9,6)) + ' [nm]')
-        
-        return N, A_fit, Lambda_ave, Lambda_std, Lambda_ste, Theta_ave, Theta_std, Theta_ste
