@@ -14,6 +14,21 @@ class Read:
             return int(match.group(0))
         else:
             return path
+        
+    def DLCpro_WideScan(self, path):
+        '''
+        Read Toptica DLC pro wide scan output
+        '''
+        x, y, DLCpro_t = [], [], []
+        for file in sorted(path, key=self.sort_key):
+            df = pd.read_csv(file, sep=',', header=None, skiprows=1,
+                             names=['Piezo Voltage (V)', 'Fine In 2 (V)',
+                                    'time (ms)'])
+            x.append(df['Piezo Voltage (V)'].to_numpy())                                                                           # [V]
+            y.append(df['Fine In 2 (V)'].to_numpy())                                                                               # [V]
+            DLCpro_t.append(df['time (ms)'].to_numpy() * 1e-3)                                                                     # [s]
+        
+        return x, y, DLCpro_t
 
     def Bristol(self, path):
         '''
@@ -30,7 +45,7 @@ class Read:
             # Filter out error readings & mode hop readings
             # filtered_data = df[(df['Instrument Wavelength'] != 0) & (df['Instrument Wavelength'] < 767)]
             B_t.append(df['Timestamp'].to_numpy())                                                                                 # [s]
-            B_lambda.append(np.float64(df['Instrument Wavelength'].to_numpy()) * pow(10,-9))                                       # [m]
+            B_lambda.append(np.float64(df['Instrument Wavelength'].to_numpy()) * 1e-9)                                             # [m]
             
         return B_t, B_lambda
 

@@ -15,6 +15,7 @@ K_vapor = os.path.join(dir_path, 'K vapor cell')
 # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements', 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
+DLCpro = os.path.join(K_vapor, 'TopticaDLCpro data')
 Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
 class Plot:
@@ -41,9 +42,9 @@ class Plot:
     def save_plot(self, name, i):
         plt.savefig(os.path.join(Plots, f'{date}', f'R{name}_{date}_run{i+1}.png'))
 
-    def process_and_plot(self, Bristol_t, Lambda, para, lockins_t, data, i, n, name, xlabel, ylabel, title):
-        Bristol_t[i], Lambda[i], lockins_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], data[i])
-        l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
+    def lockins_plot(self, Bristol_t, Lambda, para, Lockins_t, data, i, n, name, xlabel, ylabel, title):
+        Bristol_t[i], Lambda[i], Lockins_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], Lockins_t[i], data[i])
+        l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], Lockins_t[i], para[i][2], n)
         Lambd, R = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], data[i][l_idx])
 
         self.scatter_plot(Lambd * 1e9, R[1:], name)
@@ -51,23 +52,44 @@ class Plot:
         self.save_plot(name, i)
         plt.show()
 
-    def R_vs_wvl(self, lambda_path, lockin_path, name, i, n):
+    def DLCpro_plot(self, Bristol_t, Lambda, DLCpro_t, data, i, n, name, xlabel, ylabel, title):
+        Bristol_t[i], Lambda[i], DLCpro_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], DLCpro_t[i], data[i])
+        DLCpro_idx = np.arange(n,len(DLCpro_t[i])-1,1)
+        Bristol_idx = np.searchsorted(Bristol_t[i], DLCpro_t[i][DLCpro_idx], side='left')
+        uni_idx = np.unique(Bristol_idx, return_index=True)[1]
+        dup_idx = np.setdiff1d(np.arange(len(Bristol_idx)), uni_idx)
+        d_idx = np.delete(DLCpro_idx, dup_idx)
+        b_idx = np.unique(Bristol_idx)
+
+        Lambd = Lambda[i][b_idx]
+        y = data[i][d_idx]
+
+        self.scatter_plot(Lambd * 1e9, y, name)
+        self.setup_plot(xlabel, ylabel, title, Lambd * 1e9)
+        self.save_plot(name, i)
+        plt.show()
+
+    def y_vs_wvl(self, lambda_path, lockins_path, y_path, name, i, n):
         """
         Plot function of Lock-in RMS values vs Wavelength
         """
         Bristol_t, Lambda = self.Read.Bristol(lambda_path)
-        para, lockins_t, Rmod, R2f, Rdc, _ = self.Analyze.Triple_modu_theta(lockin_path)
+        para, lockins_t, Rmod, R2f, Rdc, _ = self.Analyze.Triple_modu_theta(lockins_path)
+        x, y, DLCpro_t = self.Read.DLCpro_WideScan(y_path)
 
-        if name == 'mod':
-            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, Rmod, i-1, n, name, 'Wavelength (nm)',
+        if name == 'SAS_KVC':
+            self.DLCpro_plot(Bristol_t, Lambda, DLCpro_t, y, i-1, n, name, 'Wavelength (nm)',
+                                  r'$V (V)$', r'Saturated absorption spectrum of K vapor cell, run' + str(i) + ' @'+ str(date))
+        elif name == 'mod':
+            self.lockins_plot(Bristol_t, Lambda, para, lockins_t, Rmod, i-1, n, name, 'Wavelength (nm)',
                                   r'$R_{Mod}$', r'$R_{Mod}$ vs Wavelength, run' + str(i) + ' @'+ str(date))
         elif name == '2f':
-            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R2f, i-1, n, name, 'Wavelength (nm)',
+            self.lockins_plot(Bristol_t, Lambda, para, lockins_t, R2f, i-1, n, name, 'Wavelength (nm)',
                                   r'$R_{2f}$', r'$R_{2f}$ vs Wavelength, run' + str(i) + ' @'+ str(date))
         elif name == 'dc':
-            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, Rdc, i-1, n, name, 'Wavelength (nm)',
+            self.lockins_plot(Bristol_t, Lambda, para, lockins_t, Rdc, i-1, n, name, 'Wavelength (nm)',
                                   r'$R_{DC}$', r'$R_{DC}$ vs Wavelength, run' + str(i) + ' @'+ str(date))
-
+    
     def frequency_detuning(self, lambda_path, lockin_path, n):
         """
         Plot function of measured FR angle vs Frequency
@@ -75,48 +97,49 @@ class Plot:
         Bristol_t, Lambda = self.Read.Bristol(lambda_path)
         para, lockins_t, R2f, Rdc, theta = self.Analyze.Double_modu_theta(lockin_path)
         xmin, xmax = float('-inf'), float('inf')
-        for i in range(6,8):
+        for i in range(0,2):
             Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
             Lambd, Thet = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
-            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2                                # [GHz]
+            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2 * 1e-9                               # [GHz]
             y = Thet[1:] * 1e3                                                                  # [millirad]
-
+            print(x)
             valleys, _ = find_peaks(-y, prominence=.5, height=(-28, -23))
-            color = 'black' if i == 6 else 'blue'
-            ax.plot(x, y, color=color, label=f'{r"L->H" if i == 6 else r"H->L"} Wide Scan')
+            color = 'black' if i == 0 else 'blue'
+            ax.plot(x, y, color=color, label=f'{r"L->H" if i == 0 else r"H->L"} Wide Scan')
 
             xmin = max(xmin, min(x))
             xmax = min(xmax, max(x))
 
-        lambda_theo = np.linspace(766.695*1e-9, 766.705*1e-9, 2000)
-        theta_theo = self.Theory.FR_theta(lambda_theo, 0.0718, 5*1e-4, 35, self.Consts.Lambda_D1, self.Consts.Lambda_D2)
-        x_theo = self.Consts.c / lambda_theo * 1e-9 - self.Consts.Nu_D2 
-        ax.plot(x_theo, theta_theo * 1e3, '--', color='red', label='Theory')
+        # lambda_theo = np.linspace(766.695*1e-9, 766.705*1e-9, 2000)
+        # theta_theo = self.Theory.FR_theta(lambda_theo, 0.0718, 5*1e-4, 35, self.Consts.Lambda_D1, self.Consts.Lambda_D2)
+        # x_theo = self.Consts.c / lambda_theo * 1e-9 - self.Consts.Nu_D2 
+        # ax.plot(x_theo, theta_theo * 1e3, '--', color='red', label='Theory')
 
         for j, k in enumerate(valleys):
             color = plt.cm.tab10(j)
             ax.scatter(x[k], y[k], color=color, s=20)
-            ax.vlines(x=x[k], ymin=16, ymax=y[k], 
-                      linestyle='--', color=color, label=r'$\nu$={:.6f} GHz, $\theta$={:.2f} millirad.'.format(x[k], y[k]), linewidth=2)
+            # ax.vlines(x=x[k], ymin=16, ymax=y[k], 
+                    #   linestyle='--', color=color, label=r'$\nu$={:.6f} GHz, $\theta$={:.2f} millirad.'.format(x[k], y[k]), linewidth=2)
         
         plt.xlabel(r'Frequency (GHz)')
         plt.ylabel(r'Polarization Rotation (millirad.)')
         plt.xticks(np.arange(np.floor(xmin), np.ceil(xmax), 0.5))
         # plt.yticks(np.arange(5,50,5))
-        plt.ylim(0, 22)
+        # plt.ylim(0, 22)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best')
-        plt.title(f'Polarization Rotation vs Frequency, $B$=5.15 G, $P$=2.64 $\mu$W @{date}')
+        plt.title(f'Polarization Rotation vs Frequency, $B$=5.17 G, $P$=3.06 $\mu$W @{date}')
         plt.show()
 
 plotter = Plot()
 # date_input = input("Enter the date (MM-DD-YYYY): ")
-date_input = '01-25-2024'
+date_input = '01-30-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
+DLCpro_path = glob.glob(os.path.join(DLCpro, date, '*.csv'))
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
 # plotter.frequency_detuning(Bristol_path, Lockins_path, 5)
-plotter.R_vs_wvl(Bristol_path, Lockins_path, 'dc', 6, 5)
+plotter.y_vs_wvl(Bristol_path, Lockins_path, DLCpro_path, 'SAS_KVC', 1, 5)
