@@ -80,9 +80,8 @@ class Plot:
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
             Lambd, Thet = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
-            nu0 = self.Consts.c / self.Consts.Lambda_D2 * 1e-9                              # [GHz]
-            x = self.Consts.c / Lambd * 1e-9 - nu0                                          # [GHz]
-            y = Thet[1:] * 1e3                                                              # [millirad]
+            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2                                # [GHz]
+            y = Thet[1:] * 1e3                                                                  # [millirad]
 
             valleys, _ = find_peaks(-y, prominence=.5, height=(-28, -23))
             color = 'black' if i == 6 else 'blue'
@@ -93,7 +92,7 @@ class Plot:
 
         lambda_theo = np.linspace(766.695*1e-9, 766.705*1e-9, 2000)
         theta_theo = self.Theory.FR_theta(lambda_theo, 0.0718, 5*1e-4, 35, self.Consts.Lambda_D1, self.Consts.Lambda_D2)
-        x_theo = self.Consts.c / lambda_theo * 1e-9 - nu0
+        x_theo = self.Consts.c / lambda_theo * 1e-9 - self.Consts.Nu_D2 
         ax.plot(x_theo, theta_theo * 1e3, '--', color='red', label='Theory')
 
         for j, k in enumerate(valleys):

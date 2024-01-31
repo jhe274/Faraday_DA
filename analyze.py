@@ -15,11 +15,10 @@ class Analyze:
         """
         para, lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
         Rdc, R2f, theta = [], [], []
-
         for i in range(len(lockins_path)):
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
-            theta.append(R2f[i] / (math.pi * scipy.special.jv(2,2.405) * Rdc[i])) # [rad]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                      # [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                      # [V]
+            theta.append(R2f[i] / (math.pi * scipy.special.jv(2,2.405) * Rdc[i]))               # [rad]
         
         return para, lockins_t, R2f, Rdc, theta
 
@@ -28,12 +27,11 @@ class Analyze:
         Faraday rotation angles of triple modulated measurements
         """
         para, Lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
-
         Rmod, R2f, Rdc, theta = [], [], [], []
         for i in range(len(lockins_path)):
-            Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2)) # [V]
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2)) # [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2)) # [V]
+            Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                   # [V]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                      # [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                      # [V]
             theta.append(np.sqrt(2) * para[i][3] * Rmod[i]/(10 * math.pi * scipy.special.jv(2,2.405) * Rdc[i])) # [rad]
         
         return para, Lockins_t, Rmod, R2f, Rdc, theta
@@ -62,15 +60,12 @@ class Analyze:
         try:
             lambda_ubound = 766.72 * 1e-9
             lambda_lbound = 766.68 * 1e-9
-
             condition = np.where(lambd < lambda_ubound)
             # condition = np.logical_and(lambd > lambda_lbound, lambd < lambda_ubound)
             filtered_bristol_t = bristol_t[condition]
             filtered_lambd = lambd[condition]
-
             if filtered_lambd.size == 0:
                 raise ValueError("No lambda values found within the specified bounds.")
-            
         except ValueError as e:
             print(e)
             bristol_t, lambd = bristol_t, lambd
@@ -84,7 +79,6 @@ class Analyze:
         if lambd[-1] > lock_in_t[-1]:
             end_t = np.argmin(np.abs(bristol_t - lock_in_t[-1]))
             trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t[:end_t+1], lambd[:end_t+1], lock_in_t, theta
-
         else:
             end_t = np.argmin(np.abs(lock_in_t - bristol_t[-1]))
             trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t, lambd, lock_in_t[:end_t+1], theta[:end_t+1]
@@ -119,7 +113,6 @@ class Analyze:
         '''
         calib, theta = self.check_calib(filtered_lambd, theta)
         averages = []
-
         for i in np.arange(len(Bristol_idx) - 1):
             if calib.size > 0 and i + 1 >= calib[0] and i + 1 < calib[-1] + 2:
                 pass
