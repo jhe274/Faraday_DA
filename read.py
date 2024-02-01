@@ -6,14 +6,14 @@ import pandas as pd
 class Read:
 
     def sort_key(self, path):
-        '''
-        Extract the numeric part after the last underscore in the file name
-        '''
-        match = re.search(r'(\d+)(?=\.[^.]*$|$)', path)
+        # Check if the file has an underscore and a numeric part at the end
+        match = re.search(r'_(\d+)(?=\.[^.]*$|$)', path)
         if match:
-            return int(match.group(0))
-        else:
-            return path
+            # Return the numeric part for files with underscore and number
+            return int(match.group(1))
+        
+        # If no underscore and number, return a very low value to sort these files first
+        return -1
         
     def DLCpro_WideScan(self, path):
         '''
