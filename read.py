@@ -19,16 +19,17 @@ class Read:
         '''
         Read Toptica DLC pro wide scan output
         '''
-        x, y, DLCpro_t = [], [], []
+        x, y, Y, DLCpro_t = [], [], [], []
         for file in sorted(path, key=self.sort_key):
             df = pd.read_csv(file, sep=',', header=None, skiprows=1,
-                             names=['Piezo Voltage (V)', 'Fine In 2 (V)',
-                                    'time (ms)'])
+                             names=['Piezo Voltage (V)', 'Fine In 1 (V)',
+                                    'Monitor Photodiode (non-linear)', 'time (ms)'])
             x.append(df['Piezo Voltage (V)'].to_numpy())                                                                           # [V]
-            y.append(df['Fine In 2 (V)'].to_numpy())                                                                               # [V]
+            y.append(df['Fine In 1 (V)'].to_numpy())                                                                               # [V]
+            Y.append(df['Monitor Photodiode (non-linear)'].to_numpy())
             DLCpro_t.append(df['time (ms)'].to_numpy() * 1e-3)                                                                     # [s]
         
-        return x, y, DLCpro_t
+        return x, y, Y, DLCpro_t
 
     def Bristol(self, path):
         '''
