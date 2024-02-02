@@ -101,8 +101,8 @@ class Plot:
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
             Lambd, Thet = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
-            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2 * 1e-9                               # [GHz]
-            y = Thet[1:] * 1e3                                                                  # [millirad]
+            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2 * 1e-9                             # [GHz]
+            y = Thet[1:] * 1e3                                                                      # [millirad]
             
             valleys, _ = find_peaks(-y, prominence=.5, height=(-28, -23))
             # color = 'black' if i == run-1 else 'blue'
