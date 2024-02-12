@@ -3,11 +3,14 @@ import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
+import scipy.special
 from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
 from constants import Constants as Consts
 from theory import Theory
 from read import Read
 from analyze import Analyze
+import numpy.polynomial.polynomial as poly
 
 fig, ax = plt.subplots()
 # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
@@ -37,33 +40,42 @@ class Plot:
         ax.xaxis.set_major_formatter(ScalarFormatter(useMathText=True, useOffset=False))
         # plt.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
 
-    def scatter_plot(self, x, y, label, s=2):
-        ax.scatter(x, y, s=s, label=label)
+    def plot(self, x, y, label):
+        ax.plot(x, y, label=label)
 
     def save_plot(self, name, i):
         plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i+1}-{i+2}.png'))
 
     def process_and_plot(self, Bristol_t, Lambda, para, y_t, data, run, n, name, xlabel, ylabel, title):
         if np.all(para) == 0:
-            for i in range(run-1, run+1):
+            # Wide Scan plot using DLC pro data
+            for i in range(run, run+2):
                 Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
                 Bristol_t[i], Lambda[i], y_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], y_t[i], data[i])
                 l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], y_t[i], para, n)
                 x = self.Consts.c / Lambda[i][b_idx] * 1e-9 - self.Consts.Nu_D2 * 1e-9              # [GHz]
                 y = data[i][l_idx]
-                self.scatter_plot(x, y, f'{r"H->L" if i == 0 else r"L->H"} Wide Scan')
+                self.plot(x, y, f'{r"L->H" if i == run else r"H->L"} Wide Scan')
         else:
-            for i in range(run-1, run+1):
+            # RMS plot using lock-ins data
+            for i in range(run, run+2):
+                print(i)
                 Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
                 Bristol_t[i], Lambda[i], y_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], y_t[i], data[i])
                 l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
                 Lambd, y = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], data[i][l_idx])
                 x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2 * 1e-9                         # [GHz]
-                self.scatter_plot(x, y[1:], f'{r"H->L" if i == 0 else r"L->H"} Wide Scan')
-            
+
+                # Baseline fit
+                # coefs = poly.polyfit(x, y[1:], 2)
+                # ffit = poly.polyval(x, coefs)
+
+                self.scatter_plot(x, y[1:], f'{r"H->L" if i == run else r"L->H"} Wide Scan')
+                # plt.plot(x, ffit, ':', label='Baseline Fit')
+
         plt.axvline(x=0, color = 'red', linestyle='--')
         self.setup_plot(xlabel, ylabel, title, x)
-        self.save_plot(name, i)
+        # self.save_plot(name, i)
         plt.show()
 
     def y_vs_nu(self, lambda_path, lockins_path, y_path, name, run, n, gain, B, power):
@@ -75,7 +87,9 @@ class Plot:
         x, y, Y, DLCpro_t = self.Read.DLCpro_WideScan(y_path)
         if name == 'SAS_KVC':
             self.process_and_plot(Bristol_t, Lambda, 0, DLCpro_t, y, run-1, n, name, 'Frequency (GHz)',
-                                  r'$V$ (V)', r'Saturated absorption spectrum of K vapor cell, run' + f'{run}-{run+1}' + ' @'+ str(date))
+                                  r'$V$ (V)', r'Doppler-free SAS of K vapor cell @$T=36°$C')
+                                #   r'$V$ (V)', r'Doppler-free SAS of K vapor cell with blanced photodetector')
+                                #   r'$V$ (V)', r'Saturated absorption spectrum of K vapor cell, run' + f'{run}-{run+1}' + ' @'+ str(date))
         elif name == 'Rmod':
             self.process_and_plot(Bristol_t, Lambda, para, lockins_t, Rmod, run-1, n, name, 'Frequency (GHz)',
                                   r'$R_{Mod}$ (V)', r'$R_{Mod}$ vs Frequency, run' + f'{run}-{run+1}' + 
@@ -96,20 +110,34 @@ class Plot:
         Bristol_t, Lambda = self.Read.Bristol(lambda_path)
         para, lockins_t, R2f, Rdc, theta = self.Analyze.Double_modu_theta(lockin_path)
         xmin, xmax = float('-inf'), float('inf')
+        fit_params = []
         for i in range(run-1, run+1):
             Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
+
+            # Fit
+            coefs = poly.polyfit(lockins_t[i], Rdc[i], 2)
+            Rdc_fit = poly.polyval(lockins_t[i], coefs)
+            theta_fit = R2f[i] / (np.pi * scipy.special.jv(2,2.405) * Rdc_fit)
+            Bristol_t[i], Lambda[i], lockins_t[i], theta_fit = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta_fit)
+            l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
+            Lambd_fit, Thet_fit = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta_fit[l_idx])
+            x_fit = self.Consts.c / Lambd_fit * 1e-9 - self.Consts.Nu_D2 * 1e-9                     # [GHz]
+            y_fit = Thet_fit[1:] * 1e3                                                              # [millirad]
+            
+
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
             Lambd, Thet = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
             x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu_D2 * 1e-9                             # [GHz]
             y = Thet[1:] * 1e3                                                                      # [millirad]
             
-            valleys, _ = find_peaks(-y, prominence=.5, height=(-28, -23))
+            # valleys, _ = find_peaks(-y, prominence=.5, height=(-28, -23))
             # color = 'black' if i == run-1 else 'blue'
             # TC = ['5ms', '10ms', '20ms', '50ms', '100ms']
-            ax.plot(x, y, label=f'{r"H->L" if i == 0 else r"L->H"} Wide Scan')
+            ax.plot(x, y, label=f'{r"H->L" if i == run-1 else r"L->H"} Wide Scan')
+            # plt.plot(x_fit, y_fit, ':', label=f'{r"H->L" if i == 0 else r"L->H"} Wide Scan')
             # ax.plot(x, y, label=f'TC = {TC[i-5]}')
-            
+
             xmin = max(xmin, min(x))
             xmax = min(xmax, max(x))
 
@@ -137,10 +165,10 @@ class Plot:
 
 plotter = Plot()
 # date_input = input("Enter the date (MM-DD-YYYY): ")
-date_input = '02-02-2024'
+date_input = '02-12-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 DLCpro_path = glob.glob(os.path.join(DLCpro, date, '*.csv'))
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-# plotter.frequency_detuning(Bristol_path, Lockins_path, 1, 5, 6, 5.18, 4.48)
-plotter.y_vs_nu(Bristol_path, Lockins_path, DLCpro_path, 'SAS_KVC', 1, 5, 6, 5.18, 4.48)
+# plotter.frequency_detuning(Bristol_path, Lockins_path, 1, 5, 6, 5.17, 2.28)
+plotter.y_vs_nu(Bristol_path, Lockins_path, DLCpro_path, 'SAS_KVC', 3, 5, 6, 5.16, 2.28)
