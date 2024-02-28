@@ -19,7 +19,7 @@ class Constants:
         self.Nu39_D1 = 389286.058716 * 1e9                                                       # [Hz], K39 D1 line frequency in vacuum
         self.Nu39_D2 = 391016.17003 * 1e9                                                        # [Hz], K39 D2 line frequency in vacuum
         self.Lambda39_D1 = self.c / (self.Nu39_D1)                                               # [m], K39 D1 line wavelength in vacuum
-        self.Lambda39_D2 = self.c / (self.Nu39_D1)                                               # [m], K39 D2 line wavelength in vacuum
+        self.Lambda39_D2 = self.c / (self.Nu39_D2)                                               # [m], K39 D2 line wavelength in vacuum
         self.Nu39_D2_A = 391015.99413 * 1e9                                                      # [Hz], K39 D2 line, |F=2> -> |F'=3,2,1> in vacuum
         self.Nu39_D2_C = 391016.44456 * 1e9                                                      # [Hz], K39 D2 line, |F=1> -> |F'=2,1,0> in vacuum
         self.Nu39_D2_B = (self.Nu39_D2_A + self.Nu39_D2_C) / 2                                   # [Hz], K39 D2 line, grouns state cross over in vacuum
@@ -30,7 +30,7 @@ class Constants:
         self.Nu41_D1 = 389286.294205 * 1e9                                                       # [Hz], K41 D1 line frequency in vacuum
         self.Nu41_D2 = 391016.40621 * 1e9                                                        # [Hz], K41 D2 line frequency in vacuum
         self.Lambda41_D1 = self.c / (self.Nu41_D1)                                               # [m], K41 D1 line wavelength in vacuum
-        self.Lambda41_D2 = self.c / (self.Nu41_D1)                                               # [m], K41 D2 line wavelength in vacuum
+        self.Lambda41_D2 = self.c / (self.Nu41_D2)                                               # [m], K41 D2 line wavelength in vacuum
         self.Nu41_D2_A = 391016.54544 * 1e9                                                      # [Hz], K41 D2 line, |F=2> -> |F'=3,2,1> in vacuum
         self.Nu41_D2_C = 391016.79394 * 1e9                                                      # [Hz], K41 D2 line, |F=1> -> |F'=2,1,0> in vacuum
         self.Nu41_D2_B = (self.Nu41_D2_A + self.Nu41_D2_C) / 2                                   # [Hz], K41 D2 line, grouns state cross over in vacuum

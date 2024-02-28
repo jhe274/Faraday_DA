@@ -31,8 +31,8 @@ class Theory:
         """
         E_D1 = self.Consts.g_D1 * (1/2) * self.Consts.mu_B * B
         Delta_E_D1 = -self.Zeeman_ground(B) - E_D1 - (self.Zeeman_ground(B) + E_D1)
-        Delta_Lambda_D1 = - pow(self.Consts.Lambda_D1,2) * Delta_E_D1 / (self.Consts.h * self.Consts.c) # [m]
-        Delta_nu_D1 = self.Consts.Nu_D1 - (self.Consts.c / (self.Consts.Lambda_D1 + Delta_Lambda_D1/2))*2 # [Hz]
+        Delta_Lambda_D1 = - pow(self.Consts.Lambda39_D1,2) * Delta_E_D1 / (self.Consts.h * self.Consts.c) # [m]
+        Delta_nu_D1 = self.Consts.Nu39_D1 - (self.Consts.c / (self.Consts.Lambda39_D1 + Delta_Lambda_D1/2))*2 # [Hz]
 
         return Delta_Lambda_D1, Delta_nu_D1
 
@@ -42,8 +42,8 @@ class Theory:
         """
         E_D2 = self.Consts.g_D2 * (3/2) * self.Consts.mu_B * B
         Delta_E_D2 = -self.Zeeman_ground(B) - E_D2 - (self.Zeeman_ground(B) + E_D2)
-        Delta_Lambda_D2 = - pow(self.Consts.Lambda_D2,2) * Delta_E_D2 / (self.Consts.h * self.Consts.c) # [m]
-        Delta_nu_D2 = self.Consts.Nu_D2 - (self.Consts.c / (self.Consts.Lambda_D2 + Delta_Lambda_D2/2)) * 2 # [Hz]
+        Delta_Lambda_D2 = - pow(self.Consts.Lambda39_D2,2) * Delta_E_D2 / (self.Consts.h * self.Consts.c) # [m]
+        Delta_nu_D2 = self.Consts.Nu39_D2 - (self.Consts.c / (self.Consts.Lambda39_D2 + Delta_Lambda_D2/2)) * 2 # [Hz]
 
         return Delta_Lambda_D2, Delta_nu_D2
     

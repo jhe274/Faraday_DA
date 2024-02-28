@@ -73,7 +73,7 @@ class Read:
         '''
         Read lock-ins data files
         '''
-        para, lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = [], [], [], [], [], [], [], []
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = [], [], [], [], [], [], [], []
         for file in sorted(path, key=self.sort_key):
             settings = []                                                                                                           # Store extracted values from the current file
             with open(file, 'r') as f:
@@ -87,18 +87,18 @@ class Read:
                                 settings.append(float(value))                                                                       # Convert to float and append to list
                 para.append(settings)
             df = pd.read_csv(file, sep=',', header=None, skiprows=9, 
-                               names=['Timestamp', 'X_mod', 'Y_mod',
+                               names=['Timestamp', 'X_1f', 'Y_1f',
                                       'X_2f', 'Y_2f', 'X_dc', 'Y_dc'])
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             start_time = df['Timestamp'].iloc[0]
             df['Timestamp'] = (df['Timestamp'] - start_time).dt.total_seconds()
             lockins_t.append(df['Timestamp'].to_numpy())                                                                            # [s]
-            Xmod.append(df['X_mod'].to_numpy())                                                                                     # [V]
-            Ymod.append(df['Y_mod'].to_numpy())                                                                                     # [V]
+            X1f.append(df['X_1f'].to_numpy())                                                                                      # [V]
+            Y1f.append(df['Y_1f'].to_numpy())                                                                                      # [V]
             X2f.append(df['X_2f'].to_numpy())                                                                                       # [V]
             Y2f.append(df['Y_2f'].to_numpy())                                                                                       # [V]
             Xdc.append(df['X_dc'].to_numpy())                                                                                       # [V]
             Ydc.append(df['Y_dc'].to_numpy())                                                                                       # [V]
         para = np.array(para, dtype=object)
 
-        return para, lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc
+        return para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc

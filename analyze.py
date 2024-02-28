@@ -1,4 +1,3 @@
-import math
 import numpy as np
 from read import Read
 import scipy.special
@@ -11,28 +10,33 @@ class Analyze:
 
     def Double_modu_theta(self, lockins_path):
         """
-        Faraday rotation angles of double modulated measurements
+        Calcualted data from double modulated measurements
         """
-        para, lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
-        Rdc, R2f, theta = [], [], []
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
+        R1f, R2f, Rdc, epsilon, theta = [], [], [], [], []
         for i in range(len(lockins_path)):
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                      # [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                      # [V]
-            theta.append(R2f[i] / (math.pi * scipy.special.jv(2,2.405) * Rdc[i]))               # [rad]
+            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
+            epsilon.append(R1f[i] / (np.pi * scipy.special.jv(1,2.405) * Rdc[i]))                                           # Ellipticity: [rad]
+            theta.append(R2f[i] / (2 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - epsilon[i]**2)))            # Rotation: [rad]
         
-        return para, lockins_t, R2f, Rdc, theta
+        return para, lockins_t, R1f, R2f, Rdc, epsilon, theta
 
     def Triple_modu_theta(self, lockins_path):
         """
-        Faraday rotation angles of triple modulated measurements
+        Calculated data from triple modulated measurements
         """
-        para, Lockins_t, Xmod, Ymod, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
-        Rmod, R2f, Rdc, theta = [], [], [], []
+        para, Lockins_t, Xmod, Ymod, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
+        Rmod, R1f, R2f, Rdc, epsilon, theta = [], [], [], [], [], []
         for i in range(len(lockins_path)):
-            Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                   # [V]
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                      # [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                      # [V]
-            theta.append(np.sqrt(2) * para[i][3] * Rmod[i]/(10 * math.pi * scipy.special.jv(2,2.405) * Rdc[i])) # [rad]
+            Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                                               # mod Magnitude: [V]
+            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
+            epsilon.append(R1f[i] / (np.pi * scipy.special.jv(1,2.405) * Rdc[i]))                                           # Ellipticity: [rad]
+            theta.append(np.sqrt(2) * para[i][3] * Rmod[i] / 
+                         (10 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - epsilon[i]**2)))                    # Rotation: [rad]
         
         return para, Lockins_t, Rmod, R2f, Rdc, theta
 
