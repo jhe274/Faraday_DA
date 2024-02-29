@@ -91,11 +91,17 @@ class Plot:
         plt.show()
 
     def theory_plot(self, l, B, T):
-        x = np.linspace(760*1e-9, 777*1e-9, 20000)
-        y = self.Theory.FR_theta(x, l, B*1e-4, T, self.Consts.Lambda39_D1, self.Consts.Lambda39_D2)
+        fig, ax = plt.subplots(1, 1, figsize=(25, 12))
+        x1 = np.linspace(760*1e-9, 777*1e-9, 20000)
+        y1 = self.Theory.FR_theta1(x1, l, B*1e-4, T, self.Consts.Lambda39_D1, self.Consts.Lambda39_D2)
+        # plt.plot(x1 * 1e9, y1 * 1e3, '-', color='red', label='Theory1')
 
-        plt.plot(x*1e9, y * 1e3, '--', color='red', label='Theory')
-        plt.ylim(0, 2e-5)
+        x2 = np.linspace(self.Consts.c/(777*1e-9), self.Consts.c/(760*1e-9), 20000)
+        y2 = self.Theory.FR_theta2(x2, l, B*1e-4, T, self.Consts.Nu39_D1, self.Consts.Nu39_D2)
+        plt.plot(x2 * 1e-9, y2 * 1e3, '--', color='blue', label='Theory1')
+        plt.xticks(np.arange(min(x2*1e-9), max(x2*1e-9), (max(x2*1e-9)-min(x2*1e-9))/10))
+        ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
+        # plt.ylim(0, 2e5)
         plt.grid(True)
         plt.show()
 
@@ -104,6 +110,6 @@ date_input = '02-27-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 2.5)
+# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 2.5)
 # plotter.PR_vs_Frequency(Bristol_path, Lockins_path, 9, 5, 5.103, 470)
-# plotter.theory_plot(0.0718, 5.103, 26)
+plotter.theory_plot(0.0718, 5.103, 26)

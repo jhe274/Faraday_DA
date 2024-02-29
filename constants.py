@@ -12,9 +12,10 @@ class Constants:
         self.k_B = np.float64(1.380649 * 1e-23)                                                  # [J/K]
         self.c = 299792458                                                                       # [m/s]
         self.e = np.float64(1.602176634 * 1e-19)                                                 # [C]
-        self.m = np.float64(9.1093837015 * 1e-31)                                                # [kg]
+        self.m_K39 = np.float64(1.6605402*1e-27 * 38.96370668)                                   # [kg]
+        self.m_e = np.float64(9.1093837015 * 1e-31)                                              # [kg]
         self.alpha = self.r_e * self.mu_B / (6 * self.h)
-        self.beta = self.e**2 * np.pi / (3 * self.m * self.c)
+        self.beta = self.e**2 * np.pi / (3 * self.m_e * self.c)
 
         '''
         Potassium K39 properties

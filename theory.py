@@ -21,7 +21,7 @@ class Theory:
         return Kp / (self.Consts.k_B * (273.15 + T))                                                                                    # [m^-3]
     
     def Doppler_linewidth(self, nu0, T):
-        Delta_D = nu0 * np.sqrt((8 * self.Consts.k_B * (273.15+T) * math.log(2)) / (self.Consts.c**2 * self.Consts.m))
+        Delta_D = nu0 * np.sqrt((8 * self.Consts.k_B * (273.15+T) * math.log(2)) / (self.Consts.m_K39 * self.Consts.c**2))
 
         return Delta_D
 
@@ -53,7 +53,7 @@ class Theory:
 
         return Delta_Lambda_D2, Delta_nu_D2
     
-    def FR_theta(self, Lambda, l, B, T, Lambda_D1, Lambda_D2):
+    def FR_theta1(self, Lambda, l, B, T, Lambda_D1, Lambda_D2):
         """
         Calculations of polarization rotations
         """
@@ -95,6 +95,20 @@ class Theory:
         theta_P = self.Consts.beta * self.Kn_density(T) * l * P * (theta_D1 + theta_D2)                                                 # [rad]
 
         return theta_P
+    
+    def FR_theta2(self, nu, l, B, T, nu_D1, nu_D2):
+        l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
+        
+        # Faraday rotation contributed from D1 line
+        theta_D1 = 4 * self.Consts.mu_B * np.abs(B) * pow(nu - self.Consts.Nu39_D1, 2) / (3 * (self.Consts.h / (2 * np.pi)) * pow(nu - self.Consts.Nu39_D1 - self.Doppler_linewidth(self.Consts.Nu39_D1, T), 2))          # [rad]
+        
+        # Faraday rotation contributed from D2 line
+        theta_D2 = 7 * self.Consts.mu_B * np.abs(B) * pow(nu - self.Consts.Nu39_D2, 2) / (3 * (self.Consts.h / (2 * np.pi)) * pow(nu - self.Consts.Nu39_D2 - self.Doppler_linewidth(self.Consts.Nu39_D2, T), 2))          # [rad]
+        
+        # Addition of Faraday rotation contributed from D1 & D2 line
+        theta = self.Consts.beta * self.Kn_density(T) * (theta_D1 + theta_D2)    
+
+        return theta
 
     
     def Grad_theta(self, Lambda, B, T, Lambda_D1, Lambda_D2):
