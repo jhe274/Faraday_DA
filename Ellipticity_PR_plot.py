@@ -23,7 +23,38 @@ class Plot:
         self.Read = Read()
         self.Analyze = Analyze()
 
-    def frequency_detuning(self, lambda_path, lockin_path, run, n, B, power):
+    def Ellipticity_vs_Frequency(self, lambda_path, lockin_path, run, n, B, power):
+        """
+        Plot function of measured FR angle vs Frequency
+        """
+        Bristol_t, Lambda = self.Read.Bristol(lambda_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.Analyze.Double_modu_theta(lockin_path)
+        fig, ax = plt.subplots(1, 1, figsize=(25, 12))
+
+        for i in range(run-1, run+1):
+            Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
+            Bristol_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], epsilon[i])
+            l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
+            Lambd, Epsi = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon[i][l_idx])
+            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu39_D2 * 1e-9                                                   # [GHz]
+            y = Epsi[1:] * 1e3                                                                                              # [millirad]
+
+            ax.plot(x, y, label=f'{r"L->H" if i == run-1 else r"H->L"} Wide Scan')
+
+        plt.xlabel(r'Frequency (GHz)', fontsize=25)
+        plt.ylabel(r'Ellipticity (ratio of minor and major axes of the polarization ellipse)', fontsize=25)
+        plt.xticks(np.arange(-5, 7, 1), fontsize=25)
+        plt.yticks(fontsize=25)
+        # plt.xlim(-4,6)
+        # plt.ylim(0,2)
+        # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
+        plt.grid(True)
+        ax.legend(loc='best', fontsize=25)
+        plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency(theory)_{date}_run{run}-{run+1}.png'))
+        plt.show()
+
+    def PR_vs_Frequency(self, lambda_path, lockin_path, run, n, B, power):
         """
         Plot function of measured FR angle vs Frequency
         """
@@ -73,5 +104,6 @@ date_input = '02-27-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.frequency_detuning(Bristol_path, Lockins_path, 9, 5, 5.103, 470)
+plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 2.5)
+# plotter.PR_vs_Frequency(Bristol_path, Lockins_path, 9, 5, 5.103, 470)
 # plotter.theory_plot(0.0718, 5.103, 26)
