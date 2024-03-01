@@ -8,8 +8,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -42,7 +42,7 @@ class Plot:
             ax.plot(x, y, label=f'{r"L->H" if i == run-1 else r"H->L"} Wide Scan')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        plt.ylabel(r'Ellipticity (ratio of minor and major axes of the polarization ellipse)', fontsize=25)
+        plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
         plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.xlim(-4,6)
@@ -50,8 +50,8 @@ class Plot:
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency(theory)_{date}_run{run}-{run+1}.png'))
+        plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
+        plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
 
     def PR_vs_Frequency(self, lambda_path, lockin_path, run, n, B, power):
@@ -72,22 +72,22 @@ class Plot:
 
             ax.plot(x, y, label=f'{r"L->H" if i == run-1 else r"H->L"} Wide Scan')
         
-        lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
-        y_theo = self.Theory.FR_theta(lambda_theo, 0.0718, B*1e-4, 26, self.Consts.Lambda39_D1, self.Consts.Lambda39_D2)
-        x_theo = self.Consts.c / lambda_theo * 1e-9 - self.Consts.Nu39_D2  * 1e-9
-        plt.plot(x_theo, y_theo * 1e3, '--', color='red', label='Theory')
+        # lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
+        # y_theo = self.Theory.FR_theta1(lambda_theo, 0.0718, B*1e-4, 26, self.Consts.Lambda39_D1, self.Consts.Lambda39_D2)
+        # x_theo = self.Consts.c / lambda_theo * 1e-9 - self.Consts.Nu39_D2  * 1e-9
+        # plt.plot(x_theo, y_theo * 1e3, '--', color='red', label='Theory')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         plt.ylabel(r'Polarization Rotation (millirad.)', fontsize=25)
         plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
-        plt.xlim(-4,6)
-        plt.ylim(0,2)
+        # plt.xlim(-4,6)
+        # plt.ylim(0,2)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         plt.title(f'Polarization Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'PR_vs_Frequency(theory)_{date}_run{run}-{run+1}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'PR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
 
     def theory_plot(self, l, B, T):
@@ -106,10 +106,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '02-27-2024'
+date_input = '03-01-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 2.5)
-# plotter.PR_vs_Frequency(Bristol_path, Lockins_path, 9, 5, 5.103, 470)
-plotter.theory_plot(0.0718, 5.103, 26)
+plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 570)
+# plotter.PR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 570)
+# plotter.theory_plot(0.0718, 5.103, 26)

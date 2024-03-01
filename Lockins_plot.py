@@ -8,8 +8,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -66,8 +66,8 @@ class Plot:
                                   f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
 
 plotter = Plot()
-date_input = '02-27-2024'
+date_input = '03-01-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.y_vs_nu(Bristol_path, Lockins_path, 'Rdc', 9, 5, 5.103, 470) 
+plotter.y_vs_nu(Bristol_path, Lockins_path, 'Rdc', 7, 5, 5.103, 570) 
