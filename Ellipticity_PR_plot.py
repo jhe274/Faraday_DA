@@ -8,8 +8,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -110,6 +110,6 @@ date_input = '03-01-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 570)
-# plotter.PR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 570)
+# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 3, 5, 5.103, 570)
+plotter.PR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 570)
 # plotter.theory_plot(0.0718, 5.103, 26)

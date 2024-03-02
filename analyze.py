@@ -19,7 +19,7 @@ class Analyze:
             R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
             Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
             epsilon.append(R1f[i] / ( 2 * np.pi * scipy.special.jv(1,2.405) * Rdc[i]))                                      # Ellipticity: [rad]
-            theta.append(R2f[i] / (2 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - epsilon[i]**2)))            # Rotation: [rad]
+            theta.append(R2f[i] / (2 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - 4 * epsilon[i]**2)))        # Rotation: [rad]
         
         return para, lockins_t, R1f, R2f, Rdc, epsilon, theta
 
@@ -36,7 +36,7 @@ class Analyze:
             Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
             epsilon.append(R1f[i] / (2 * np.pi * scipy.special.jv(1,2.405) * Rdc[i]))                                       # Ellipticity: [rad]
             theta.append(np.sqrt(2) * para[i][3] * Rmod[i] / 
-                         (10 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - epsilon[i]**2)))                    # Rotation: [rad]
+                         (10 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - 4 * epsilon[i]**2)))                # Rotation: [rad]
         
         return para, Lockins_t, Rmod, R2f, Rdc, theta
 

@@ -70,4 +70,4 @@ date_input = '03-01-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.y_vs_nu(Bristol_path, Lockins_path, 'Rdc', 7, 5, 5.103, 570) 
+plotter.y_vs_nu(Bristol_path, Lockins_path, 'R1f', 7, 5, 5.103, 570) 
