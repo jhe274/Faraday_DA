@@ -12,14 +12,14 @@ from analyze import Analyze
 class Plot:
 
     def __init__(self):
-        self.analyzer = Analyze()
+        self.Analyze = Analyze()
 
     def rdc_vs_rtd(self, lockins_path, B, power, date):
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockins_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.Analyze.Double_modu_theta(lockins_path)
 
         fig, ax = plt.subplots(figsize=(25, 12))
-        rtd = np.linspace(1.8, 2.6, 17)
-        x = np.arange(1.6, 2.7, 0.05)
+        rtd = np.linspace(2.2, 3, 17)
+        x = np.arange(1.8, 3.15, 0.05)
 
         labels = [r'$\theta_a$=30°', r'$\theta_a$=75°', r'$\theta_a$=120°']
         colors = ['b', 'g', 'r']
@@ -33,15 +33,23 @@ class Plot:
             m, c = coefficients
             fitted_y = m * x + c
 
-            ax.plot(x, fitted_y, label=label, color=color)
+            # Plot the line and get the intersection points with previous lines
+            ax.plot(x, fitted_y, label=label)
+            if ax.lines:
+                for line in ax.lines[:-1]:
+                    x_intersect, y_intersect = self.find_intersection(x, fitted_y, line.get_xdata(), line.get_ydata())
+                    if x_intersect is not None:
+                        ax.scatter(x_intersect, y_intersect, color='black', s=100)
+                        ax.annotate(f'({x_intersect:.2f}, {y_intersect:.2f})', (x_intersect, y_intersect), textcoords="offset points", xytext=(-20,20), ha='center')
 
-            for line in ax.lines[:-1]:
-                x_intersect, y_intersect = self.find_intersection(x, fitted_y, line.get_xdata(), line.get_ydata())
-                if x_intersect is not None:
-                    intersect_x.append(x_intersect)
-                    intersect_y.append(y_intersect)
-                    ax.scatter(x_intersect, y_intersect, color='black', s=100)
+            return y, fitted_y
 
+        labels = [r'$\theta_a$=30°', r'$\theta_a$=75°', r'$\theta_a$=120°']
+        colors = ['b', 'g', 'r']
+        data_slices = [Rdc[i*len(rtd):(i+1)*len(rtd)] for i in range(len(labels))]
+
+        for label, color, Rdc_slice in zip(labels, colors, data_slices):
+            y, fitted_y = process_data(Rdc_slice, label)
             ax.scatter(rtd, y, color=color)
             ax.plot(x, fitted_y, color=color)
 
@@ -78,7 +86,8 @@ class Plot:
         return x_intersect, y_intersect
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
