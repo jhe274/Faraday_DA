@@ -19,39 +19,39 @@ class Plot:
 
         fig, ax = plt.subplots(figsize=(25, 12))
         rtd = np.linspace(1.8, 2.6, 17)
-        x = np.arange(1.6, 2.8, 0.05)
+        x = np.arange(1.6, 2.7, 0.05)
 
-        def process_data(Rdc_slice, label):
+        labels = [r'$\theta_a$=30°', r'$\theta_a$=75°', r'$\theta_a$=120°']
+        colors = ['b', 'g', 'r']
+        intersect_x, intersect_y = [], []
+        
+        for label, color, Rdc_slice in zip(labels, colors, [Rdc[i*len(rtd):(i+1)*len(rtd)] for i in range(len(labels))]):
             Vdc = [np.average(Rdc_slice[i::len(rtd)]) for i in range(len(rtd))]
-            y = [v * 1e3 for v in Vdc]
+            y = np.array(Vdc) * 1e3
             coefficients = np.polyfit(rtd, y, 1)
             m, c = coefficients
             fitted_y = m * x + c
 
-            # Plot the line and get the intersection points with previous lines
-            ax.plot(x, fitted_y, label=label)
-            if ax.lines:
-                for line in ax.lines[:-1]:
-                    x_intersect, y_intersect = self.find_intersection(x, fitted_y, line.get_xdata(), line.get_ydata())
-                    if x_intersect is not None:
-                        ax.scatter(x_intersect, y_intersect, color='black', s=100)
-                        ax.annotate(f'({x_intersect:.3f}, {y_intersect:.2f})', (x_intersect, y_intersect), textcoords="offset points", xytext=(-20,20), ha='center')
+            ax.plot(x, fitted_y, label=label, color=color)
 
-                        print(x_intersect)
-            return y, fitted_y
+            for line in ax.lines[:-1]:
+                x_intersect, y_intersect = self.find_intersection(x, fitted_y, line.get_xdata(), line.get_ydata())
+                if x_intersect is not None:
+                    intersect_x.append(x_intersect)
+                    intersect_y.append(y_intersect)
+                    ax.scatter(x_intersect, y_intersect, color='black', s=100)
 
-        labels = [r'$\theta_a$=30°', r'$\theta_a$=75°', r'$\theta_a$=120°']
-        colors = ['b', 'g', 'r']
-        data_slices = [Rdc[i*len(rtd):(i+1)*len(rtd)] for i in range(len(labels))]
-
-        for label, color, Rdc_slice in zip(labels, colors, data_slices):
-            y, fitted_y = process_data(Rdc_slice, label)
             ax.scatter(rtd, y, color=color)
             ax.plot(x, fitted_y, color=color)
 
+        # Annotation of intersction points
+        ax.annotate(f'({intersect_x[0]:.2f}, {intersect_y[0]:.2f})', (intersect_x[0], intersect_y[0]), textcoords="offset points", xytext=(0,-20), ha='center')
+        ax.annotate(f'({intersect_x[2]:.2f}, {intersect_y[2]:.2f})', (intersect_x[2], intersect_y[2]), textcoords="offset points", xytext=(-5,20), ha='center')
+        ax.annotate(f'({intersect_x[4]:.2f}, {intersect_y[4]:.2f})', (intersect_x[4], intersect_y[4]), textcoords="offset points", xytext=(-70,-5), ha='center')
+        
         ax.set_xlabel('RTD (rad)', fontsize=25)
         ax.set_ylabel(r'$R_{dc}$ (mV)', fontsize=25)
-        plt.xticks(np.arange(1.8, 3.2, 0.1), fontsize=25)
+        plt.xticks(np.arange(1.6, 2.7, 0.1), fontsize=25)
         plt.yticks(fontsize=25)
         ax.grid(True)
         ax.legend(loc='best', fontsize=25)
@@ -77,8 +77,8 @@ class Plot:
         return x_intersect, y_intersect
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -89,4 +89,4 @@ if __name__ == "__main__":
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.rdc_vs_rtd(Lockins_path, 5.103, 1.5, date)
+    plotter.rdc_vs_rtd(Lockins_path, 5.074, 1.434, date)
