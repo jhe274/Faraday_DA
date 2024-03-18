@@ -18,21 +18,21 @@ Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 class Plot:
 
     def __init__(self):
-        self.Consts = Consts()
-        self.Theory = Theory()
-        self.Read = Read()
-        self.Analyze = Analyze()
+        self.consts = Consts()
+        self.theory = Theory()
+        self.reader = Read()
+        self.analyzer = Analyze()
 
     def process_and_plot(self, Bristol_t, Lambda, para, y_t, R, run, n, name, xlabel, ylabel, title):
         x, y = [], []
         fig, ax = plt.subplots(2, 2, figsize=(25, 12))  # 4 subplots, each with 1 column
 
         for i in range(run, run+8):
-            Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
-            Bristol_t[i], Lambda[i], y_t[i], R[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
-            l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
-            Lambd, V = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
-            x.append(self.Consts.c / Lambd * 1e-9 - self.Consts.Nu39_D2 * 1e-9)                                                         # Frequency: [GHz]
+            Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
+            Bristol_t[i], Lambda[i], y_t[i], R[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
+            Lambd, V = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
+            x.append(self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                         # Frequency: [GHz]
             # y.append(V[1:] * 1e3)                                                                                                       # RMS Voltage: [mV]                            
             y.append(V[1:] * 1e6)                                                                                                       # RMS Voltage: [microV]
 
@@ -78,8 +78,8 @@ class Plot:
 
 
     def y_vs_nu(self, lambda_path, lockins_path, name, run, n, B, T):
-        Bristol_t, Lambda = self.Read.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.Analyze.Double_modu_theta(lockins_path)
+        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockins_path)
 
         if name == 'R1f':
             self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',

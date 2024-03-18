@@ -22,19 +22,19 @@ Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 class Plot:
 
     def __init__(self):
-        self.Consts = Consts()
-        self.Theory = Theory()
-        self.Read = Read()
-        self.Analyze = Analyze()
+        self.consts = Consts()
+        self.theory = Theory()
+        self.reader = Read()
+        self.analyzer = Analyze()
 
     def process_and_plot(self, Bristol_t, Lambda, y_t, data, run, n):
         x, y = [], []
         l = 1
         for i in range(run, run+2):
-            Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
-            Bristol_t[i], Lambda[i], y_t[i], data[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], y_t[i], data[i])
-            l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], y_t[i], 0, n)
-            x.append(self.Consts.c / Lambda[i][b_idx] * 1e-9 - self.Consts.Nu39_D2 * 1e-9)              # [GHz]
+            Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
+            Bristol_t[i], Lambda[i], y_t[i], data[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], data[i])
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], 0, n)
+            x.append(self.consts.c / Lambda[i][b_idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9)              # [GHz]
             y.append(data[i][l_idx])
         
         data = np.array([x[l], y[l]]).T
@@ -56,10 +56,10 @@ class Plot:
         peaks, _ = find_peaks(Y, prominence=.0015, height=(.65, .68))
         valleys, _ = find_peaks(-Y, prominence=0.01, height=(-.65, -.6))
         print(peaks, valleys)
-        K39_diff = (X[valleys[0]] + self.Consts.Nu39_D2 - self.Consts.Nu39_D2_B) * 1e-9
-        K41_D2_A = (self.Consts.Nu41_D2_A-self.Consts.Nu39_D2) * 1e-9 + K39_diff
-        K41_D2_B = (self.Consts.Nu41_D2_B-self.Consts.Nu39_D2) * 1e-9 + K39_diff
-        K41_D2_C = (self.Consts.Nu41_D2_C-self.Consts.Nu39_D2) * 1e-9 + K39_diff
+        K39_diff = (X[valleys[0]] + self.consts.Nu39_D2 - self.consts.Nu39_D2_B) * 1e-9
+        K41_D2_A = (self.consts.Nu41_D2_A-self.consts.Nu39_D2) * 1e-9 + K39_diff
+        K41_D2_B = (self.consts.Nu41_D2_B-self.consts.Nu39_D2) * 1e-9 + K39_diff
+        K41_D2_C = (self.consts.Nu41_D2_C-self.consts.Nu39_D2) * 1e-9 + K39_diff
         
         fig, axs = plt.subplots(2, 1, figsize=(12, 12))
         axs[0].plot(X, Y, color='red')
@@ -102,8 +102,8 @@ class Plot:
         """
         Plot function of Lock-in RMS values vs Wavelength
         """
-        Bristol_t, Lambda = self.Read.Bristol(lambda_path)
-        x, y, Y, DLCpro_t = self.Read.DLCpro_WideScan(y_path)
+        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
+        x, y, Y, DLCpro_t = self.reader.DLCpro_WideScan(y_path)
         self.process_and_plot(Bristol_t, Lambda, DLCpro_t, y, run-1, n)
                             # r'Doppler-free SAS of K vapor cell @$T=36°$C')
                             # r'Doppler-free SAS of K vapor cell with blanced phoodetector @$T=36°$C')

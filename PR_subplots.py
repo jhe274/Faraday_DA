@@ -8,7 +8,6 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-fig, ax = plt.subplots()
 dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
 # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
@@ -20,28 +19,28 @@ Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 class Plot:
 
     def __init__(self):
-        self.Consts = Consts()
-        self.Theory = Theory()
-        self.Read = Read()
-        self.Analyze = Analyze()
+        self.consts = Consts()
+        self.theory = Theory()
+        self.reader = Read()
+        self.analyzer = Analyze()
     
     def y_vs_Frequency(self, lambda_path, lockin_path, run, n):
         """
         Plot function of measured FR angle vs Frequency
         """
-        Bristol_t, Lambda = self.Read.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.Analyze.Double_modu_theta(lockin_path)
+        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockin_path)
         x, y = [], []
         fig, ax = plt.subplots(2, 2, figsize=(25, 12))  # 4 subplots, each with 1 column
 
         for i in range(run-1, run+7):
-            Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
-            Bristol_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], epsilon[i])
-            # Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
-            l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
-            Lambd, Epsi = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon[i][l_idx])
-            # Lambd, Thet = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
-            x.append(self.Consts.c / Lambd * 1e-9 - self.Consts.Nu39_D2 * 1e-9)                                             # [GHz]
+            Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
+            Bristol_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], epsilon[i])
+            # Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
+            Lambd, Epsi = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon[i][l_idx])
+            # Lambd, Thet = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
+            x.append(self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                             # [GHz]
             # y.append(Thet[1:] * 1e3)                                                                                        # [millirad]
             y.append(Epsi[1:] * 1e3)                                                                                        # [millirad]
 

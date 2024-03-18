@@ -18,23 +18,24 @@ Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 class Plot:
 
     def __init__(self):
-        self.Consts = Consts()
-        self.Theory = Theory()
-        self.Read = Read()
-        self.Analyze = Analyze()
+        self.consts = Consts()
+        self.theory = Theory()
+        self.reader = Read()
+        self.analyzer = Analyze()
 
     def process_and_plot(self, Bristol_t, Lambda, para, y_t, R, run, n, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         for i in range(run, run+2):
-            Bristol_t[i], Lambda[i] = self.Analyze.filter_data(Bristol_t[i], Lambda[i])
-            Bristol_t[i], Lambda[i], y_t[i], R[i] = self.Analyze.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
-            l_idx, b_idx = self.Analyze.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
-            Lambd, y = self.Analyze.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
-            x = self.Consts.c / Lambd * 1e-9 - self.Consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
-            y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
-            # y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+        # i = run
+            Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
+            Bristol_t[i], Lambda[i], y_t[i], R[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
+            Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
+            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
+            # y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
+            y = y * 1e6                                                                                                     # RMS Voltage: [microV]
 
-            ax.scatter(x, y[1:], label=f'{r"L->H" if i == run else r"H->L"} Wide Scan')
+            ax.scatter(x, y[1:], label=f'{r"L->H" if i == run else r"H->L"} Wide Scan', s=5)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -44,13 +45,14 @@ class Plot:
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         plt.title(title, fontsize=25)
-        # plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}-{i+1}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}-{i+1}.png'))
+        # plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}.png'))
         plt.show()
 
 
     def y_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
-        Bristol_t, Lambda = self.Read.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.Analyze.Double_modu_theta(lockins_path)
+        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockins_path)
 
         if name == 'R1f':
             self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',
@@ -66,8 +68,8 @@ class Plot:
                                   f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
 
 plotter = Plot()
-date_input = '03-01-2024'
+date_input = '03-18-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.y_vs_nu(Bristol_path, Lockins_path, 'R1f', 7, 5, 5.103, 570) 
+plotter.y_vs_nu(Bristol_path, Lockins_path, 'R1f', 3, 5, 5.103, 860) 
