@@ -69,10 +69,10 @@ class Plot:
             Lambd, Thet = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
             x0.append(self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                   # [GHz]
             y0.append(Thet[1:] * 1e3)                                                                                              # [millirad]
+
         print(len(y0[0]), len(y0[1]), len(y0[2]), len(y0[3]))
         y1 = []
         for xval in x0[0]:
-            print(xval)
             cidx = np.argmin(np.abs(x0[2] - xval))
             y1.append(y0[2][cidx] - y0[0][xval] )
         ax.plot(x0[0], y1, label=r'L->H Wide Scan')
