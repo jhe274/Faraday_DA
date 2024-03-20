@@ -52,7 +52,7 @@ class Plot:
 
     def y_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockins_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockins_path)
 
         if name == 'R1f':
             self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',

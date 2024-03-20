@@ -8,7 +8,7 @@ class Analyze:
     def __init__(self):
         self.Read = Read()
 
-    def Double_modu_theta(self, lockins_path):
+    def FR_double_Kvapor(self, lockins_path):
         """
         Analyzed data from double modulated measurements
         """
@@ -23,7 +23,7 @@ class Analyze:
         
         return para, lockins_t, R1f, R2f, Rdc, epsilon, theta
 
-    def Triple_modu_theta(self, lockins_path):
+    def FR_triple_Kvapor(self, lockins_path):
         """
         Analyzed data from triple modulated measurements
         """

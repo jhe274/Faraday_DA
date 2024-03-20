@@ -15,7 +15,7 @@ class Plot:
         self.analyzer = Analyze()
 
     def rdc_vs_rtd(self, lockins_path, B, power, date):
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockins_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockins_path)
 
         fig, ax = plt.subplots(figsize=(25, 12))
         rtd = np.linspace(1.8, 2.6, 17)

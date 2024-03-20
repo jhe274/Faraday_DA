@@ -59,7 +59,7 @@ class Plot:
         Plot function of measured FR angle vs Frequency
         """
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockin_path)
+        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path)
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         x0, y0 = [], []
         for i in range(run-1, run+3):
