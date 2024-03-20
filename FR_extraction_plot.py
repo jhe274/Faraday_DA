@@ -8,8 +8,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -50,7 +50,7 @@ class Plot:
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
+        plt.title(f'Ellipticity vs Frequency, run{run}-{run+3}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
         plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
 
@@ -61,20 +61,32 @@ class Plot:
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
         para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.Double_modu_theta(lockin_path)
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
-
+        x0, y0 = [], []
         for i in range(run-1, run+3):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
             Lambd, Thet = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
-            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # [GHz]
-            y = Thet[1:] * 1e3                                                                                              # [millirad]
-            print(x[0])
-            ax.plot(x, y, label=f'{r"L->H" if i % 2 == 0 else r"H->L"} Wide Scan')
+            x0.append(self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                   # [GHz]
+            y0.append(Thet[1:] * 1e3)                                                                                              # [millirad]
+        print(len(y0[0]), len(y0[1]), len(y0[2]), len(y0[3]))
+        y1 = []
+        for xval in x0[0]:
+            print(xval)
+            cidx = np.argmin(np.abs(x0[2] - xval))
+            y1.append(y0[2][cidx] - y0[0][xval] )
+        ax.plot(x0[0], y1, label=r'L->H Wide Scan')
+
+        y1 = []
+        for xval in x0[1]:
+            cidx = np.argmin(np.abs(x0[3] - xval))
+            y1.append(y0[3][cidx] - y0[1][cidx] )
+        
+        ax.plot(x0[1], y1, label=r'H->L Wide Scan')
         
         # lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
-        # y_theo = self.Theory.FR_theta1(lambda_theo, 0.0718, B*1e-4, 26, self.Consts.Lambda39_D1, self.Consts.Lambda39_D2)
-        # x_theo = self.Consts.c / lambda_theo * 1e-9 - self.Consts.Nu39_D2  * 1e-9
+        # y_theo = self.theory.FR_theta1(lambda_theo, 0.0718, B*1e-4, 26, self.consts.Lambda39_D1, self.consts.Lambda39_D2)
+        # x_theo = self.consts.c / lambda_theo * 1e-9 - self.consts.Nu39_D2  * 1e-9
         # plt.plot(x_theo, y_theo * 1e3, '--', color='red', label='Theory')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
@@ -82,12 +94,12 @@ class Plot:
         plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.xlim(-4,6)
-        # plt.ylim(0,2)
+        # plt.ylim(-0.15,0.25)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'PR_vs_Frequency_{date}_run{run}-{run+3}.png'))
+        plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
+        plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+3}.png'))
         plt.show()
 
     def theory_plot(self, l, B, T):
@@ -106,10 +118,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '03-18-2024'
+date_input = '03-19-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 860)
-plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 860)
+# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 870)
+plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 870)
 # plotter.theory_plot(0.0718, 5.103, 26)

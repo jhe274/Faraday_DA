@@ -80,7 +80,8 @@ class Analyze:
         '''
         Trimming lock-in or Bristol data based on the shorter measurement
         '''
-        if lambd[-1] > lock_in_t[-1]:
+        if bristol_t[-1] > lock_in_t[-1]:
+            print(lambd[-1], lock_in_t[-1])
             end_t = np.argmin(np.abs(bristol_t - lock_in_t[-1]))
             trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t[:end_t+1], lambd[:end_t+1], lock_in_t, theta
         else:

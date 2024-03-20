@@ -106,10 +106,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '03-18-2024'
+date_input = '03-19-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 860)
-plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 3, 5, 5.103, 860)
+# plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 873)
+plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 873)
 # plotter.theory_plot(0.0718, 5.103, 26)
