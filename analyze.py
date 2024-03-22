@@ -6,13 +6,13 @@ from scipy.optimize import curve_fit
 class Analyze:
 
     def __init__(self):
-        self.Read = Read()
+        self.reader = Read()
 
     def FR_double_Kvapor(self, lockins_path):
         """
         Analyzed data from double modulated measurements
         """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
         R1f, R2f, Rdc, epsilon, theta = [], [], [], [], []
         for i in range(len(lockins_path)):
             R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
@@ -27,7 +27,7 @@ class Analyze:
         """
         Analyzed data from triple modulated measurements
         """
-        para, Lockins_t, Xmod, Ymod, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.Read.lockins(lockins_path)
+        para, Lockins_t, Xmod, Ymod, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
         Rmod, R1f, R2f, Rdc, epsilon, theta = [], [], [], [], [], []
         for i in range(len(lockins_path)):
             Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                                               # mod Magnitude: [V]
@@ -86,6 +86,8 @@ class Analyze:
             trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t[:end_t+1], lambd[:end_t+1], lock_in_t, theta
         else:
             end_t = np.argmin(np.abs(lock_in_t - bristol_t[-1]))
+            # print(lock_in_t)
+            # print(theta)
             trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t, lambd, lock_in_t[:end_t+1], theta[:end_t+1]
 
         return trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta

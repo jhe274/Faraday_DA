@@ -23,19 +23,27 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
 
-    def process_and_plot(self, Bristol_t, Lambda, para, y_t, R, run, n, name, xlabel, ylabel, title):
+    def XYplot(self, Bristol_t, Lambda, para, y_t, X, Y, run, n, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         for i in range(run, run+2):
-        # i = run
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
-            Bristol_t[i], Lambda[i], y_t[i], R[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
+            Bristol_t[i], Lambda[i], y_t[i], X[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], X[i])
+            Bristol_t[i], Lambda[i], y_t[i], Y[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], Y[i])
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
-            Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
-            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
-            # y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
-            y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+            Lambd, X[i] = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], X[i][l_idx])
+            Lambd, Y[i] = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], Y[i][l_idx])
+            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]    
+            # X[i] = X[i] * 1e3                                                                                               # RMS Voltage: [mV]
+            # Y[i] = Y[i] * 1e3                                                                                               # RMS Voltage: [mV]                      
+            X[i] = X[i] * 1e6                                                                                               # RMS Voltage: [microV]
+            Y[i] = Y[i] * 1e6                                                                                               # RMS Voltage: [microV]
 
-            ax.scatter(x, y[1:], label=f'{r"L->H" if i == run else r"H->L"} Wide Scan', s=5)
+            colors = 'b' if i == run else 'r'
+
+            ax.scatter(x, X[i][1:], color=colors, 
+                        label=f'X{name}, cell inserted' if i == run else f'X{name}, cell removed', marker='o', s=10)
+            ax.scatter(x, Y[i][1:], color=colors, 
+                        label=f'Y{name}, cell inserted' if i == run else f'Y{name}, cell inserted', marker='x', s=10)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -45,31 +53,72 @@ class Plot:
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         plt.title(title, fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}-{i+1}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'XY{name}_{date}_run{i}-{i+1}.png'))
+        plt.show()
+
+    def Rplot(self, Bristol_t, Lambda, para, y_t, R, run, n, name, xlabel, ylabel, title):
+        fig, ax = plt.subplots(1, 1, figsize=(25, 12))
+        for i in range(run, run+2):
+            Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
+            Bristol_t[i], Lambda[i], y_t[i], R[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
+            Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
+            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
+            y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
+            # y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+
+            ax.scatter(x, y[1:], label=f'{r"cell inserted" if i == run else r"cell removed"}', s=5)
+
+        plt.xlabel(xlabel, fontsize=25)
+        plt.ylabel(ylabel, fontsize=25)
+        plt.xticks(np.arange(-5, 7, 1), fontsize=25)
+        plt.yticks(fontsize=25)
+        # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
+        plt.grid(True)
+        ax.legend(loc='best', fontsize=25)
+        plt.title(title, fontsize=25)
+        plt.savefig(os.path.join(Plots, f'{date}', f'R{name}_{date}_run{i}-{i+1}.png'))
         # plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}.png'))
         plt.show()
 
+    def XY_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
+        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
 
-    def y_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
+        if name == '1f':
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, run-1, n, name, 'Frequency (GHz)',
+                                  r'$\text{XY}_{\omega}$ ($\mu$V)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+        elif name == '2f':
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, run-1, n, name, 'Frequency (GHz)',
+                                  r'$\text{XY}_{2\omega}$ ($\mu$V)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+        elif name == 'dc':
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
+                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+            
+    def R_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
         para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockins_path)
 
-        if name == 'R1f':
-            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$R_{1f}$ ($\mu$V)', r'$R_{1f}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
-        elif name == 'R2f':
-            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, R2f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$R_{2f}$ ($\mu$V)', r'$R_{2f}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
-        elif name == 'Rdc':
-            self.process_and_plot(Bristol_t, Lambda, para, lockins_t, Rdc, run-1, n, name, 'Frequency (GHz)',
-                                  r'$R_{dc}$ (mV)', r'$R_{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
-
+        if name == '1f':
+            self.Rplot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',
+                                  r'$\text{R}_{\omega}$ ($\mu$V)', r'$\text{R}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+        elif name == '2f':
+            self.Rplot(Bristol_t, Lambda, para, lockins_t, R2f, run-1, n, name, 'Frequency (GHz)',
+                                  r'$\text{R}_{2\omega}$ ($\mu$V)', r'$\text{R}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+        elif name == 'dc':
+            self.Rplot(Bristol_t, Lambda, para, lockins_t, Rdc, run-1, n, name, 'Frequency (GHz)',
+                                  r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+            
 plotter = Plot()
-date_input = '03-19-2024'
+date_input = '03-21-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.y_vs_nu(Bristol_path, Lockins_path, 'R1f', 7, 5, 5.103, 873) 
+# plotter.XY_vs_nu(Bristol_path, Lockins_path, '1f', 13, 5, 5.103, 1.74) 
+plotter.R_vs_nu(Bristol_path, Lockins_path, 'dc', 13, 5, 5.103, 1.74) 

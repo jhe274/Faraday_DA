@@ -62,27 +62,27 @@ class Plot:
         para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path)
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         x0, y0 = [], []
-        for i in range(run-1, run+3):
+        for i in range(run-1, run+1):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
             Lambd, Thet = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
             x0.append(self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                   # [GHz]
             y0.append(Thet[1:] * 1e3)                                                                                              # [millirad]
-
-        print(len(y0[0]), len(y0[1]), len(y0[2]), len(y0[3]))
-        y1 = []
-        for xval in x0[0]:
-            cidx = np.argmin(np.abs(x0[2] - xval))
-            y1.append(y0[2][cidx] - y0[0][xval] )
-        ax.plot(x0[0], y1, label=r'L->H Wide Scan')
-
+        print(len(x0[0]), len(x0[1]))
+        print(len(y0[0]), len(y0[1]))
         y1 = []
         for xval in x0[1]:
-            cidx = np.argmin(np.abs(x0[3] - xval))
-            y1.append(y0[3][cidx] - y0[1][cidx] )
+            cidx = np.argmin(np.abs(x0[0] - xval))
+            y1.append(y0[0][cidx] - y0[1][cidx] )
+        ax.plot(x0[0], y1, label=r'L->H Wide Scan')
+
+        # y1 = []
+        # for xval in x0[1]:
+        #     cidx = np.argmin(np.abs(x0[3] - xval))
+        #     y1.append(y0[3][cidx] - y0[1][cidx] )
         
-        ax.plot(x0[1], y1, label=r'H->L Wide Scan')
+        # ax.plot(x0[1], y1, label=r'H->L Wide Scan')
         
         # lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
         # y_theo = self.theory.FR_theta1(lambda_theo, 0.0718, B*1e-4, 26, self.consts.Lambda39_D1, self.consts.Lambda39_D2)
@@ -118,10 +118,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '03-19-2024'
+date_input = '03-21-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
 # plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 870)
-plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 1, 5, 5.103, 870)
+plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 865)
 # plotter.theory_plot(0.0718, 5.103, 26)

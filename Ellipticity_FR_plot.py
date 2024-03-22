@@ -62,7 +62,7 @@ class Plot:
         para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path)
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
 
-        for i in range(run-1, run+1):
+        for i in range(run-1, run):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
             Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
@@ -106,10 +106,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '03-19-2024'
+date_input = '03-21-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
 # plotter.Ellipticity_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 873)
-plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 873)
+plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 865)
 # plotter.theory_plot(0.0718, 5.103, 26)
