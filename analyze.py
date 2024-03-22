@@ -8,37 +8,45 @@ class Analyze:
     def __init__(self):
         self.reader = Read()
 
+    def R_lockins(self, lockins_path):
+        """
+        Calculate R values from lock-in amplifiers
+        """
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
+        R1f, R2f, Rdc = [], [], []
+        for i in range(len(lockins_path)):
+            # Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                                               # mod Magnitude: [V]   
+            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
+
+        return para, lockins_t, R1f, R2f, Rdc
+        # return para, lockins_t, Rmod, R1f, R2f, Rdc
+
     def FR_double_Kvapor(self, lockins_path):
         """
         Analyzed data from double modulated measurements
         """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
-        R1f, R2f, Rdc, epsilon, theta = [], [], [], [], []
+        para, lockins_t, R1f, R2f, Rdc = self.R_lockins(lockins_path)
+        epsilon, theta = [], []
         for i in range(len(lockins_path)):
-            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
             epsilon.append(R1f[i] / ( 2 * np.pi * scipy.special.jv(1,2.405) * Rdc[i]))                                      # Ellipticity: [rad]
             theta.append(R2f[i] / (2 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - 4 * epsilon[i]**2)))        # Rotation: [rad]
         
-        return para, lockins_t, R1f, R2f, Rdc, epsilon, theta
+        return epsilon, theta
 
     def FR_triple_Kvapor(self, lockins_path):
         """
         Analyzed data from triple modulated measurements
         """
-        para, Lockins_t, Xmod, Ymod, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
-        Rmod, R1f, R2f, Rdc, epsilon, theta = [], [], [], [], [], []
+        para, lockins_t, Rmod, R1f, R2f, Rdc = self.R_lockins(lockins_path)
+        epsilon, theta = [], []
         for i in range(len(lockins_path)):
-            Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                                               # mod Magnitude: [V]
-            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
             epsilon.append(R1f[i] / (2 * np.pi * scipy.special.jv(1,2.405) * Rdc[i]))                                       # Ellipticity: [rad]
             theta.append(np.sqrt(2) * para[i][3] * Rmod[i] / 
                          (10 * np.pi * scipy.special.jv(2,2.405) * Rdc[i] * np.sqrt(1 - 4 * epsilon[i]**2)))                # Rotation: [rad]
         
-        return para, Lockins_t, Rmod, R2f, Rdc, theta
+        return epsilon, theta
 
     def check_calib(self, lambd, theta):
         '''
