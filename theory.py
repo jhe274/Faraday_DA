@@ -53,7 +53,7 @@ class Theory:
 
         return Delta_Lambda_D2, Delta_nu_D2
     
-    def FR_theta1(self, Lambda, l, B, T, Lambda_D1, Lambda_D2):
+    def dia_FR(self, Lambda, l, B, T, Lambda_D1, Lambda_D2):
         """
         Calculations of polarization rotations
         """

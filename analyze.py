@@ -51,7 +51,6 @@ class Analyze:
     def check_calib(self, lambd, theta):
         '''
         Check the timestamp when Bristol starts and ends its self-calibration as calib
-        and the corresponding timestamp in lock-ins as idx1, idx2
         '''
         # Bristol wavelength meter has several ways(manual, time, temperature) for self-calibration
         # every time the instrument calibrates there will be a ~2s blank in the wavelength measurements
@@ -65,74 +64,74 @@ class Analyze:
 
         return calib, theta
     
-    def filter_data(self, bristol_t, lambd):
+    def filter_data(self, t, lambd):
         '''
-        Filtering lambda values based on bounds
+        Filtering lambda values based on bounds from Bristol measurements
         '''
         try:
             lambda_ubound = 766.72 * 1e-9
             lambda_lbound = 766.68 * 1e-9
             condition = np.where(lambd < lambda_ubound)
             # condition = np.logical_and(lambd > lambda_lbound, lambd < lambda_ubound)
-            filtered_bristol_t = bristol_t[condition]
+            filtered_t = t[condition]
             filtered_lambd = lambd[condition]
             if filtered_lambd.size == 0:
                 raise ValueError("No lambda values found within the specified bounds.")
         except ValueError as e:
             print(e)
-            bristol_t, lambd = bristol_t, lambd
+            t, lambd = t, lambd
 
-        return filtered_bristol_t, filtered_lambd
+        return filtered_t, filtered_lambd
     
-    def trim_data(self, bristol_t, lambd, lock_in_t, theta):
+    def trim_data(self, x1, y1, x2, y2):
         '''
-        Trimming lock-in or Bristol data based on the shorter measurement
+        Trimming data based on the shorter measurement from either Bristol or lock-ins
         '''
-        if bristol_t[-1] > lock_in_t[-1]:
-            print(lambd[-1], lock_in_t[-1])
-            end_t = np.argmin(np.abs(bristol_t - lock_in_t[-1]))
-            trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t[:end_t+1], lambd[:end_t+1], lock_in_t, theta
+        if x1[-1] > x2[-1]:
+            print(y1[-1], x2[-1])
+            idx = np.argmin(np.abs(x1 - x2[-1]))
+            trim_x1, trim_y1, trim_x2, trimmed_y2 = x1[:idx+1], y1[:idx+1], x2, y2
         else:
-            end_t = np.argmin(np.abs(lock_in_t - bristol_t[-1]))
-            # print(lock_in_t)
-            # print(theta)
-            trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta = bristol_t, lambd, lock_in_t[:end_t+1], theta[:end_t+1]
+            idx = np.argmin(np.abs(x2 - x1[-1]))
+            trim_x1, trim_y1, trim_x2, trim_y2 = x1, y1, x2[:idx+1], y2[:idx+1]
 
-        return trimmed_bristol_t, trimmed_lambd, trimmed_lock_in_t, trimmed_theta
+        return trim_x1, trim_y1, trim_x2, trim_y2
 
-    def calculate_interval_and_indices(self, bristol_t, lock_in_t, time_const, n):
+    def calculate_interval_and_indices(self, x1, x2, TC, n):
         '''
         Timestamp matching between lock-ins and Bristol
         '''
-        # Data acquisition using ReadFaradayLockinsRealtimeplot.vi typically has a update rate about 100ms per data point, 
-        # making it significantly slower than Bristol, where Bristol has a minimum frame rate 20Hz that is 50ms per data point
-        if time_const > 200e-3:
-            interval = np.arange(time_const * n, lock_in_t[-1] + time_const, time_const)
-            lock_in_idx = np.searchsorted(lock_in_t, interval, side='left')[:-1]
-            Bristol_idx = np.searchsorted(bristol_t, lock_in_t[lock_in_idx], side='left')
+        # Data acquisition using ReadFaradayLockinsRealtimeplot.vi typically
+        # has a update rate about 10Hz (100ms) per data point, and similarly using lock-ins(x2) internal buffer
+        # the storage interval settings are typically slower than Bristol(x1), where Bristol has
+        # a minimum frame rate 20Hz (50ms) per data point
+        if TC > 200e-3:
+            interval = np.arange(TC * n, x2[-1] + TC, TC)
+            x2_idx = np.searchsorted(x2, interval, side='left')[:-1]
+            x1_idx = np.searchsorted(x1, x2[x2_idx], side='left')
         else:
-            lock_in_idx = np.arange(n,len(lock_in_t)-1,1)
-            Bristol_idx = np.searchsorted(bristol_t, lock_in_t[lock_in_idx], side='left')
+            x2_idx = np.arange(n,len(x2)-1,1)
+            x1_idx = np.searchsorted(x1, x2[x2_idx], side='left')
 
-        # Removing duplicate timestamps from Bristol_idx, and their corresponding timestamps in lock-ins
-        uni_idx = np.unique(Bristol_idx, return_index=True)[1]
-        dup_idx = np.setdiff1d(np.arange(len(Bristol_idx)), uni_idx)
-        l_idx = np.delete(lock_in_idx, dup_idx)
-        b_idx = np.unique(Bristol_idx)
+        # Removing duplicate timestamps from x1_idx, and their corresponding timestamps in x2
+        uni_idx = np.unique(x1_idx, return_index=True)[1]
+        dup_idx = np.setdiff1d(np.arange(len(x1_idx)), uni_idx)
+        l_idx = np.delete(x2_idx, dup_idx)
+        b_idx = np.unique(x1_idx)
 
         return l_idx, b_idx
     
-    def calculate_averages(self, Bristol_idx, lambd, filtered_lambd, theta):
+    def calculate_averages(self, b_idx, y1, filtered_y1, y2):
         '''
-        Average function to match lock-in readings and wavelength measurements
+        Average function to match lock-ins readings and wavelength measurements
         '''
-        calib, theta = self.check_calib(filtered_lambd, theta)
+        calib, theta = self.check_calib(filtered_y1, y2)
         averages = []
-        for i in np.arange(len(Bristol_idx) - 1):
+        for i in np.arange(len(b_idx) - 1):
             if calib.size > 0 and i + 1 >= calib[0] and i + 1 < calib[-1] + 2:
                 pass
             else:
-                segment = lambd[Bristol_idx[i]:Bristol_idx[i + 1]]
+                segment = y1[b_idx[i]:b_idx[i + 1]]
                 avg_value = np.mean(segment)
                 averages.append(avg_value)
 
