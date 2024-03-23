@@ -9,8 +9,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -24,7 +24,7 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
 
-    def Ellipticity_X(self, lambda_path, lockin_path, run, n, B, power):
+    def Ellipticity_FR_X(self, lambda_path, lockin_path, run, n, B, power):
         """
         Plot function of measured FR angle vs Frequency
         """
@@ -64,11 +64,11 @@ class Plot:
             epsilon0, theta0,  = [], []
 
             for j in range(len(x0[i-run+1])):
-                epsilon0.append(X1[i-run+1][j]/ (2 * np.pi * scipy.special.jv(1, 2.405) * X3[i-run+1][j]))                                        # Ellipticity: [millirad]
-                theta0.append(X2[i-run+1][j] * 1e3 / (2 * np.pi * scipy.special.jv(2, 2.405) * X3[i-run+1][j] * np.sqrt(1 - 4 * epsilon0[j]**2)))              # Rotation: [millirad]
+                epsilon0.append(X1[i-run+1][j]/ (2 * np.pi * scipy.special.jv(1, 2.405) * X3[i-run+1][j]))                                              # Ellipticity: [millirad]
+                theta0.append(X2[i-run+1][j] * 1e3 / (2 * np.pi * scipy.special.jv(2, 2.405) * X3[i-run+1][j] * np.sqrt(1 - 4 * epsilon0[j]**2)))       # Rotation: [millirad]
 
             # ax.plot(x[i-run+1], epsilon0, label=r'$\epsilon_7$' if i-run+1==0 else r'$\epsilon_8$')
-            ax.plot(x[i-run+1], theta0, label=r'$\theta_7$' if i-run+1==0 else r'$\theta_8$')
+            ax.plot(x[i-run+1], theta0, label=r'$\theta_\text{cell}$' if i-run+1==0 else r'$\theta_\text{air}$')
 
         """
         Subtracting measured background R values from sample R values
@@ -95,17 +95,17 @@ class Plot:
                 # y7.append(np.nan)  # For example, append NaN if cidx is out of bounds
                 # y8.append(np.nan)  # For example, append NaN if cidx is out of bounds
 
-        x0.append(self.consts.c / x0[1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                # [GHz]
+        x0.append(self.consts.c / x0[1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
 
         for k in range(len(x0[2])):
-            epsilon2.append(yX1[k]/ ( 2 * np.pi * scipy.special.jv(1,2.405) * yX3[k]))                                               # Ellipticity: [rad]
-            theta2.append(yX2[k] * 1e3 / (2 * np.pi * scipy.special.jv(2,2.405) * yX3[k] * np.sqrt(1 - 4 * epsilon2[k]**2)))                # Rotation: [rad]
+            epsilon2.append(yX1[k]/ ( 2 * np.pi * scipy.special.jv(1,2.405) * yX3[k]))                                                                  # Ellipticity: [rad]
+            theta2.append(yX2[k] * 1e3 / (2 * np.pi * scipy.special.jv(2,2.405) * yX3[k] * np.sqrt(1 - 4 * epsilon2[k]**2)))                            # Rotation: [rad]
         
-        # ax.plot(x0[2], epsilon1, label=r'$\epsilon_7$-$\epsilon_8$')
-        # ax.plot(x0[2], epsilon2, label=r'$X_7$-$X_8$')
+        # ax.plot(x0[2], epsilon1, label=r'$\epsilon_\text{cell}$-$\epsilon_\text{air}$')
+        # ax.plot(x0[2], epsilon2, label=r'$\frac{\text{X}^\text{cell}_{\omega} - \text{X}^\text{air}_{\omega}}{\text{X}^\text{cell}_\text{dc} - \text{X}^\text{air}_\text{dc}}$')
         
-        ax.plot(x0[2], theta1, label=r'$\theta_7$-$\theta_8$')
-        ax.plot(x0[2], theta2, label=r'$X_7$-$X_8$')
+        ax.plot(x0[2], theta1, label=r'$\theta_\text{cell}$-$\theta_\text{air}$')
+        ax.plot(x0[2], theta2, label=r'$\frac{\text{X}^\text{cell}_{2\omega} - \text{X}^\text{air}_{2\omega}}{\text{X}^\text{cell}_\text{dc} - \text{X}^\text{air}_\text{dc}}$')
         
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         # plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
@@ -116,12 +116,12 @@ class Plot:
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        plt.title(f'Raraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'FR(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
     
-    def Ellipticity_R(self, lambda_path, lockin_path, run, n, B, power):
+    def Ellipticity_FR_R(self, lambda_path, lockin_path, run, n, B, power):
         """
         Plot function of measured FR angle vs Frequency
         """
@@ -161,11 +161,11 @@ class Plot:
             epsilon0, theta0,  = [], []
 
             for j in range(len(x0[i-run+1])):
-                epsilon0.append(R1[i-run+1][j]/ (2 * np.pi * scipy.special.jv(1, 2.405) * R3[i-run+1][j]))                                             # Ellipticity: [millirad]
-                theta0.append(R2[i-run+1][j] * 1e3/ (2 * np.pi * scipy.special.jv(2, 2.405) * R3[i-run+1][j] * np.sqrt(1 - 4 * epsilon0[j]**2)))       # Rotation: [millirad]
+                epsilon0.append(R1[i-run+1][j]/ (2 * np.pi * scipy.special.jv(1, 2.405) * R3[i-run+1][j]))                                              # Ellipticity: [millirad]
+                theta0.append(R2[i-run+1][j] * 1e3/ (2 * np.pi * scipy.special.jv(2, 2.405) * R3[i-run+1][j] * np.sqrt(1 - 4 * epsilon0[j]**2)))        # Rotation: [millirad]
 
-            # ax.plot(x[i-run+1], epsilon0, label=r'$\epsilon_7$' if i-run+1==0 else r'$\epsilon_8$')
-            ax.plot(x[i-run+1], theta0, label=r'$\theta_7$' if i-run+1==0 else r'$\theta_8$')
+            # ax.plot(x[i-run+1], epsilon0, label=r'$\epsilon_\text{cell}$' if i-run+1==0 else r'$\epsilon\text{air}$')
+            ax.plot(x[i-run+1], theta0, label=r'$\theta_\text{cell}$' if i-run+1==0 else r'$\theta_\text{air}$')
 
         """
         Subtracting measured background R values from sample R values
@@ -192,16 +192,16 @@ class Plot:
                 # y7.append(np.nan)  # For example, append NaN if cidx is out of bounds
                 # y8.append(np.nan)  # For example, append NaN if cidx is out of bounds
 
-        x0.append(self.consts.c / x0[1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                # [GHz]
+        x0.append(self.consts.c / x0[1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
 
         for k in range(len(x0[2])):
-            epsilon2.append(yR1[k]/ ( 2 * np.pi * scipy.special.jv(1,2.405) * yR3[k]))                                                       # Ellipticity: [rad]
-            theta2.append(yR2[k] * 1e3 / (2 * np.pi * scipy.special.jv(2,2.405) * yR3[k] * np.sqrt(1 - 4 * epsilon2[k]**2)))                   # Rotation: [rad]
+            epsilon2.append(yR1[k]/ ( 2 * np.pi * scipy.special.jv(1,2.405) * yR3[k]))                                                                  # Ellipticity: [rad]
+            theta2.append(yR2[k] * 1e3 / (2 * np.pi * scipy.special.jv(2,2.405) * yR3[k] * np.sqrt(1 - 4 * epsilon2[k]**2)))                            # Rotation: [rad]
         
-        # ax.plot(x0[2], epsilon1, label=r'$\epsilon_7$-$\epsilon_8$')
-        # ax.plot(x0[2], epsilon2, label=r'$R_7$-$R_8$')
-        ax.plot(x0[2], theta1, label=r'$\theta_7$-$\theta_8$')
-        ax.plot(x0[2], theta2, label=r'$R_7$-$R_8$')
+        # ax.plot(x0[2], epsilon1, label=r'$\epsilon_\text{cell}$-$\epsilon_\text{air}$')
+        # ax.plot(x0[2], epsilon2, label=r'$\frac{\text{R}^\text{cell}_{\omega} - \text{R}^\text{air}_{\omega}}{\text{R}^\text{cell}_\text{dc} - \text{R}^\text{air}_\text{dc}}$')
+        ax.plot(x0[2], theta1, label=r'$\theta_\text{cell}$-$\theta_\text{air}$')
+        ax.plot(x0[2], theta2, label=r'$\frac{\text{R}^\text{cell}_{2\omega} - \text{R}^\text{air}_{2\omega}}{\text{R}^\text{cell}_\text{dc} - \text{R}^\text{air}_\text{dc}}$')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         # plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
@@ -212,58 +212,9 @@ class Plot:
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        plt.title(f'Raraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
+        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
         # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity(R)_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.savefig(os.path.join(Plots, f'{date}', f'FR(R)_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        plt.show()
-
-    def FR_vs_Frequency(self, lambda_path, lockin_path, run, n, B, power):
-        """
-        Plot function of measured FR angle vs Frequency
-        """
-        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc = self.analyzer.R_lockins(lockin_path)
-        epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path)
-        fig, ax = plt.subplots(1, 1, figsize=(25, 12))
-        x0, y0 = [], []
-        for i in range(run-1, run+1):
-            Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
-            Bristol_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], lockins_t[i], theta[i])
-            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], lockins_t[i], para[i][2], n)
-            Lambd, Thet = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
-            x0.append(self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                   # [GHz]
-            y0.append(Thet[1:] * 1e3)                                                                                              # [millirad]
-        print(len(x0[0]), len(x0[1]))
-        print(len(y0[0]), len(y0[1]))
-        y1 = []
-        for xval in x0[1]:
-            cidx = np.argmin(np.abs(x0[0] - xval))
-            y1.append(y0[0][cidx] - y0[1][cidx] )
-        ax.plot(x0[0], y1, label=r'L->H Wide Scan')
-
-        # y1 = []
-        # for xval in x0[1]:
-        #     cidx = np.argmin(np.abs(x0[3] - xval))
-        #     y1.append(y0[3][cidx] - y0[1][cidx] )
-        
-        # ax.plot(x0[1], y1, label=r'H->L Wide Scan')
-        
-        # lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
-        # y_theo = self.theory.FR_theta1(lambda_theo, 0.0718, B*1e-4, 26, self.consts.Lambda39_D1, self.consts.Lambda39_D2)
-        # x_theo = self.consts.c / lambda_theo * 1e-9 - self.consts.Nu39_D2  * 1e-9
-        # plt.plot(x_theo, y_theo * 1e3, '--', color='red', label='Theory')
-
-        plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        plt.ylabel(r'Faraday Rotation (millirad.)', fontsize=25)
-        plt.xticks(np.arange(-5, 7, 1), fontsize=25)
-        plt.yticks(fontsize=25)
-        # plt.xlim(-4,6)
-        # plt.ylim(-0.15,0.25)
-        # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
-        plt.grid(True)
-        ax.legend(loc='best', fontsize=25)
-        plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+3}.png'))
         plt.show()
 
     def theory_plot(self, l, B, T):
@@ -286,7 +237,6 @@ date_input = '03-21-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-# plotter.Ellipticity_X(Bristol_path, Lockins_path, 7, 5, 5.103, 860)
-plotter.Ellipticity_R(Bristol_path, Lockins_path, 7, 5, 5.103, 860)
-# plotter.FR_vs_Frequency(Bristol_path, Lockins_path, 7, 5, 5.103, 860)
+plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
+# plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
 # plotter.theory_plot(0.0718, 5.103, 26)
