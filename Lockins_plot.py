@@ -122,10 +122,5 @@ date_input = '03-25-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-<<<<<<< HEAD
 plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 5.103, 1.24) 
 # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 7, 5, 5.103, 1.24) 
-=======
-plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.103, 2.71) 
-# plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 7, 5, 5.103, 860) 
->>>>>>> 69609e5c1b63d1563a862ef27a78d42dcc30ca8b
