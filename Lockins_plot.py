@@ -8,8 +8,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -66,8 +66,8 @@ class Plot:
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
             Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
             x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
-            y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
-            # y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+            # y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
+            y = y * 1e6                                                                                                     # RMS Voltage: [microV]
 
             ax.scatter(x, y[1:], label="cell inserted" if i == run else "cell removed" , s=1)
 
@@ -90,11 +90,11 @@ class Plot:
         if name == 'f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{XY}_{\omega}$ ($\mu$V)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{XY}_{2\omega}$ ($\mu$V)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
@@ -107,20 +107,25 @@ class Plot:
         if name == 'f':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_{\omega}$ ($\mu$V)', r'$\text{R}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, R2f, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_{2\omega}$ ($\mu$V)', r'$\text{R}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, Rdc, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
 plotter = Plot()
-date_input = '03-21-2024'
+date_input = '03-25-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-# plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 19, 5, 5.103, 3.5) 
-plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 7, 5, 5.103, 860) 
+<<<<<<< HEAD
+plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 5.103, 1.24) 
+# plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 7, 5, 5.103, 1.24) 
+=======
+plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.103, 2.71) 
+# plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 7, 5, 5.103, 860) 
+>>>>>>> 69609e5c1b63d1563a862ef27a78d42dcc30ca8b
