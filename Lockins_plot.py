@@ -25,7 +25,7 @@ class Plot:
 
     def XYplot(self, Bristol_t, Lambda, para, y_t, X, Y, run, n, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
-        for i in range(run, run+2):
+        for i in range(run, run+3):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
             Bristol_t[i], Lambda[i], y_t[i], X[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], X[i])
             Bristol_t[i], Lambda[i], y_t[i], Y[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], Y[i])
@@ -38,13 +38,21 @@ class Plot:
             # X[i] = X[i] * 1e6                                                                                               # RMS Voltage: [microV]
             # Y[i] = Y[i] * 1e6                                                                                               # RMS Voltage: [microV]
 
-            colors = 'b' if i == run else 'r'
+            colors = 'b' if i == run else ('r' if i == run+1 else 'y')
 
             ax.plot(x, X[i][1:], color=colors, 
-                        label=r'$\text{X}_\text{dc}$, cell inserted' if i == run else r'$\text{X}_\text{dc}$, cell removed',
+                        label=(r'$\text{X}_\text{dc}$, empty cell' if i == run 
+                               else (r'$\text{X}_\text{dc}$, vapor cell' if i == run+1
+                                     else r'$\text{X}_\text{dc}$, air'
+                                     )
+                               ),
                           linestyle='-', linewidth=1, marker='^', markevery=200, markersize=10)
             ax.plot(x, Y[i][1:], color=colors, 
-                        label=r'$\text{Y}_\text{dc}$, cell inserted' if i == run else r'$\text{Y}_\text{dc}$, cell removed',
+                        label=(r'$\text{Y}_\text{dc}$, empty cell' if i == run 
+                               else (r'$\text{Y}_\text{dc}$, vapor cell' if i == run+1
+                                     else r'$\text{Y}_\text{dc}$, air'
+                                     )
+                               ),
                           linestyle='-', linewidth=1, marker='x', markevery=200, markersize=10)
 
         plt.xlabel(xlabel, fontsize=25)
@@ -89,16 +97,16 @@ class Plot:
 
         if name == 'f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_{\omega}$ ($\mu$V)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+                                  r'$\text{XY}_{\omega}$ (mV)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+2}' + 
+                                  f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_{2\omega}$ ($\mu$V)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+                                  r'$\text{XY}_{2\omega}$ ($\mu$V)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+2}' + 
+                                  f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
+                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+2}' + 
+                                  f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
     def R_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
@@ -118,9 +126,9 @@ class Plot:
                                   f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
 plotter = Plot()
-date_input = '03-25-2024'
+date_input = '04-11-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.103, 2.71) 
+plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 5.07, 5) 
 # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 7, 5, 5.103, 860) 
