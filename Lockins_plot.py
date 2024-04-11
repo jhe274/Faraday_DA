@@ -74,8 +74,8 @@ class Plot:
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
             Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
             x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
-            y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
-            # y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+            # y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
+            y = y * 1e6                                                                                                     # RMS Voltage: [microV]
 
             ax.scatter(x, y[1:], label="cell inserted" if i == run else "cell removed" , s=1)
 
@@ -115,11 +115,11 @@ class Plot:
         if name == 'f':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_{\omega}$ ($\mu$V)', r'$\text{R}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, R2f, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_{2\omega}$ ($\mu$V)', r'$\text{R}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} nW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, Rdc, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 

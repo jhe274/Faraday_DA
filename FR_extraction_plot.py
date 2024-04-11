@@ -9,8 +9,8 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -69,12 +69,11 @@ class Plot:
             idx_long = np.argmin(np.abs(x0[long_idx] - x_val))
             diff_eps.append(Eps[short_idx][idx] - Eps[long_idx][idx_long])
             # diff_eps.append(Eps[long_idx][idx_long] - Eps[short_idx][idx])
-            diff_the.append(The[short_idx][idx] - The[long_idx][idx_long])
-            # diff_the.append(The[long_idx][idx_long] - The[short_idx][idx])
+            diff_the.append(-1 * (The[short_idx][idx] - The[long_idx][idx_long]))
 
         x0.append(self.consts.c / x0[short_idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
-        # ax.plot(x0[2], diff_eps, color='blue', label=r'$\epsilon_\text{K}$')
-        # ax.plot(x0[2], diff_the, color='blue', label=r'$\theta_\text{K}$')
+        ax.plot(x0[2], diff_eps, label=r'$\varepsilon_\text{cell}$')
+        # ax.plot(x0[2], diff_the, label=r'$\theta_\text{cell}$')
 
         """
         Theoretical curve from diamagnetic Faraday rotation
@@ -84,20 +83,19 @@ class Plot:
         # x_theo = self.consts.c / lambda_theo * 1e-9 - self.consts.Nu39_D2  * 1e-9
         # plt.plot(x_theo, y_theo * 1e3, '--', color='red', label='Theory')
 
-        
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        # plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
-        plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
+        plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
+        plt.ylabel(r'Faraday Rotation (millirad.)', fontsize=25)
         plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.ylim(0, .6)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity(X)_vs_Frequency_{date}_run{run}-{run+2}.png'))
-        plt.savefig(os.path.join(Plots, f'{date}', f'FR(X)_vs_Frequency_{date}_run{run}-{run+2}.png'))
+        plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        # plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
     
     def Ellipticity_FR_R(self, lambda_path, lockin_path, run, n, B, power):
@@ -201,6 +199,6 @@ date_input = '04-11-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 5, 5, 5.07, 3)
+plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 3, 5, 5.103, 2)
 # plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
 # plotter.theory_plot(0.0718, 5.103, 26)
