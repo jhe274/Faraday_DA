@@ -35,7 +35,7 @@ class Plot:
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         x, x0, Eps, The = [], [], [], []
 
-        for i in range(run-1, run+2):
+        for i in range(run-1, run+1):
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
 
             B_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], epsilon[i])
@@ -50,14 +50,17 @@ class Plot:
             The.append(th * 1e6)
             x = self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                                   # [GHz]
 
-            # ax.plot(x, Eps[i - run + 1][1:], label=(r'$\epsilon_\text{empty cell}$' if i-run+1 == 0 
+            colors = 'y' if i == run - 1 else ('r' if i == run else 'b')
+            # ax.plot(x, Eps[i - run + 1][1:], color=colors, label=(r'$\epsilon_\text{empty cell}$' if i-run+1 == 0 
             #                                         else (r'$\epsilon_\text{vapor cell}$' if i-run == 0
             #                                               else r'$\epsilon_\text{air}$')
-            #                                         ))
-            ax.plot(x, The[i - run + 1][1:], label=(r'$\theta_\text{empty cell}$' if i-run+1 == 0 
+            #                                         )
+            #         )
+            ax.plot(x, The[i - run + 1][1:], color=colors, label=(r'$\theta_\text{empty cell}$' if i-run+1 == 0 
                                                     else (r'$\theta_\text{vapor cell}$' if i-run == 0
                                                           else r'$\theta_\text{air}$')
-                                                    ))
+                                                    )
+                    )
 
         """
         Subtracting measured background epsilon/theta values from sample epsilon/theta values
@@ -69,11 +72,12 @@ class Plot:
             idx_long = np.argmin(np.abs(x0[long_idx] - x_val))
             diff_eps.append(Eps[short_idx][idx] - Eps[long_idx][idx_long])
             # diff_eps.append(Eps[long_idx][idx_long] - Eps[short_idx][idx])
-            diff_the.append(-1 * (The[short_idx][idx] - The[long_idx][idx_long]))
+            diff_the.append(The[short_idx][idx] - The[long_idx][idx_long])
+            # diff_the.append(The[long_idx][idx_long] - The[short_idx][idx])
 
         x0.append(self.consts.c / x0[short_idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
-        ax.plot(x0[2], diff_eps, label=r'$\varepsilon_\text{cell}$')
-        # ax.plot(x0[2], diff_the, label=r'$\theta_\text{cell}$')
+        # ax.plot(x0[2], diff_eps, label=r'$\epsilon_\text{K}$')
+        # ax.plot(x0[2], diff_the, label=r'$\theta_\text{K}$')
 
         """
         Theoretical curve from diamagnetic Faraday rotation
@@ -81,21 +85,21 @@ class Plot:
         # lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
         # y_theo = self.theory.dia_FR(lambda_theo, 0.0718, B*1e-4, 26, self.consts.Lambda39_D1, self.consts.Lambda39_D2)
         # x_theo = self.consts.c / lambda_theo * 1e-9 - self.consts.Nu39_D2  * 1e-9
-        # plt.plot(x_theo, y_theo * 1e3, '--', color='red', label='Theory')
+        # plt.plot(x_theo, -y_theo * 1e6, '--', color='red', label='Theory')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
-        plt.ylabel(r'Faraday Rotation (millirad.)', fontsize=25)
+        # plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
+        plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
         plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
-        # plt.ylim(0, .6)
+        # plt.ylim(0, -700)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        # plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        # plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'FR(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
     
     def Ellipticity_FR_R(self, lambda_path, lockin_path, run, n, B, power):
@@ -199,6 +203,6 @@ date_input = '04-11-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 3, 5, 5.103, 2)
+plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 3, 5, 5.07, 4.77)
 # plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
 # plotter.theory_plot(0.0718, 5.103, 26)
