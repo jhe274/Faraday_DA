@@ -8,6 +8,8 @@ from constants import Constants as Consts
 from theory import Theory
 from read import Read
 from analyze import Analyze
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
 
 dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
 # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
@@ -35,6 +37,9 @@ class Plot:
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         x, x0, Eps, The = [], [], [], []
 
+        """
+        Plot measured epsilon/theta for vapor cell and background
+        """
         for i in range(run-1, run+1):
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
 
@@ -48,19 +53,19 @@ class Plot:
             x0.append(Lambd)
             Eps.append(ep * 1e3)
             The.append(th * 1e6)
-            x = self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                                   # [GHz]
+            # x = self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                                   # [GHz]
 
-            colors = 'y' if i == run - 1 else ('r' if i == run else 'b')
+            # colors = 'y' if i == run - 1 else ('r' if i == run else 'b')
             # ax.plot(x, Eps[i - run + 1][1:], color=colors, label=(r'$\epsilon_\text{empty cell}$' if i-run+1 == 0 
             #                                         else (r'$\epsilon_\text{vapor cell}$' if i-run == 0
             #                                               else r'$\epsilon_\text{air}$')
             #                                         )
             #         )
-            ax.plot(x, The[i - run + 1][1:], color=colors, label=(r'$\theta_\text{empty cell}$' if i-run+1 == 0 
-                                                    else (r'$\theta_\text{vapor cell}$' if i-run == 0
-                                                          else r'$\theta_\text{air}$')
-                                                    )
-                    )
+            # ax.plot(x, The[i - run + 1][1:], color=colors, label=(r'$\theta_\text{empty cell}$' if i-run+1 == 0 
+            #                                         else (r'$\theta_\text{vapor cell}$' if i-run == 0
+            #                                               else r'$\theta_\text{air}$')
+            #                                         )
+            #         )
 
         """
         Subtracting measured background epsilon/theta values from sample epsilon/theta values
@@ -75,31 +80,91 @@ class Plot:
             diff_the.append(The[short_idx][idx] - The[long_idx][idx_long])
             # diff_the.append(The[long_idx][idx_long] - The[short_idx][idx])
 
-        x0.append(self.consts.c / x0[short_idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
+        # x0.append(self.consts.c / x0[short_idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
         # ax.plot(x0[2], diff_eps, label=r'$\epsilon_\text{K}$')
-        # ax.plot(x0[2], diff_the, label=r'$\theta_\text{K}$')
+        # ax.plot(x0[2], diff_the, label=r'$\theta_{K}$')
+
+        x = self.consts.c / x0[short_idx]
+        y = np.array(diff_the)
+        ax.plot(x*1e-9-self.consts.Nu39_D2*1e-9, y, '.', label=r'Measured $\theta_{K}$', color='blue', markersize=1)
 
         """
-        Theoretical curve from diamagnetic Faraday rotation
+        Find the peaks and valleys in the epsilon_K/theta_K and mirror the data w.r.t. the peak axis
         """
-        # lambda_theo = np.linspace(766.69*1e-9, 766.71*1e-9, 2000)
-        # y_theo = self.theory.dia_FR(lambda_theo, 0.0718, B*1e-4, 26, self.consts.Lambda39_D1, self.consts.Lambda39_D2)
-        # x_theo = self.consts.c / lambda_theo * 1e-9 - self.consts.Nu39_D2  * 1e-9
-        # plt.plot(x_theo, -y_theo * 1e6, '--', color='red', label='Theory')
+        # peaks, _ = find_peaks(y, prominence=20, height=(-150, -100))
+        # valleys, _ = find_peaks(-y, prominence=50, height=(100, 400))
+
+        # for idx, indices in enumerate([peaks, valleys]):
+        #     for k in indices:
+        #         y0 = y[k]
+        #         color = 'cyan' if idx == 0 else 'purple'
+        #         ax.vlines(x=x[k]*1e-9-self.consts.Nu39_D2*1e-9, ymin=-400, ymax=y[k], linestyle=':', color=color)
+        
+        # mirror = -y[peaks[0]:] + 2 * y[peaks[0]]
+        # new_y = y.copy()
+        # new_y[peaks[0]:] = mirror
+        # ax.plot(x[peaks[0]:]*1e-9-self.consts.Nu39_D2*1e-9, mirror, label=r'Manipulated $\theta_{K}$', color='green')
+
+        """
+        Curve fitting
+        """
+        def Kn_density(T):
+            Kp = 10 ** (9.967 - 4646 / (273.15 + T))
+            return Kp / (self.consts.k_B * (273.15 + T))
+        # print(Kn_density(22)) # 4.13 * 1e14
+        # print(Kn_density(24)) # 5.23 * 1e14
+        # print(Kn_density(25)) # 5.88 * 1e14
+        # print(Kn_density(26)) # 6.61 * 1e14
+
+        l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
+        nu_D1 = 389286.058716 * 1e9
+        nu_D2 = 391016.17003 * 1e9
+
+        def FR(nu, Kn, T, B, P, const):
+            delta_nu_D2 = nu - nu_D2
+            delta_nu_D1 = nu - nu_D1
+            delta_doppler_D2 = self.theory.doppler_broad(nu_D2, T)
+            delta_doppler_D1 = self.theory.doppler_broad(nu_D1, T)
+            term1 = (
+                (7*(delta_nu_D2**2 - delta_doppler_D2**2/4) / (delta_nu_D2**2 + delta_doppler_D2**2/4)**2) + 
+                (4*(delta_nu_D1**2 - delta_doppler_D1**2/4) / (delta_nu_D1**2 + delta_doppler_D1**2/4)**2) - 
+                (2*(delta_nu_D1*delta_nu_D2) / ((delta_nu_D2-delta_doppler_D2) * (delta_nu_D1-delta_doppler_D1))**2)) / (3 * self.consts.h)
+            # term2 = np.sign(B) * ((nu / (nu_D1 * (nu - nu_D1))) - (nu / (nu_D2 * (nu - nu_D2)))) / (self.consts.k_B * T)
+            
+            diamagnetic_theta = self.consts.mu_B * B*1e-4 * (term1)
+            paramagnetic_thetea = P * (
+                    (delta_nu_D2 / ((delta_nu_D2 - delta_doppler_D2) ** 2)) -
+                    (delta_nu_D1 / ((delta_nu_D1 - delta_doppler_D1) ** 2))
+                )
+            # paramagnetic_thetea = P * (
+            #         (delta_nu_D2 / ((delta_nu_D2 - doppler_broad_D2)**2 + (doppler_broad_D2**2)/4)) -
+            #         (delta_nu_D1 / ((delta_nu_D1 - doppler_broad_D1)**2 + (doppler_broad_D1**2)/4))
+            #     )
+            theta = self.consts.alpha * Kn*1e14 * l * (diamagnetic_theta + paramagnetic_thetea) * 1e6 + const                                                        # [microrad]
+            return theta
+
+        initial_guess = [1.47, 19.5, -5.103, -0.002, -60]
+        bounds = ([.1, 15, -5.2, -1, -100], [5, 25, -5., 1, 100])
+        params, covariance = curve_fit(FR, x, y, p0=initial_guess, bounds=bounds)
+        print(params)
+        Kn, T, Bz, PK, const = np.round(params,3)
+        # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, Kn, T, Bz, PK, const), '--', color='red', label='Curve fit')
+        plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, 1.474, 19.497, -5.103, -.02, -60), '--', color='green', label='Manual fit')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         # plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
         plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
-        plt.xticks(np.arange(-5, 7, 1), fontsize=25)
+        # plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
-        # plt.ylim(0, -700)
+        plt.ylim(150,-600)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
+        plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
         # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        plt.savefig(os.path.join(Plots, f'{date}', f'FR(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}(fitted).png'))
         plt.show()
     
     def Ellipticity_FR_R(self, lambda_path, lockin_path, run, n, B, power):
@@ -199,10 +264,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '04-11-2024'
+date_input = '03-21-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 3, 5, 5.07, 4.77)
+plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 7, 5, -5.103, 860)
 # plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
 # plotter.theory_plot(0.0718, 5.103, 26)

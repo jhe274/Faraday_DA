@@ -5,23 +5,23 @@ from constants import Constants as Consts
 class Theory:
     
     def __init__(self):
-        self.Consts = Consts()
+        self.consts = Consts()
 
     def Kn_density(self, T):
         '''
         Potassium number density
         '''
-        if 25 < T <= 63.35:
+        if 24.85 < T <= 63.35:
             Kp = 10 ** (9.967 - 4646 / (273.15 + T))                                                                                    # [Pa]
         elif 63.35 < T:
             Kp = 10 ** (9.408 - 4453 / (273.15 + T))                                                                                    # [Pa]
         else:
-            raise ValueError("Temperature T must be above 25°C")
+            raise ValueError("Temperature T must be above 24.85°C")
         
-        return Kp / (self.Consts.k_B * (273.15 + T))                                                                                    # [m^-3]
+        return Kp / (self.consts.k_B * (273.15 + T))                                                                                    # [m^-3]
     
-    def Doppler_linewidth(self, nu0, T):
-        Delta_D = nu0 * np.sqrt((8 * self.Consts.k_B * (273.15+T) * math.log(2)) / (self.Consts.m_K39 * self.Consts.c**2))
+    def doppler_broad(self, nu0, T):
+        Delta_D = nu0 * np.sqrt((8 * self.consts.k_B * (273.15+T) * math.log(2)) / (self.consts.m_K39 * self.consts.c**2))
 
         return Delta_D
 
@@ -29,16 +29,16 @@ class Theory:
         '''
         Calculations of Zeeman splitting 
         '''
-        return self.Consts.g_G * (1/2) * self.Consts.mu_B * B
+        return self.consts.g_G * (1/2) * self.consts.mu_B * B
 
     def Zeeman_D1(self, B):
         """
         Zeeman splitting at potassium D1 line
         """
-        E_D1 = self.Consts.g_D1 * (1/2) * self.Consts.mu_B * B
+        E_D1 = self.consts.g_D1 * (1/2) * self.consts.mu_B * B
         Delta_E_D1 = -self.Zeeman_ground(B) - E_D1 - (self.Zeeman_ground(B) + E_D1)
-        Delta_Lambda_D1 = - pow(self.Consts.Lambda39_D1,2) * Delta_E_D1 / (self.Consts.h * self.Consts.c)                               # [m]
-        Delta_nu_D1 = self.Consts.Nu39_D1 - (self.Consts.c / (self.Consts.Lambda39_D1 + Delta_Lambda_D1/2))*2                           # [Hz]
+        Delta_Lambda_D1 = - pow(self.consts.Lambda39_D1,2) * Delta_E_D1 / (self.consts.h * self.consts.c)                               # [m]
+        Delta_nu_D1 = self.consts.Nu39_D1 - (self.consts.c / (self.consts.Lambda39_D1 + Delta_Lambda_D1/2))*2                           # [Hz]
 
         return Delta_Lambda_D1, Delta_nu_D1
 
@@ -46,16 +46,16 @@ class Theory:
         """
         Zeeman splitting at potassium D2 line
         """
-        E_D2 = self.Consts.g_D2 * (3/2) * self.Consts.mu_B * B
+        E_D2 = self.consts.g_D2 * (3/2) * self.consts.mu_B * B
         Delta_E_D2 = -self.Zeeman_ground(B) - E_D2 - (self.Zeeman_ground(B) + E_D2)
-        Delta_Lambda_D2 = - pow(self.Consts.Lambda39_D2,2) * Delta_E_D2 / (self.Consts.h * self.Consts.c)                               # [m]
-        Delta_nu_D2 = self.Consts.Nu39_D2 - (self.Consts.c / (self.Consts.Lambda39_D2 + Delta_Lambda_D2/2)) * 2                         # [Hz]
+        Delta_Lambda_D2 = - pow(self.consts.Lambda39_D2,2) * Delta_E_D2 / (self.consts.h * self.consts.c)                               # [m]
+        Delta_nu_D2 = self.consts.Nu39_D2 - (self.consts.c / (self.consts.Lambda39_D2 + Delta_Lambda_D2/2)) * 2                         # [Hz]
 
         return Delta_Lambda_D2, Delta_nu_D2
     
-    def dia_FR(self, Lambda, l, B, T, Lambda_D1, Lambda_D2):
+    def diamagnetic_FR(self, nu, l, T, B, nu_D1, nu_D2):
         """
-        Calculations of polarization rotations
+        Calculations of diamagnetic Faraday rotation
         """
         Delta_Lambda_D1, Delta_nu_D1 = self.Zeeman_D1(B)
         Delta_Lambda_D2, Delta_nu_D2 = self.Zeeman_D2(B)
@@ -66,54 +66,44 @@ class Theory:
               str(Delta_Lambda_D2*pow(10,9)), " nm = ", str(Delta_nu_D2*pow(10,-9)), " GHz")
         
         l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
+
+        term1 = ((7 / (nu - nu_D2)**2) + (4 / (nu - nu_D1)**2) - (2 / ((nu - nu_D2) * (nu - nu_D1)))) / (3 * self.consts.h)
+        term2 = np.sign(B) * ((nu / (nu_D1 * (nu - nu_D1))) - (nu / (nu_D2 * (nu - nu_D2)))) / (self.consts.k_B * T)
         
-        # Faraday rotation contributed from D1 line
-        theta_D1_term1 = 4 * (Lambda**2) / (3 * self.Consts.c * pow(Lambda-Lambda_D1,2))
-        theta_D1_term2 = -np.sign(B) * self.Consts.h / (self.Consts.k_B * (273.15+T) * (Lambda-Lambda_D1))
-        theta_D1 = self.Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D1**2) * (theta_D1_term1 + theta_D1_term2)          # [rad]
-        
-        # Faraday rotation contributed from D2 line
-        theta_D2_term1 = 7 * (Lambda**2) / (3 * self.Consts.c * pow(Lambda-Lambda_D2,2))
-        theta_D2_term2 = np.sign(B) * self.Consts.h / (self.Consts.k_B * (273.15+T) * (Lambda-Lambda_D2))
-        theta_D2 = self.Consts.alpha * self.Kn_density(T) * l * np.abs(B) * (Lambda_D2**2) * (theta_D2_term1 + theta_D2_term2)          # [rad]
-        
-        # Addition of Faraday rotation contributed from D1 & D2 line
-        theta = theta_D1 + theta_D2                                                                                                     # [rad]
-        
-        return theta
+        diamagnetic_theta = self.consts.alpha * self.consts.mu_B * self.Kn_density(T) * l  * B * (term1 + term2)
+
+        return diamagnetic_theta
     
-    def para_FR(self, nu, l, T, P):
-        l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
-
-        # Contribution from D1 line
-        theta_D1 = -(nu - self.Consts.Nu39_D1) / pow(nu - self.Consts.Nu39_D1 - self.Doppler_linewidth(self.Consts.Nu39_D1, T), 2)
-
-        # Contribution from D2 line
-        theta_D2 = (nu - self.Consts.Nu39_D2) / pow(nu - self.Consts.Nu39_D2 - self.Doppler_linewidth(self.Consts.Nu39_D2, T), 2)
-
-        # Paramagnetic Faraday rotation
-        theta_P = self.Consts.beta * self.Kn_density(T) * l * P * (theta_D1 + theta_D2)                                                 # [rad]
-
-        return theta_P
-    
-    def FR_theta2(self, nu, l, B, T, nu_D1, nu_D2):
-        l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
-        
-        # Faraday rotation contributed from D1 line
-        theta_D1 = 4 * self.Consts.mu_B * np.abs(B) * pow(nu - self.Consts.Nu39_D1, 2) / (3 * (self.Consts.h / (2 * np.pi)) * pow(nu - self.Consts.Nu39_D1 - self.Doppler_linewidth(self.Consts.Nu39_D1, T), 2))          # [rad]
-        
-        # Faraday rotation contributed from D2 line
-        theta_D2 = 7 * self.Consts.mu_B * np.abs(B) * pow(nu - self.Consts.Nu39_D2, 2) / (3 * (self.Consts.h / (2 * np.pi)) * pow(nu - self.Consts.Nu39_D2 - self.Doppler_linewidth(self.Consts.Nu39_D2, T), 2))          # [rad]
-        
-        # Addition of Faraday rotation contributed from D1 & D2 line
-        theta = self.Consts.beta * self.Kn_density(T) * (theta_D1 + theta_D2)    
-
-        return theta
-
-    
-    def Grad_theta(self, Lambda, B, T, Lambda_D1, Lambda_D2):
+    def paramagnetic_FR(self, nu, l, T, P, nu_D1, nu_D2):
         """
-        Calculations of change of polarization rotations w.r.t. wavelengths
+        Calculations of paramagnetic Faraday rotation
+        """
+        l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
+        doppler_broad_D2 = self.doppler_broad(nu_D2, T)
+        doppler_broad_D1 = self.doppler_broad(nu_D1, T)
+        delta_nu_D2 = nu - nu_D2
+        delta_nu_D1 = nu - nu_D1
+
+        paramagnetic_thetea = (
+            self.consts.alpha * self.Kn_density(T) * l * P * (
+                (delta_nu_D2 / ((delta_nu_D2 - doppler_broad_D2) ** 2)) -
+                (delta_nu_D1 / ((delta_nu_D1 - doppler_broad_D1) ** 2))
+            )
+        )                                                                                                                               # [rad]
+
+        return paramagnetic_thetea
+    
+    def FR(self, nu, l, T, B, P, nu_D1, nu_D2):
+        l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
+        
+        theta = self.diamagnetic_FR(nu, l, T, B, nu_D1, nu_D2) + self.paramagnetic_FR(nu, l, T, P, nu_D1, nu_D2)
+
+        return theta
+
+    
+    def Grad_theta(self, nu, l, T, B, nu_D1, nu_D2):
+        """
+        Wrong calculations
         """
         l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
 
