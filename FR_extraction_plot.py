@@ -11,8 +11,8 @@ from analyze import Analyze
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
-dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+# dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
 K_vapor = os.path.join(dir_path, 'K vapor cell')
 Bristol = os.path.join(K_vapor, 'Bristol data')
 Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -53,19 +53,19 @@ class Plot:
             x0.append(Lambd)
             Eps.append(ep * 1e3)
             The.append(th * 1e6)
-            # x = self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                                   # [GHz]
+            colors = 'y' if i == run - 1 else ('r' if i == run else 'b')
 
-            # colors = 'y' if i == run - 1 else ('r' if i == run else 'b')
+            x = self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                                   # [GHz]
             # ax.plot(x, Eps[i - run + 1][1:], color=colors, label=(r'$\epsilon_\text{empty cell}$' if i-run+1 == 0 
             #                                         else (r'$\epsilon_\text{vapor cell}$' if i-run == 0
             #                                               else r'$\epsilon_\text{air}$')
             #                                         )
             #         )
-            # ax.plot(x, The[i - run + 1][1:], color=colors, label=(r'$\theta_\text{empty cell}$' if i-run+1 == 0 
-            #                                         else (r'$\theta_\text{vapor cell}$' if i-run == 0
-            #                                               else r'$\theta_\text{air}$')
-            #                                         )
-            #         )
+            ax.plot(x, The[i - run + 1][1:], color=colors, label=(r'$\theta_\text{empty cell}$' if i-run+1 == 0 
+                                                    else (r'$\theta_\text{vapor cell}$' if i-run == 0
+                                                          else r'$\theta_\text{air}$')
+                                                    )
+                    )
 
         """
         Subtracting measured background epsilon/theta values from sample epsilon/theta values
@@ -149,20 +149,20 @@ class Plot:
         print(params)
         Kn, T, Bz, PK, const = np.round(params,3)
         # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, Kn, T, Bz, PK, const), '--', color='red', label='Curve fit')
-        plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, 1.474, 19.497, -5.103, -.02, -60), '--', color='green', label='Manual fit')
+        # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, 1.474, 19.497, -5.103, -.02, -60), '--', color='green', label='Manual fit')
 
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         # plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
         plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
         # plt.xticks(np.arange(-5, 7, 1), fontsize=25)
         plt.yticks(fontsize=25)
-        plt.ylim(150,-600)
+        plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        # plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} nW @{date}', fontsize=25)
-        plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
+        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+1}, $B_z$={B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
         # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity(X)_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}(fitted).png'))
         plt.show()
@@ -264,10 +264,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '03-21-2024'
+date_input = '05-01-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 7, 5, -5.103, 860)
+plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 5, 5, -5.06, 2.06)
 # plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
 # plotter.theory_plot(0.0718, 5.103, 26)
