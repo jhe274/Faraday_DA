@@ -174,7 +174,7 @@ class Plot:
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         # plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
         plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
-        # plt.xticks(np.arange(-5, 7, 1), fontsize=25)
+        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
