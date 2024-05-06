@@ -24,8 +24,8 @@ class Plot:
         self.analyzer = Analyze()
 
     def XYplot(self, Bristol_t, Lambda, para, y_t, X, Y, run, n, name, xlabel, ylabel, title):
-        fig, ax = plt.subplots(1, 1, figsize=(25, 12))
-        for i in range(run, run+2):
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        for i in range(run, run+3):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
             Bristol_t[i], Lambda[i], y_t[i], X[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], X[i])
             Bristol_t[i], Lambda[i], y_t[i], Y[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], Y[i])
@@ -49,17 +49,17 @@ class Plot:
             # Plot X and Y with the appropriate labels
             label_x = (r'$\text{X}_\text{f}$' if name == 'f' else 
                     r'$\text{X}_\text{2f}$' if name == '2f' else 
-                    r'$\text{X}_\text{dc}$') + ', empty cell' if i == run else (r'$\text{X}_\text{dc}$, vapor cell')
+                    r'$\text{X}_\text{dc}$') + (', air' if i == run else (', empty cell' if i==run+1 else ', vapor cell'))
             label_y = (r'$\text{Y}_\text{f}$' if name == 'f' else 
                     r'$\text{Y}_\text{2f}$' if name == '2f' else 
-                    r'$\text{Y}_\text{dc}$') + ', empty cell' if i == run else (r'$\text{Y}_\text{dc}$, vapor cell')
+                    r'$\text{Y}_\text{dc}$') + (', air' if i == run else (', empty cell' if i==run+1 else ', vapor cell'))
 
             ax.plot(x, X[i][1:], color=colors, label=label_x, linestyle='-', linewidth=1, marker='^', markevery=200, markersize=10)
             ax.plot(x, Y[i][1:], color=colors, label=label_y, linestyle='-', linewidth=1, marker='x', markevery=200, markersize=10)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
-        plt.xticks(np.arange(-5, 7, 1), fontsize=25)
+        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
         plt.yticks(fontsize=25)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
@@ -128,9 +128,9 @@ class Plot:
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
 plotter = Plot()
-date_input = '05-01-2024'
+date_input = '05-06-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 5, 5.06, 2.06) 
+plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 5.11, 1.54) 
 # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 
