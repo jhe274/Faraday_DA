@@ -40,7 +40,7 @@ class Plot:
         """
         Plot measured epsilon/theta for vapor cell and background
         """
-        for i in range(run-1, run+2):
+        for i in range(run-1, run+1):
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
 
             B_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], epsilon[i])
@@ -53,9 +53,10 @@ class Plot:
             x0.append(Lambd)
             Eps.append(ep * 1e6)
             The.append(th * 1e6)
+            x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
             colors = 'y' if i == run - 1 else ('r' if i == run else 'b')
 
-            x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
+            # plot functions for measurements with air, empty cell and vapor cell
             # ax.plot(x, Eps[i - run + 1][1:], color=colors, label=(r'$\epsilon_\text{air}$' if i-run+1 == 0 
             #                                         else (r'$\epsilon_\text{empty cell}$' if i-run == 0
             #                                               else r'$\epsilon_\text{vapor cell}$')
@@ -67,46 +68,39 @@ class Plot:
             #                                         )
             #         )
 
+            # plot functions for measurements with air and vapor cell
+            # ax.plot(x[i - run + 1], Eps[i - run + 1][1:], color=colors, label=(r'$\epsilon_\text{air}$' if i-run+1 == 0 
+            #                                         else r'$\epsilon_\text{vapor cell}$')
+            #         )
+            # ax.plot(x[i - run + 1], The[i - run + 1][1:], color=colors, label=(r'$\theta_\text{air}$' if i-run+1 == 0 
+            #                                         else r'$\theta_\text{vapor cell}$')
+            #         )
+
         """
         Subtracting measured background epsilon/theta values from sample epsilon/theta values
         """
-        diff_eps, diff_the = [], []
         CD_empty, CD_vapor, CD_K, CB_empty, CB_vapor, CB_K = [], [], [], [], [], []
-        # short_idx, long_idx = (0, 1) if len(x0[0]) <= len(x0[1]) else (1, 0)
-        
-        # for idx, x_val in enumerate(x0[short_idx]):
-        #     idx_long = np.argmin(np.abs(x0[long_idx] - x_val))
-        #     # diff_eps.append(Eps[short_idx][idx] - Eps[long_idx][idx_long])
-        #     diff_eps.append(Eps[long_idx][idx_long] - Eps[short_idx][idx])
-        #     # diff_the.append(The[short_idx][idx] - The[long_idx][idx_long])
-        #     diff_the.append(The[long_idx][idx_long] - The[short_idx][idx])
 
+        # Subtracting air FR from vapor FR
         for idx, x_val in enumerate(x0[0]):
-            idx_empty = np.argmin(np.abs(x0[1] - x_val))
-            idx_vapor = np.argmin(np.abs(x0[2] - x_val))
-            CD_empty.append(Eps[1][idx_empty] - Eps[0][idx])
-            CD_vapor.append(Eps[2][idx_vapor] - Eps[0][idx])
-            CB_empty.append(The[1][idx_empty] - The[0][idx])
-            CB_vapor.append(The[2][idx_vapor] - The[0][idx])
-        for idx, x_val in enumerate(x0[1]):
-            idx_K = np.argmin(np.abs(x0[2] - x_val))
-            CD_K.append(Eps[2][idx_K] - Eps[1][idx])
-            CB_K.append(The[2][idx_K] - The[1][idx])
+            # idx_empty = np.argmin(np.abs(x0[1] - x_val))
+            idx_vapor = np.argmin(np.abs(x0[1] - x_val))
+            # CD_empty.append(Eps[1][idx_empty] - Eps[0][idx])
+            CD_vapor.append(Eps[1][idx_vapor] - Eps[0][idx])
+            # CB_empty.append(The[1][idx_empty] - The[0][idx])
+            CB_vapor.append(The[1][idx_vapor] - The[0][idx])
         
-        # x0.append(self.consts.c / x0[short_idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                            # [GHz]
-        # ax.plot(x0[2], diff_eps, label=r'$\epsilon_\text{K}$')
-        # ax.plot(x0[2], diff_the, label=r'$\theta_{K}$')
-
-        # x = self.consts.c / x0[short_idx]
-        # x = self.consts.c / x0[0]
-        # y = np.array(diff_eps)
-        # y = np.array(diff_the)
-        # ax.plot(x[0], CD_empty, '.', label=r'$\epsilon_\text{empty cell}-\theta_\text{air}$', color='g', markersize=1)
-        # ax.plot(x[0], CD_vapor, '.', label=r'$\epsilon_\text{vapor cell}-\theta_\text{air}$', color='r', markersize=1)
-        # ax.plot(x[1], CD_K, '.', label=r'$\epsilon_\text{vapor cell}-\theta_\text{empty cell}$', color='b', markersize=1)
-        ax.plot(x[0], CB_empty, '.', label=r'$\theta_\text{empty cell}-\theta_\text{air}$', color='g', markersize=1)
-        ax.plot(x[0], CB_vapor, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{air}$', color='r', markersize=1)
-        ax.plot(x[1], CB_K, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$', color='b', markersize=1)
+        # Subtracting empty FR from vapor FR
+        # for idx, x_val in enumerate(x0[1]):
+        #     idx_K = np.argmin(np.abs(x0[2] - x_val))
+        #     CD_K.append(Eps[2][idx_K] - Eps[1][idx])
+        #     CB_K.append(The[2][idx_K] - The[1][idx])
+        # ax.plot(x[0], CD_empty, '.', label=r'$\epsilon_\text{empty cell}-\epsilon_\text{air}$', markersize=2)
+        # ax.plot(x[0], CD_vapor, '.', label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{air}$', markersize=2)
+        # ax.plot(x[1], CD_K, '.', label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', markersize=2)
+        # ax.plot(x[0], CB_empty, '.', label=r'$\theta_\text{empty cell}-\theta_\text{air}$', markersize=2)
+        ax.plot(x[0], CB_vapor, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{air}$', markersize=2)
+        # ax.plot(x[1], CB_K, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$', markersize=2)
 
         """
         Find the peaks and valleys in the epsilon_K/theta_K and mirror the data w.r.t. the peak axis
@@ -180,11 +174,11 @@ class Plot:
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         ax.legend(loc='best', fontsize=25)
-        # plt.title(f'Ellipticity vs Frequency, run{run}-{run+1}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-        plt.title(f'Faraday Rotation vs Frequency, run{run}-{run+2}, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        # plt.title(f'Ellipticity vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
+        plt.title(f'Faraday Rotation vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
         # plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}(fitted).png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         plt.show()
     
     def Ellipticity_FR_R(self, lambda_path, lockin_path, run, n, B, power):
@@ -284,10 +278,10 @@ class Plot:
         plt.show()
 
 plotter = Plot()
-date_input = '05-06-2024'
+date_input = '05-07-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 1, 5, 5.11, 1.54)
+plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 7, 5, 5.12, 2.03)
 # plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
 # plotter.theory_plot(0.0718, 5.103, 26)
