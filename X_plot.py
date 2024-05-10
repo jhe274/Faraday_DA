@@ -58,18 +58,21 @@ class Plot:
 
         if len(runs) > 2:
             for idx, x_val in enumerate(x0[0]):
-                # Subtracting air ellipticity/FR from empty cell ellipticity/FR
+                # Considr air ellipticity/FR as background measurement
                 idx_empty = np.argmin(np.abs(x0[1] - x_val))
+                idx_vapor = np.argmin(np.abs(x0[2] - x_val))
                 CD_empty.append(Eps[1][idx_empty] - Eps[0][idx])
+                CD_vapor.append(Eps[2][idx_vapor] - Eps[0][idx])
                 CB_empty.append(The[1][idx_empty] - The[0][idx])
+                CB_vapor.append(The[2][idx_vapor] - The[0][idx])
             for idx, x_val in enumerate(x0[1]):
-                # Subtracting empty cell ellipticity/FR from vapor cell ellipticity/FR
+                # Consider empty cell ellipticity/FR as background measurement
                 idx_K = np.argmin(np.abs(x0[2] - x_val))
                 CD_K.append(Eps[2][idx_K] - Eps[1][idx])
                 CB_K.append(The[2][idx_K] - The[1][idx])
         else:
             for idx, x_val in enumerate(x0[0]):
-                # Subtracting air ellipticity/FR from vapor cell ellipticity/FR
+                # Consider air ellipticity/FR as background measurement
                 idx_vapor = np.argmin(np.abs(x0[1] - x_val))
                 CD_vapor.append(Eps[1][idx_vapor] - Eps[0][idx])
                 CB_vapor.append(The[1][idx_vapor] - The[0][idx])
@@ -77,6 +80,9 @@ class Plot:
         return x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K
     
     def raw_plot(self, lambda_path, lockin_path, run, n, B, power, dtype):
+        """
+        Plot ellipticity/FR for each individual measurements
+        """
         x0, x, Eps, The = self.read_data(lambda_path, lockin_path, run, n)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
@@ -110,6 +116,9 @@ class Plot:
         self.plot_settings(n, B, power, date, dtype)
 
     def extracted_plot(self, lambda_path, lockin_path, run, n, B, power, dtype, material):
+        """
+        Plot background subtracted ellipticity/FR
+        """
         x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, run, n)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
@@ -128,7 +137,19 @@ class Plot:
             elif material == 'K':
                 ax.plot(x[1], CB_K, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$', markersize=2)
 
+        self.peaks_valleys_plot(x[0], CB_vapor)
         self.plot_settings(n, B, power, date, dtype)
+
+    def peaks_valleys_plot(self, x, y):
+        """
+        Find peaks and valleys in the ellipticity/FR
+        """
+        peaks, _ = find_peaks(np.array(y), prominence=20, height=(200, 600))
+        valleys, _ = find_peaks(-1*np.array(y), prominence=10, height=(-600, -200))
+
+        for idx, indices in enumerate([peaks, valleys]):
+            for k in indices:
+                plt.vlines(x=x[k], ymin=0, ymax=y[k], linestyle=':', color='purple')
 
     def curve_fitting(self):
         l = (7.5-0.159*2)*1e-2                                                                                                          # [m]
@@ -172,6 +193,8 @@ class Plot:
         plt.yticks(fontsize=25)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
+        plt.grid(True)
+        plt.legend(loc='best', fontsize=25)
         if dtype == 'CD':
             plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
@@ -179,15 +202,13 @@ class Plot:
         elif dtype == 'CB':
             plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-            # plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+            plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
-        plt.grid(True)
-        plt.legend(loc='best', fontsize=25)
         plt.show()
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -198,4 +219,4 @@ if __name__ == "__main__":
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 1, 5, 5.12, 2.50, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 11, 5, 5.12, 4.99, 'CB', 'vapor')
