@@ -9,7 +9,7 @@ class Theory:
 
     def Kn_density(self, T):
         '''
-        Potassium number density
+        Potassium number density based on experienced formula
         '''
         if 24.85 < T <= 63.35:
             Kp = 10 ** (9.967 - 4646 / (273.15 + T))                                                                                    # [Pa]
