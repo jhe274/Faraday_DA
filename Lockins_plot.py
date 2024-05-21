@@ -8,13 +8,6 @@ from theory import Theory
 from read import Read
 from analyze import Analyze
 
-dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-# dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
-K_vapor = os.path.join(dir_path, 'K vapor cell')
-Bristol = os.path.join(K_vapor, 'Bristol data')
-Lockins = os.path.join(K_vapor, 'Lockins data')
-Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
-
 class Plot:
 
     def __init__(self):
@@ -33,14 +26,14 @@ class Plot:
             Lambd, X[i] = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], X[i][l_idx])
             Lambd, Y[i] = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], Y[i][l_idx])
             x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
-            colors = 'y' if i == run else ('r' if i == run+1 else 'b')
+            colors = 'b' if i == run else ('g' if i == run+1 else ('r' if i ==run+2 else 'c'))
 
             if name == 'f':
-                scale_factor = 1e6  # RMS Voltage: [microV]
+                scale_factor = 1e6                                                                                          # RMS Voltage: [mV]
             elif name == '2f':
-                scale_factor = 1e6  # RMS Voltage: [microV]
+                scale_factor = 1e6                                                                                          # RMS Voltage: [mV]
             else:
-                scale_factor = 1e3  # RMS Voltage: [mV]
+                scale_factor = 1e3                                                                                          # RMS Voltage: [V]
 
             # Apply the scaling factor to X and Y arrays
             X[i] = X[i] * scale_factor
@@ -49,10 +42,12 @@ class Plot:
             # Plot X and Y with the appropriate labels
             label_x = (r'$\text{X}_\text{f}$' if name == 'f' else 
                     r'$\text{X}_\text{2f}$' if name == '2f' else 
-                    r'$\text{X}_\text{dc}$') + (', air' if i == run else ', vapor cell')
+                    r'$\text{X}_\text{dc}$') + (', air' if i == run else 
+                    r', $\theta_\text{cell}=0°$')
             label_y = (r'$\text{Y}_\text{f}$' if name == 'f' else 
                     r'$\text{Y}_\text{2f}$' if name == '2f' else 
-                    r'$\text{Y}_\text{dc}$') + (', air' if i == run else ', vapor cell')
+                    r'$\text{Y}_\text{dc}$') + (', air' if i == run else 
+                    r', $\theta_\text{cell}=0°$')
 
             ax.plot(x, X[i][1:], color=colors, label=label_x, linestyle='-', linewidth=1, marker='^', markevery=200, markersize=10)
             ax.plot(x, Y[i][1:], color=colors, label=label_y, linestyle='-', linewidth=1, marker='x', markevery=200, markersize=10)
@@ -99,15 +94,15 @@ class Plot:
 
         if name == 'f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_{\omega}$ ($\mu$V)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  r'$\text{XY}_{\omega}$ (mV)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+3}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_{2\omega}$ ($\mu$V)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  r'$\text{XY}_{2\omega}$ (mV)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+3}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
+                                  r'$\text{XY}_\text{dc}$ (V)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+3}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
     def R_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
@@ -126,11 +121,19 @@ class Plot:
             self.Rplot(Bristol_t, Lambda, para, lockins_t, Rdc, run-1, n, name, 'Frequency (GHz)',
                                   r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
-            
-plotter = Plot()
-date_input = '05-09-2024'
-date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
-Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
-Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 11, 5, 5.12, 4.99) 
-# plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 
+
+if __name__ == "__main__":
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    K_vapor = os.path.join(dir_path, 'K vapor cell')
+    Bristol = os.path.join(K_vapor, 'Bristol data')
+    Lockins = os.path.join(K_vapor, 'Lockins data')
+    Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
+
+    plotter = Plot()
+    date_input = '05-03-2024'
+    date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
+    Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
+    Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 5, 5.09, 1.65) 
+    # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 

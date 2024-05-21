@@ -61,9 +61,9 @@ class Plot:
             # ax.plot(x[i - run + 1], Eps[i - run + 1][1:], label=(r'$\epsilon_\text{air}$' if i-run+1 == 0 
             #                                         else r'$\epsilon_\text{vapor cell}$')
             #         )
-            ax.plot(x[i - run + 1], The[i - run + 1][1:], label=(r'$\theta_\text{air}$' if i-run+1 == 0 
-                                                    else r'$\theta_\text{vapor cell}$')
-                    )
+            # ax.plot(x[i - run + 1], The[i - run + 1][1:], label=(r'$\theta_\text{air}$' if i-run+1 == 0 
+            #                                         else r'$\theta_\text{vapor cell}$')
+            #         )
 
         """
         Subtracting measured background epsilon/theta values from sample epsilon/theta values
@@ -267,18 +267,18 @@ class Plot:
         plt.show()
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '05-09-2024'
+    date_input = '05-15-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 1, 5, 5.12, 2.50)
+    plotter.Ellipticity_FR_X(Bristol_path, Lockins_path, 1, 5, 5.11, 5.08)
     # plotter.Ellipticity_FR_R(Bristol_path, Lockins_path, 17, 5, 5.103, 3)
     # plotter.theory_plot(0.0718, 5.103, 26)
