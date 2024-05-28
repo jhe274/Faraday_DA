@@ -215,8 +215,8 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '05-19-2024'
+    date_input = '05-24-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 13, 5, 5.09, 301.1, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 1, 5, 6.07, 99.8, 'CD', 'vapor')

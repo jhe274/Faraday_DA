@@ -29,11 +29,11 @@ class Plot:
             colors = 'b' if i == run else ('g' if i == run+1 else ('r' if i ==run+2 else 'c'))
 
             if name == 'f':
-                scale_factor = 1e6                                                                                          # RMS Voltage: [mV]
+                scale_factor = 1e3                                                                                          # RMS Voltage: [mV]
             elif name == '2f':
-                scale_factor = 1e6                                                                                          # RMS Voltage: [mV]
+                scale_factor = 1e3                                                                                          # RMS Voltage: [mV]
             else:
-                scale_factor = 1e3                                                                                          # RMS Voltage: [V]
+                scale_factor = 1                                                                                            # RMS Voltage: [V]
 
             # Apply the scaling factor to X and Y arrays
             X[i] = X[i] * scale_factor
@@ -94,15 +94,15 @@ class Plot:
 
         if name == 'f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_{\omega}$ (mV)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+3}' + 
+                                  r'$\text{XY}_{\omega}$ (mV)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_{2\omega}$ (mV)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+3}' + 
+                                  r'$\text{XY}_{2\omega}$ (mV)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_\text{dc}$ (V)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+3}' + 
+                                  r'$\text{XY}_\text{dc}$ (V)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
     def R_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
@@ -131,9 +131,9 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '05-03-2024'
+    date_input = '05-24-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 5, 5.09, 1.65) 
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 6.07, 99.8) 
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 
