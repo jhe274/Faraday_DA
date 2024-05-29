@@ -19,7 +19,7 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
 
-    def read_data(self, lambda_path, lockin_path, run, n):
+    def read_data(self, lambda_path, lockin_path, n, run):
         """
         Read measured wavelength and voltages and calculate the ellipticities and Faraday rotations
         """
@@ -47,11 +47,11 @@ class Plot:
             
         return x0, x, Eps, The
     
-    def physics_extraction(self, lambda_path, lockin_path, run, n):
+    def physics_extraction(self, lambda_path, lockin_path, n, run):
         """
         Calculate ellipticity/Faraday rotation by subtraction appropriate background
         """
-        x0, x, Eps, The = self.read_data(lambda_path, lockin_path, run, n)
+        x0, x, Eps, The = self.read_data(lambda_path, lockin_path, n, run)
         CD_empty, CD_vapor, CD_K, CB_empty, CB_vapor, CB_K = [], [], [], [], [], []
 
         runs = range(run-1, run+1)
@@ -79,11 +79,11 @@ class Plot:
 
         return x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K
     
-    def raw_plot(self, lambda_path, lockin_path, run, n, B, power, dtype):
+    def raw_plot(self, lambda_path, lockin_path, n, run, B, power, dtype):
         """
         Plot ellipticity/FR for each individual measurements
         """
-        x0, x, Eps, The = self.read_data(lambda_path, lockin_path, run, n)
+        x0, x, Eps, The = self.read_data(lambda_path, lockin_path, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         runs = range(run-1, run+1)
@@ -115,11 +115,11 @@ class Plot:
         
         self.plot_settings(n, B, power, date, dtype)
 
-    def extracted_plot(self, lambda_path, lockin_path, run, n, B, power, dtype, material):
+    def extracted_plot(self, lambda_path, lockin_path, n, run, B, power, dtype, material):
         """
         Plot background subtracted ellipticity/FR
         """
-        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, run, n)
+        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         if dtype == 'CD':
@@ -206,11 +206,11 @@ class Plot:
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
         plt.show()
 
-    def write(self, lambda_path, lockin_path, folder_path, filename, run, n, T, B, P):
+    def write(self, lambda_path, lockin_path, folder_path, filename, n, run, T, B, P):
         """
         Write the processed data to csv file
         """
-        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, run, n)
+        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, n, run)
         data = [x0[0], CD_vapor, CB_vapor]
 
         try:
@@ -226,7 +226,7 @@ class Plot:
             file_path = os.path.join(folder_path, filename)
             with open(file_path, "w") as file:
                 for attribute, value in zip(['Date (MM-DD-YYYY)', 'Temperature (°C)', 'Longitudinal magnetic field (G)', 'Power (microW)'],
-                                            [date_input, T, B, P]):
+                                            [date_input, T, -B, P]):
                     file.write(f'{attribute}, {value}\n')
 
                 header = 'Wavelength (m), Ellipticity (radian), Faraday rotation (radian)\n'
@@ -248,11 +248,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '05-23-2024'
+    date_input = '05-07-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    # plotter.extracted_plot(Bristol_path, Lockins_path, 1, 5, 6.07, 99.8, 'CD', 'vapor')
+    # plotter.extracted_plot(Bristol_path, Lockins_path, 5, 1, 5.12, 2.50, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 11, 5, 22.1, 6.07, 52)
+    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 5, 9, 20.9, 5.12, 2.49)
