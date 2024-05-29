@@ -42,8 +42,8 @@ class Plot:
 
             x0.append(Lambd)                                                                                                                                # [m]
             x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
-            Eps.append(ep * 1e3)                                                                                                                            # [millirad]
-            The.append(th * 1e3)                                                                                                                            # [microrad]
+            Eps.append(ep)                                                                                                                            # [millirad]
+            The.append(th)                                                                                                                            # [microrad]
             
         return x0, x, Eps, The
     
@@ -77,7 +77,7 @@ class Plot:
                 CD_vapor.append(Eps[1][idx_vapor] - Eps[0][idx])
                 CB_vapor.append(The[1][idx_vapor] - The[0][idx])
 
-        return x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K
+        return x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K
     
     def raw_plot(self, lambda_path, lockin_path, run, n, B, power, dtype):
         """
@@ -119,7 +119,7 @@ class Plot:
         """
         Plot background subtracted ellipticity/FR
         """
-        x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, run, n)
+        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, run, n)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         if dtype == 'CD':
@@ -206,17 +206,53 @@ class Plot:
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
         plt.show()
 
+    def write(self, lambda_path, lockin_path, folder_path, filename, run, n, T, B, P):
+        """
+        Write the processed data to csv file
+        """
+        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, run, n)
+        data = [x0[0], CD_vapor, CB_vapor]
+
+        try:
+            counter = 1
+            original_filename = filename
+            folder_path = os.path.join(folder_path, date_input)
+            os.makedirs(folder_path, exist_ok=True)
+            
+            while os.path.isfile(os.path.join(folder_path, filename)):
+                filename = f"{original_filename.split('.')[0]}_{counter}.csv"
+                counter += 1
+
+            file_path = os.path.join(folder_path, filename)
+            with open(file_path, "w") as file:
+                for attribute, value in zip(['Date (MM-DD-YYYY)', 'Temperature (°C)', 'Longitudinal magnetic field (G)', 'Power (microW)'],
+                                            [date_input, T, B, P]):
+                    file.write(f'{attribute}, {value}\n')
+
+                header = 'Wavelength (m), Ellipticity (radian), Faraday rotation (radian)\n'
+                file.write(header)
+
+                for row in list(zip(*data)):
+                    file.write(','.join(map(str, row)) + '\n')
+
+        except Exception as e:
+            print(f"An error occurred while saving data to the file: {e}")
+
 if __name__ == "__main__":
-    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
-
+    processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
+    
     plotter = Plot()
-    date_input = '05-24-2024'
+    date_input = '05-23-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 1, 5, 6.07, 99.8, 'CD', 'vapor')
+    # plotter.extracted_plot(Bristol_path, Lockins_path, 1, 5, 6.07, 99.8, 'CD', 'vapor')
+
+    FR_file = f'FaradayRotation_{date_input}.csv'
+    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 11, 5, 22.1, 6.07, 52)
