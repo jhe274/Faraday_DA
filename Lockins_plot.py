@@ -16,7 +16,7 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
 
-    def XYplot(self, Bristol_t, Lambda, para, y_t, X, Y, run, n, name, xlabel, ylabel, title):
+    def XYplot(self, Bristol_t, Lambda, para, y_t, X, Y, n, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
         for i in range(run, run+2):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
@@ -33,7 +33,7 @@ class Plot:
             elif name == '2f':
                 scale_factor = 1e3                                                                                          # RMS Voltage: [mV]
             else:
-                scale_factor = 1                                                                                            # RMS Voltage: [V]
+                scale_factor = 1e3                                                                                          # RMS Voltage: [mV]
 
             # Apply the scaling factor to X and Y arrays
             X[i] = X[i] * scale_factor
@@ -63,7 +63,7 @@ class Plot:
         plt.savefig(os.path.join(Plots, f'{date}', f'XY{name}_{date}_run{i}-{i+1}.png'))
         plt.show()
 
-    def Rplot(self, Bristol_t, Lambda, para, y_t, R, run, n, name, xlabel, ylabel, title):
+    def Rplot(self, Bristol_t, Lambda, para, y_t, R, n, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         for i in range(run, run+2):
             Bristol_t[i], Lambda[i] = self.analyzer.filter_data(Bristol_t[i], Lambda[i])
@@ -88,37 +88,37 @@ class Plot:
         # plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}.png'))
         plt.show()
 
-    def XY_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
+    def XY_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
         para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
 
         if name == 'f':
-            self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, run-1, n, name, 'Frequency (GHz)',
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{XY}_{\omega}$ (mV)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
-            self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, run-1, n, name, 'Frequency (GHz)',
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{XY}_{2\omega}$ (mV)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
-            self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_\text{dc}$ (V)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, n, run-1, name, 'Frequency (GHz)',
+                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
-    def R_vs_nu(self, lambda_path, lockins_path, name, run, n, B, power):
+    def R_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
         para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockins_path)
 
         if name == 'f':
-            self.Rplot(Bristol_t, Lambda, para, lockins_t, R1f, run-1, n, name, 'Frequency (GHz)',
+            self.Rplot(Bristol_t, Lambda, para, lockins_t, R1f, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{R}_{\omega}$ ($\mu$V)', r'$\text{R}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == '2f':
-            self.Rplot(Bristol_t, Lambda, para, lockins_t, R2f, run-1, n, name, 'Frequency (GHz)',
+            self.Rplot(Bristol_t, Lambda, para, lockins_t, R2f, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{R}_{2\omega}$ ($\mu$V)', r'$\text{R}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
-            self.Rplot(Bristol_t, Lambda, para, lockins_t, Rdc, run-1, n, name, 'Frequency (GHz)',
+            self.Rplot(Bristol_t, Lambda, para, lockins_t, Rdc, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
 
@@ -131,9 +131,9 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '05-24-2024'
+    date_input = '06-14-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 6.07, 99.8) 
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.07, 0.25) 
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 

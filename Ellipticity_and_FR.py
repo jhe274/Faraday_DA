@@ -42,8 +42,8 @@ class Plot:
 
             x0.append(Lambd)                                                                                                                                # [m]
             x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
-            Eps.append(ep)                                                                                                                            # [millirad]
-            The.append(th)                                                                                                                            # [microrad]
+            Eps.append(ep*1e6)                                                                                                                            # [millirad]
+            The.append(th*1e6)                                                                                                                            # [microrad]
             
         return x0, x, Eps, The
     
@@ -196,11 +196,11 @@ class Plot:
         plt.grid(True)
         plt.legend(loc='best', fontsize=25)
         if dtype == 'CD':
-            plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
+            plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
             plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
         elif dtype == 'CB':
-            plt.ylabel(r'Faraday Rotation (millirad.)', fontsize=25)
+            plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
             plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
@@ -239,8 +239,8 @@ class Plot:
             print(f"An error occurred while saving data to the file: {e}")
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -248,11 +248,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '05-07-2024'
+    date_input = '06-14-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    # plotter.extracted_plot(Bristol_path, Lockins_path, 5, 1, 5.12, 2.50, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 5, 1, 4.07, 0.25, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 5, 9, 20.9, 5.12, 2.49)
+    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 5, 9, 20.9, 5.12, 2.49)
