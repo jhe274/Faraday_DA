@@ -33,7 +33,7 @@ class Plot:
             elif name == '2f':
                 scale_factor = 1e3                                                                                          # RMS Voltage: [mV]
             else:
-                scale_factor = 1                                                                                            # RMS Voltage: [V]
+                scale_factor = 1e3                                                                                          # RMS Voltage: [mV]
 
             # Apply the scaling factor to X and Y arrays
             X[i] = X[i] * scale_factor
@@ -101,8 +101,8 @@ class Plot:
                                   r'$\text{XY}_{2\omega}$ (mV)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
         elif name == 'dc':
-            self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, run-1, n, name, 'Frequency (GHz)',
-                                  r'$\text{XY}_\text{dc}$ (V)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
+            self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, n, run-1, name, 'Frequency (GHz)',
+                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
             
     def R_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
@@ -123,17 +123,17 @@ class Plot:
                                   f', $B_z$={-B} G, $P$={power} $\mu$W' + ' @'+ str(date))
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '05-24-2024'
+    date_input = '06-18-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 1, 5, 6.07, 99.8) 
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.05, 0.25) 
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 
