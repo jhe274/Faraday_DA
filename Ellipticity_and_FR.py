@@ -19,13 +19,17 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
 
-    def read_data(self, lambda_path, lockin_path, n, run):
+    def read_data(self, lambda_path, lockin_path, dtype, n, run):
         """
         Read measured wavelength and voltages and calculate the ellipticities and Faraday rotations
         """
         B_t, Lambda = self.reader.Bristol(lambda_path)
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockin_path)
-        epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path, X1f, X2f, Xdc)
+        if dtype == 'X':
+            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockin_path)
+            epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path, X1f, X2f, Xdc)
+        elif dtype == 'R':
+            para, lockins_t, R1f, R2f, Rdc = self.analyzer.R_lockins(lockin_path)
+            epsilon, theta = self.analyzer.FR_double_Kvapor(lockin_path, R1f, R2f, Rdc)
         x, x0, Eps, The = [], [], [], []
 
         runs = range(run-1, run+1)
@@ -42,16 +46,16 @@ class Plot:
 
             x0.append(Lambd)                                                                                                                                # [m]
             x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
-            Eps.append(ep*1e6)                                                                                                                            # [microrad]
-            The.append(th*1e6)                                                                                                                            # [microrad]
+            Eps.append(ep*1e3)                                                                                                                              # [millirad]
+            The.append(th*1e6)                                                                                                                              # [microrad]
             
         return x0, x, Eps, The
     
-    def physics_extraction(self, lambda_path, lockin_path, n, run):
+    def physics_extraction(self, lambda_path, lockin_path, dtype, n, run):
         """
         Calculate ellipticity/Faraday rotation by subtraction appropriate background
         """
-        x0, x, Eps, The = self.read_data(lambda_path, lockin_path, n, run)
+        x0, x, Eps, The = self.read_data(lambda_path, lockin_path, dtype, n, run)
         CD_empty, CD_vapor, CD_K, CB_empty, CB_vapor, CB_K = [], [], [], [], [], []
 
         runs = range(run-1, run+1)
@@ -115,21 +119,21 @@ class Plot:
         
         self.plot_settings(n, B, power, date, dtype)
 
-    def extracted_plot(self, lambda_path, lockin_path, n, run, B, power, dtype, material):
+    def extracted_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material):
         """
         Plot background subtracted ellipticity/FR
         """
-        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, n, run)
+        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, dtype, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
-        if dtype == 'CD':
+        if phytype == 'CD':
             if material == 'empty':
                 ax.plot(x[0], CD_empty, '.', label=r'$\epsilon_\text{empty cell}-\epsilon_\text{air}$', markersize=2)
             elif material == 'vapor':
                 ax.plot(x[0], CD_vapor, '.', label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{air}$', markersize=2)
             elif material == 'K':
                 ax.plot(x[1], CD_K, '.', label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', markersize=2)
-        elif dtype == 'CB':
+        elif phytype == 'CB':
             if material == 'empty':
                 ax.plot(x[0], CB_empty, '.', label=r'$\theta_\text{empty cell}-\theta_\text{air}$', markersize=2)
             elif material == 'vapor':
@@ -138,7 +142,7 @@ class Plot:
                 ax.plot(x[1], CB_K, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$', markersize=2)
 
         # self.peaks_valleys_plot(x[0], CB_vapor)
-        self.plot_settings(run, B, power, date, dtype)
+        self.plot_settings(run, B, power, date, dtype, phytype)
 
     def peaks_valleys_plot(self, x, y):
         """
@@ -187,7 +191,7 @@ class Plot:
         # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, Kn, T, Bz, PK, const), '--', color='red', label='Curve fit')
         # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, 1.474, 19.497, -5.103, -.002, -60), '--', color='green', label='Manual fit')
 
-    def plot_settings(self, run, B, power, date, dtype):
+    def plot_settings(self, run, B, power, date, dtype, phytype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         plt.xticks(np.arange(-5, 6, 1), fontsize=25)
         plt.yticks(fontsize=25)
@@ -195,22 +199,28 @@ class Plot:
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         plt.legend(loc='best', fontsize=25)
-        if dtype == 'CD':
-            plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
+        if phytype == 'CD':
+            plt.ylabel(r'Ellipticity (millirad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-            plt.savefig(os.path.join(Plots, f'{date}', f'Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        elif dtype == 'CB':
+            if dtype == 'X':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]_Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+            elif dtype == 'R':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[R]_Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        elif phytype == 'CB':
             plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
-            plt.savefig(os.path.join(Plots, f'{date}', f'FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+            if dtype == 'X':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+            elif dtype == 'R':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[R]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
         plt.show()
 
-    def write(self, lambda_path, lockin_path, folder_path, filename, n, run, T, B, P):
+    def write(self, lambda_path, lockin_path, folder_path, filename, dtype, n, run, T, B, P):
         """
         Write the processed data to csv file
         """
-        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, n, run)
+        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.physics_extraction(lambda_path, lockin_path, dtype, n, run)
         data = [x0[0], CD_vapor, CB_vapor]
 
         try:
@@ -248,11 +258,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '06-21-2024'
+    date_input = '06-18-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 5, 1, 4.03, 2.01, 'CD', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 'R', 5, 9, 4.05, 2.01, 'CD', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 5, 9, 20.9, 5.12, 2.49)
+    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 9, 22.4, 4.04, 4.01)

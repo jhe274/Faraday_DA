@@ -71,10 +71,14 @@ class Plot:
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
             Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
             x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
-            # y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
-            y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+            y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
+            # y = y * 1e6                                                                                                     # RMS Voltage: [microV]
 
-            ax.scatter(x, y[1:], label="cell inserted" if i == run else "cell removed" , s=1)
+            label_R = (r'$\text{R}_\text{f}$' if name == 'f' else 
+                    r'$\text{R}_\text{2f}$' if name == '2f' else 
+                    r'$\text{R}_\text{dc}$') + (', air' if i == run else 
+                    r', $\theta_\text{cell}=0°$')
+            ax.scatter(x, y[1:], label=label_R , s=1)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -107,7 +111,7 @@ class Plot:
             
     def R_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
-        para, lockins_t, R1f, R2f, Rdc, epsilon, theta = self.analyzer.FR_double_Kvapor(lockins_path)
+        para, lockins_t, R1f, R2f, Rdc = self.analyzer.R_lockins(lockins_path)
 
         if name == 'f':
             self.Rplot(Bristol_t, Lambda, para, lockins_t, R1f, n, run-1, name, 'Frequency (GHz)',
@@ -135,5 +139,5 @@ if __name__ == "__main__":
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 1, 4.03, 2.01) 
-    # plotter.R_vs_nu(Bristol_path, Lockins_path, 'f', 5, 5, 5.07, 3) 
+    # plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 9, 4.03, 4.01)
+    plotter.R_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.04, 2.01) 
