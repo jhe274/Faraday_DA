@@ -47,7 +47,7 @@ class Plot:
             x0.append(Lambd)                                                                                                                                # [m]
             x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
             Eps.append(ep*1e3)                                                                                                                              # [millirad]
-            The.append(th*1e6)                                                                                                                              # [microrad]
+            The.append(th*1e3)                                                                                                                              # [millirad]
             
         return x0, x, Eps, The
     
@@ -207,7 +207,7 @@ class Plot:
             elif dtype == 'R':
                 plt.savefig(os.path.join(Plots, f'{date}', f'[R]_Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
         elif phytype == 'CB':
-            plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
+            plt.ylabel(r'Faraday Rotation (millirad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={-B} G, $P$={power} $\mu$W @{date}', fontsize=25)
             if dtype == 'X':
                 plt.savefig(os.path.join(Plots, f'{date}', f'[X]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
@@ -258,11 +258,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '06-18-2024'
+    date_input = '06-27-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 'R', 5, 9, 4.05, 2.01, 'CD', 'vapor')
+    # plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 5, 4.05, 12.0, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 9, 22.4, 4.04, 4.01)
+    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 11, 21.9, 4.05, 301.3)
