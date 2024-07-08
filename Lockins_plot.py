@@ -135,9 +135,9 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '06-27-2024'
+    date_input = '07-01-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 11, 4.05, 301.3)
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 3, 4.05, 399.1)
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.04, 2.01) 

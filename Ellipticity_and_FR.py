@@ -258,11 +258,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '06-27-2024'
+    date_input = '07-01-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    # plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 5, 4.05, 12.0, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 3, 4.05, 399.1, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 11, 21.9, 4.05, 301.3)
+    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 11, 21.9, 4.05, 301.3)
