@@ -46,8 +46,8 @@ class Plot:
 
             x0.append(Lambd)                                                                                                                                # [m]
             x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
-            Eps.append(ep*1e3)                                                                                                                              # [millirad]
-            The.append(th*1e3)                                                                                                                              # [millirad]
+            Eps.append(ep)                                                                                                                              # [millirad]
+            The.append(th)                                                                                                                              # [millirad]
             
         return x0, x, Eps, The
     
@@ -235,7 +235,7 @@ class Plot:
 
             file_path = os.path.join(folder_path, filename)
             with open(file_path, "w") as file:
-                for attribute, value in zip(['Date (MM-DD-YYYY)', 'Temperature (°C)', 'Longitudinal magnetic field (G)', 'Power (microW)'],
+                for attribute, value in zip(['Date (MM-DD-YYYY)', 'Temperature (Â°C)', 'Longitudinal magnetic field (G)', 'Power (microW)'],
                                             [date_input, T, -B, P]):
                     file.write(f'{attribute}, {value}\n')
 
@@ -249,8 +249,8 @@ class Plot:
             print(f"An error occurred while saving data to the file: {e}")
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -258,11 +258,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '07-01-2024'
+    date_input = '06-27-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 3, 4.05, 399.1, 'CB', 'vapor')
+    # plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 3, 4.05, 399.1, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 11, 21.9, 4.05, 301.3)
+    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 1, 21.90, 4.05, 25.45)
