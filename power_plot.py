@@ -59,6 +59,7 @@ if __name__ == "__main__":
     # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
 
+    plotter = Plot()
     dates = ['06-18-2024', '06-24-2024', '06-25-2024', '06-26-2024', '06-27-2024', '07-01-2024',
                 '05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024',
                 '05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
