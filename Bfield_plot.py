@@ -65,5 +65,5 @@ if __name__ == "__main__":
     dates_6G = ['05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
     date_input = '05-19-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
-    Plots = os.path.join(processed_path, 'Sort by B-field', '6 Gauss measurements')
+    Plots = os.path.join(processed_path, 'Correlation plots', 'Sort by B-field', '6 Gauss measurements')
     plotter.corr_plot(dates_6G, 'CB')
