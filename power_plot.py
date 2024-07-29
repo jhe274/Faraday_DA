@@ -46,12 +46,12 @@ class Plot:
         plt.legend(loc='best', markerscale=5, fontsize=15)
         if phytype == 'CD':
             plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
-            plt.title(r'Ellipticity  vs Frequency with $P\simeq6.1$ G', fontsize=25)
-            plt.savefig(os.path.join(Plots, f'[X]_Ellipticity_vs_Frequency.png'))
+            plt.title(f'Ellipticity  vs Frequency with $P\simeq${power} $\mu$W', fontsize=25)
+            plt.savefig(os.path.join(Plots, f'[X]_Ellipticity_vs_Frequency_{power}microW.png'))
         elif phytype == 'CB':
             plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
-            plt.title(r'Faraday Rotation vs Frequency with $P\simeq6.1$ G', fontsize=25)
-            plt.savefig(os.path.join(Plots, f'[X]_FR_vs_Frequency.png'))
+            plt.title(f'Faraday Rotation vs Frequency with $P\simeq${power} $\mu$W', fontsize=25)
+            plt.savefig(os.path.join(Plots, f'[X]_FR_vs_Frequency_{power}microW.png'))
         plt.show()
 
 if __name__ == "__main__":
