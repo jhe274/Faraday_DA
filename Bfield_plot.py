@@ -30,12 +30,12 @@ class Plot:
                 if phytype == 'CD':
                     ax.plot(x[j], ellip[j]*1e6, '.', label=f'T={temp[j]}°C, $B_z$={Bz[j]} G, P={power[j]} $\mu$W', markersize=2)
                     
-                if phytype == 'CB':
+                elif phytype == 'CB':
                     ax.plot(x[j], theta[j]*1e6, '.', label=f'T={temp[j]}°C, $B_z$={Bz[j]} G, P={power[j]} $\mu$W', markersize=2)
 
-        self.plot_settings(date[0], phytype)
+        self.plot_settings(phytype)
         
-    def plot_settings(self, date, phytype):
+    def plot_settings(self, phytype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         plt.xticks(np.arange(-5, 6, 1), fontsize=25)
         plt.yticks(fontsize=25)
