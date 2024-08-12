@@ -1,5 +1,4 @@
 import os, glob
-import datetime as dt
 import numpy as np
 import scipy.special
 import matplotlib.pyplot as plt
@@ -17,25 +16,38 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
     
-    def corr_plot(self, dates, phytype):
+    def corr_plot(self, dates, phytype, datatype):
         
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
         
         for i in dates:
             path = glob.glob(os.path.join(processed_path, i, '*.csv'))
-            date, temp, Bz, power, wl, ellip, theta = self.reader.ellip_theta(path)
+            date, T, B, P, x1, y1, y2 = self.reader.ellip_theta(path)
+            T, B, P = map(self.analyzer.convert_to_float_array, [T, B, P])
             x = []
             for j in range(len(path)):
-                x.append(self.consts.c / wl[j] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
+                x.append(self.consts.c / x1[j] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
+                smoothed_y1 = self.analyzer.smooth(y1[j]*1e6, 90)
+                smoothed_y2 = self.analyzer.smooth(y2[j]*1e6, 90)
+                y1_grad = np.gradient(y1[j]*1e6, x[j])
+                y2_grad = np.gradient(y2[j]*1e6, x[j])
+                label = f'T={T[j]:.2f}°C, $B_z$={B[j]:.2f} G, P={P[j]:.2f} μW'
                 if phytype == 'CD':
-                    ax.plot(x[j], ellip[j]*1e6, '.', label=f'T={temp[j]}°C, $B_z$={Bz[j]} G, P={power[j]} $\mu$W', markersize=2)
-                    
+                    if datatype == 'raw':
+                        ax.plot(x[j], y1[j]*1e6, '.', label=label, markersize=2)
+                        ax.plot(x[j], smoothed_y1, '.', label=label, markersize=2)
+                    if datatype == 'grad':
+                        ax.plot(x[j], y1_grad, '.', label=label, markersize=2)
                 elif phytype == 'CB':
-                    ax.plot(x[j], theta[j]*1e6, '.', label=f'T={temp[j]}°C, $B_z$={Bz[j]} G, P={power[j]} $\mu$W', markersize=2)
+                    if datatype == 'raw':
+                        # ax.plot(x[j], y2[j]*1e6, '.', label=label, markersize=2)
+                        ax.plot(x[j], y2[j]*1e6-smoothed_y2, '.', label=label, markersize=2)
+                    if datatype == 'grad':
+                        ax.plot(x[j], y2_grad, '.', label=label, markersize=2)
 
-        self.plot_settings(phytype)
-        
-    def plot_settings(self, phytype):
+        self.plot_settings(phytype, datatype)
+
+    def plot_settings(self, phytype, datatype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         plt.xticks(np.arange(-5, 6, 1), fontsize=25)
         plt.yticks(fontsize=25)
@@ -43,15 +55,29 @@ class Plot:
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
-        plt.legend(loc='best', markerscale=5, fontsize=15)
+        plt.legend(loc='best', markerscale=10, fontsize=15)
+
+        plots_path = os.path.join(processed_path, 'Correlation plots', 'Sort by B-field', '6 Gauss measurements')
+        os.makedirs(plots_path, exist_ok=True)
+
         if phytype == 'CD':
-            plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
-            plt.title(r'Ellipticity  vs Frequency with $B_z\simeq6.1$ G', fontsize=25)
-            plt.savefig(os.path.join(Plots, f'[X]_Ellipticity_vs_Frequency_6G.png'))
+            if datatype == 'raw':
+                plt.ylabel(r'Ellipticity (microrad.)', fontsize=25)
+                plt.title(r'Ellipticity vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
+                plt.savefig(os.path.join(plots_path, f'[X]_Ellipticity_vs_Detuning_6G.png'))
+            elif datatype == 'grad':
+                plt.ylabel(r'$\nabla_\nu\epsilon$ (microrad/GHz)', fontsize=25)
+                plt.title(r'$\nabla_\nu\epsilon$ vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
+                plt.savefig(os.path.join(plots_path, f'[X]_gradEllipticity_vs_Detuning_6G.png'))
         elif phytype == 'CB':
-            plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
-            plt.title(r'Faraday Rotation vs Frequency with $B_z\simeq6.1$ G', fontsize=25)
-            plt.savefig(os.path.join(Plots, f'[X]_FR_vs_Frequency_6G.png'))
+            if datatype == 'raw':
+                plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
+                plt.title(r'Faraday Rotation vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
+                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_6G(featured).png'))
+            elif datatype == 'grad':
+                plt.ylabel(r'$\nabla_\nu\theta$ (microrad/GHz)', fontsize=25)
+                plt.title(r'$\nabla_\nu\theta$ vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
+                plt.savefig(os.path.join(plots_path, f'[X]_gradFR_vs_Detuning_6G.png'))
         plt.show()
 
 if __name__ == "__main__":
@@ -63,7 +89,5 @@ if __name__ == "__main__":
     dates_4G = ['06-18-2024', '06-24-2024', '06-25-2024', '06-26-2024', '06-27-2024', '07-01-2024']
     dates_5G = ['05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024']
     dates_6G = ['05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
-    date_input = '05-19-2024'
-    date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
-    Plots = os.path.join(processed_path, 'Correlation plots', 'Sort by B-field', '6 Gauss measurements')
-    plotter.corr_plot(dates_6G, 'CB')
+    
+    plotter.corr_plot(dates_6G, 'CB', 'raw')

@@ -136,3 +136,20 @@ class Analyze:
                 averages.append(avg_value)
 
         return np.array(averages), theta
+    
+    def convert_to_float_array(self, arr):
+        '''
+        Convert processed data from object to float array
+        '''
+        return np.array([np.array(lst, dtype=np.float64) for lst in np.array(arr, dtype=object)], dtype=object)
+    
+    def smooth(self, data, width=100):
+        len_data = len(data)
+        smoothed_data = np.zeros(len_data)
+        for i in range(len_data):
+            lower = max(0,i-width//2)
+            upper = min(i+width//2, len_data)
+            avg = np.mean(data[lower:upper])
+            smoothed_data[i] = avg
+
+        return smoothed_data
