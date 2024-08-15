@@ -7,6 +7,7 @@ from constants import Constants as Consts
 from theory import Theory
 from read import Read
 from analyze import Analyze
+from scipy.signal import find_peaks
 
 class Plot:
 
@@ -31,7 +32,7 @@ class Plot:
                 smoothed_y2 = self.analyzer.smooth(y2[j]*1e6, 90)
                 y1_grad = np.gradient(y1[j]*1e6, x[j])
                 y2_grad = np.gradient(y2[j]*1e6, x[j])
-                label = f'T={T[j]:.2f}°C, $B_z$={B[j]:.2f} G, P={P[j]:.2f} μW'
+                label = f'P={P[j]:.2f} μW'
                 if phytype == 'CD':
                     if datatype == 'raw':
                         ax.plot(x[j], y1[j]*1e6, '.', label=label, markersize=2)
@@ -40,8 +41,7 @@ class Plot:
                         ax.plot(x[j], y1_grad, '.', label=label, markersize=2)
                 elif phytype == 'CB':
                     if datatype == 'raw':
-                        # ax.plot(x[j], y2[j]*1e6, '.', label=label, markersize=2)
-                        ax.plot(x[j], y2[j]*1e6-smoothed_y2, '.', label=label, markersize=2)
+                        ax.plot(x[j], y2[j]*1e6, '.', label=label, markersize=2)
                     if datatype == 'grad':
                         ax.plot(x[j], y2_grad, '.', label=label, markersize=2)
 
@@ -73,7 +73,7 @@ class Plot:
             if datatype == 'raw':
                 plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
                 plt.title(r'Faraday Rotation vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
-                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_6G(featured).png'))
+                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_6G(poster).png'))
             elif datatype == 'grad':
                 plt.ylabel(r'$\nabla_\nu\theta$ (microrad/GHz)', fontsize=25)
                 plt.title(r'$\nabla_\nu\theta$ vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)

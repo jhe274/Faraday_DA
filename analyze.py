@@ -90,7 +90,7 @@ class Analyze:
         if x1[-1] > x2[-1]:
             print(y1[-1], x2[-1])
             idx = np.argmin(np.abs(x1 - x2[-1]))
-            trim_x1, trim_y1, trim_x2, trimmed_y2 = x1[:idx+1], y1[:idx+1], x2, y2
+            trim_x1, trim_y1, trim_x2, trim_y2 = x1[:idx+1], y1[:idx+1], x2, y2
         else:
             idx = np.argmin(np.abs(x2 - x1[-1]))
             trim_x1, trim_y1, trim_x2, trim_y2 = x1, y1, x2[:idx+1], y2[:idx+1]

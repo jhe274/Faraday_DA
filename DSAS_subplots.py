@@ -53,14 +53,15 @@ class Plot:
         dY = np.gradient(YY, XX)
         dYs = savgol_filter(dY, deriv=1, delta=XX[1]-XX[0], **savgol_params)
 
-        peaks, _ = find_peaks(Y, prominence=.0015, height=(.65, .68))
-        valleys, _ = find_peaks(-Y, prominence=0.01, height=(-.65, -.6))
+        peaks, _ = find_peaks(Y, prominence=.01, height=(0, .03))
+        valleys, _ = find_peaks(-Y, prominence=0.01, height=(0, 0.05))
         print(peaks, valleys)
         K39_diff = (X[valleys[0]] + self.consts.Nu39_D2 - self.consts.Nu39_D2_B) * 1e-9
         K41_D2_A = (self.consts.Nu41_D2_A-self.consts.Nu39_D2) * 1e-9 + K39_diff
         K41_D2_B = (self.consts.Nu41_D2_B-self.consts.Nu39_D2) * 1e-9 + K39_diff
         K41_D2_C = (self.consts.Nu41_D2_C-self.consts.Nu39_D2) * 1e-9 + K39_diff
         
+        print(X[peaks[0]], X[peaks[1]], X[valleys[0]])
         fig, axs = plt.subplots(2, 1, figsize=(12, 12))
         axs[0].plot(X, Y, color='red')
         for j,k in enumerate(peaks):
@@ -96,7 +97,8 @@ class Plot:
 
         fig.text(0.5, 0.04, 'Detuning (GHz)', ha='center', va='center', fontsize=25)
         fig.text(0.02, 0.5, 'Intensity (au)', ha='center', va='center', rotation='vertical', fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'SAS_KVC_{date}_run{run+l+1}.png'))
+        # plt.savefig(os.path.join(Plots, f'{date}', f'SAS_KVC_{date}_run{run+l+1}.png'))
+        plt.show()
 
     def V_vs_nu(self, lambda_path, y_path, run, n):
         """
@@ -109,9 +111,9 @@ class Plot:
                             # r'Doppler-free SAS of K vapor cell with blanced phoodetector @$T=36°$C')
 plotter = Plot()
 # date_input = input("Enter the date (MM-DD-YYYY): ")
-date_input = '02-13-2024'
+date_input = '02-12-2024'
 date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
 DLCpro_path = glob.glob(os.path.join(DLCpro, date, '*.csv'))
 Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
 Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-plotter.V_vs_nu(Bristol_path, DLCpro_path, 1, 5)
+plotter.V_vs_nu(Bristol_path, DLCpro_path, 3, 5)
