@@ -54,8 +54,8 @@ class Plot:
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
-        # plt.xticks(np.arange(-5, 6, 1), fontsize=25)
-        plt.xticks(np.arange(-1, 1, .1), fontsize=25)
+        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        # plt.xticks(np.arange(-.7, 1.3, .1), fontsize=25)
         plt.yticks(fontsize=25)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
@@ -100,15 +100,15 @@ class Plot:
         if name == 'f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{XY}_{\omega}$ (mV)', r'$\text{XY}_{\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={-B} G, $P$={power} μW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
         elif name == '2f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X2f, Y2f, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{XY}_{2\omega}$ (mV)', r'$\text{XY}_{2\omega}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={-B} G, $P$={power} μW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
         elif name == 'dc':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, Xdc, Ydc, n, run-1, name, 'Frequency (GHz)',
                                   r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Frequency, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={-B} G, $P$={power} μW' + ' @'+ str(date))
+                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
             
     def R_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
         Bristol_t, Lambda = self.reader.Bristol(lambda_path)
@@ -136,9 +136,9 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '09-07-2024'
+    date_input = '09-08-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 5, 0, 393.0)
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 9, 0.007, 26.4)
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.04, 2.01) 
