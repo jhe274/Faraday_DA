@@ -44,10 +44,10 @@ class Plot:
             Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon[i][l_idx])
             Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
 
-            x0.append(Lambd)                                                                                                                            # [m]
-            x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                               # [GHz]
-            Eps.append(ep*1e6)                                                                                                                          # [μrad]
-            The.append(th*1e6)                                                                                                                          # [μrad]
+            x0.append(Lambd)                                                                                                                                # [m]
+            x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
+            Eps.append(ep * 1e6)                                                                                                                                  # [μrad]
+            The.append(th * 1e6)                                                                                                                                  # [μrad]
             
         return x0, x, Eps, The
     
@@ -193,13 +193,16 @@ class Plot:
 
     def plot_settings(self, run, B, power, date, dtype, phytype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        # plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        plt.xticks(np.arange(-1, 1, .1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
         plt.legend(loc='best', fontsize=25)
         if phytype == 'CD':
+            plt.ylabel(r'Ellipticity (μrad.)', fontsize=25)
+            plt.title(f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             plt.ylabel(r'Ellipticity (μrad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
@@ -209,11 +212,13 @@ class Plot:
         elif phytype == 'CB':
             plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+            plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
+            plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
                 plt.savefig(os.path.join(Plots, f'{date}', f'[X]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
             elif dtype == 'R':
                 plt.savefig(os.path.join(Plots, f'{date}', f'[R]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
-        # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}\mu\text{{rad}}$', fontsize=25)
+        # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=25)
         plt.show()
 
     def write(self, lambda_path, lockin_path, folder_path, filename, dtype, n, run, T, B, P):
@@ -249,8 +254,8 @@ class Plot:
             print(f"An error occurred while saving data to the file: {e}")
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
@@ -258,11 +263,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '06-27-2024'
+    date_input = '09-07-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 11, 4.05, 301.3, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 5, 0, 393.0, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 1, 21.90, 4.05, 25.45)

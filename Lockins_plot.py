@@ -54,7 +54,8 @@ class Plot:
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
-        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        # plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        plt.xticks(np.arange(-1, 1, .1), fontsize=25)
         plt.yticks(fontsize=25)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
@@ -72,7 +73,7 @@ class Plot:
             Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
             x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
             y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
-            # y = y * 1e6                                                                                                     # RMS Voltage: [microV]
+            # y = y * 1e6                                                                                                     # RMS Voltage: [μV]
 
             label_R = (r'$\text{R}_\text{f}$' if name == 'f' else 
                     r'$\text{R}_\text{2f}$' if name == '2f' else 
@@ -135,9 +136,9 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '07-01-2024'
+    date_input = '09-07-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 3, 4.05, 399.1)
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 5, 0, 393.0)
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.04, 2.01) 
