@@ -29,13 +29,9 @@ class Plot:
             dia_FR = self.consts.mu_B * np.sign(B) * B * 1e-4 * (dia_FR1)
 
             para_FR = P * (
-                    (delta_nu_D2 / ((delta_nu_D2 - delta_doppler_D2) ** 2)) -
-                    (delta_nu_D1 / ((delta_nu_D1 - delta_doppler_D1) ** 2))
+                    (delta_nu_D2 / ((delta_nu_D2 - delta_doppler_D2) ** 2 + self.theory.doppler_broad(self.consts.Nu39_D2, T)**2/4)) -
+                    (delta_nu_D1 / ((delta_nu_D1 - delta_doppler_D1) ** 2 + self.theory.doppler_broad(self.consts.Nu39_D1, T)**2/4))
                 )
-            # para_FR = P * (
-            #         (delta_nu_D2 / (delta_nu_D2**2 + self.theory.doppler_broad(self.consts.Nu39_D2, T)**2/4)) -
-            #         (delta_nu_D1 / (delta_nu_D1**2 + self.theory.doppler_broad(self.consts.Nu39_D1, T)**2/4))
-            #     )
             theta = self.consts.alpha * Kn * 1e14 * l * (dia_FR + para_FR) * 1e6                                                  # [microrad]
             return theta
     

@@ -42,6 +42,7 @@ class Plot:
                 elif phytype == 'CB':
                     if datatype == 'raw':
                         ax.plot(x[j], y2[j]*1e6, '.', label=label, markersize=2)
+                        ax.text(-3, 1700, r'$B_z\simeq4.0$ G', fontsize=70, color='black', ha='center', va='bottom')
                     if datatype == 'grad':
                         ax.plot(x[j], y2_grad, '.', label=label, markersize=2)
 
@@ -72,8 +73,8 @@ class Plot:
         elif phytype == 'CB':
             if datatype == 'raw':
                 plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
-                plt.title(r'Faraday Rotation vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
-                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_6G(poster).png'))
+                plt.title(r'Faraday Rotation vs Frequency Detuning with $B_z\simeq4.0$ G', fontsize=25)
+                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_4G(poster).png'))
             elif datatype == 'grad':
                 plt.ylabel(r'$\nabla_\nu\theta$ (microrad/GHz)', fontsize=25)
                 plt.title(r'$\nabla_\nu\theta$ vs Frequency Detuning with $B_z\simeq6.1$ G', fontsize=25)
@@ -90,4 +91,4 @@ if __name__ == "__main__":
     dates_5G = ['05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024']
     dates_6G = ['05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
     
-    plotter.corr_plot(dates_6G, 'CB', 'raw')
+    plotter.corr_plot(dates_4G, 'CB', 'raw')

@@ -2,6 +2,7 @@ import os, glob
 import datetime as dt
 import numpy as np
 import scipy.special
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from constants import Constants as Consts
@@ -48,7 +49,8 @@ class Plot:
         result = self.find_closest_indices(P, power, n)
     
         for sub_idx, idx, value in result:
-            detun = self.consts.c / x1[sub_idx][idx] * 1e-9 - self.consts.Nu39_D2 * 1e-9
+            nu = self.consts.c / x1[sub_idx][idx]                                                                                       # [Hz]
+            detun = (nu - self.consts.Nu39_D2) * 1e-9                                                                                   # [GHz]
             smoothed_y1 = self.analyzer.smooth(y1[sub_idx][idx]*1e6, 90)
             smoothed_y2 = self.analyzer.smooth(y2[sub_idx][idx]*1e6, 90)
             y1_grad = np.gradient(y1[sub_idx][idx]*1e6, detun)
@@ -66,17 +68,46 @@ class Plot:
                     # ax.plot(detun, smoothed_y1_grad, '.', label=label, markersize=4)
             elif phytype == 'CB':
                 if datatype == 'raw':
-                    # ax.plot(detun, smoothed_y2, '.', label=label, markersize=4)
-                    peaks, _ = find_peaks(y2[sub_idx][idx] * 1e6, prominence=900, height=(2000, 3000))
-                    valleys, _ = find_peaks(-y2[sub_idx][idx] * 1e6, prominence=500, height=(2000, 2500))
-                    print(peaks, valleys)
-
-                    for index, indices in enumerate([peaks, valleys]):
-                        for k in indices:
-                            ax.plot(detun, y2[sub_idx][idx] * 1e6, '.', label=label, markersize=4)
-                            ax.axvline(x=detun[k], linestyle='--', label=label, markersize=4)
-                            print(detun[k])
-
+                    # peaks, _ = find_peaks(y2[sub_idx][idx] * 1e6, prominence=900, height=(2000, 3000))
+                    # valleys, _ = find_peaks(-y2[sub_idx][idx] * 1e6, prominence=500, height=(2000, 2500))
+                    # print(peaks, valleys)
+                    # for index, indices in enumerate([peaks, valleys]):
+                    #     for k in indices:
+                    ax.plot(detun, y2[sub_idx][idx] * 1e6, '.', label=label, markersize=4)
+                            # ax.axvline(x=detun[k], linestyle='--', label=label, markersize=4)
+                            # print(detun[k])
+        
+                    if sub_idx == 0:
+                        initial_guess = [0.8, 21.85, -4.05, 0, 45*1e-6]
+                        bounds = ([.1, 21.7, -4.15, -1, -100*1e-6], [2, 23, -3.95, 1, 100*1e-6])
+                        params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
+                        Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
+                        print(Kn_fit, T_fit, B_fit, P_fit, const)
+                        label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
+                        ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
+                                label=label_fit, linewidth=3)
+                        
+                    elif sub_idx == 14:
+                        initial_guess = [1.4, 20.3, -6.11, 0, 30*1e-6]
+                        bounds = ([.05, 20.3, -6.3, -1, -100*1e-6], [5, 23, -5.9, 1, 100*1e-6])
+                        params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
+                        Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
+                        print(Kn_fit, T_fit, B_fit, P_fit, const)
+                        label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
+                        ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
+                                label=label_fit, linewidth=3)
+                        
+                    elif sub_idx == 6:
+                        initial_guess = [1.1, 20.7, -5.12, 0, 34*1e-6]
+                        bounds = ([.5, 20.7, -5.3, -1, -100*1e-6], [1.5, 23, -4.9, 1, 100*1e-6])
+                        params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
+                        Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
+                        print(Kn_fit, T_fit, B_fit, P_fit, const)
+                        label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
+                        ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
+                                label=label_fit, linewidth=3)
+                    # ax.plot(detun, self.theory.resonant_FR(nu, 0.83, 21.85, -4.05, 0.013, 43.2*1e-6)*1e6, '--', color='red', label='Manual fit')
+                    # ax.plot(detun, self.theory.resonant_FR(nu, 1.474, 19.497, -5.12, .002, 60*1e-6)*1e6, '--', color='red', label='Manual fit')
                 elif datatype == 'grad':
                     ax.plot(detun, y2_grad, '.', label=label, markersize=4)
                     # ax.plot(detun, smoothed_y2_grad, '.', label=label, markersize=4)
@@ -90,10 +121,8 @@ class Plot:
                             ax.axvline(x=detun[k], linestyle='--')
                             print(detun[k])
 
-
-        
         self.plot_settings(power, phytype, datatype)
-
+    
     def plot_settings(self, power, phytype, datatype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
         plt.xticks(np.arange(-5, 6, 1), fontsize=25)
@@ -102,7 +131,7 @@ class Plot:
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
-        plt.legend(loc='best', markerscale=5, fontsize=15)
+        plt.legend(loc='best', markerscale=10, fontsize=25)
 
         plots_path = os.path.join(processed_path, 'Correlation plots', 'Sort by power', f'{power:.0f} Microwatts')
         os.makedirs(plots_path, exist_ok=True)
@@ -119,8 +148,8 @@ class Plot:
         elif phytype == 'CB':
             if datatype == 'raw':
                 plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
-                plt.title(f'Faraday Rotation vs Frequency Detuning with $P\simeq${power:.0f} μW', fontsize=25)
-                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_{power:.0f}microW(smoothed).png'))
+                plt.title(f'Faraday Rotation vs Frequency Detuning with $P\simeq${power:.2f} μW', fontsize=25)
+                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_{power:.0f}microW(fitted).png'))
             elif datatype == 'grad':
                 plt.ylabel(r'$\nabla_{\nu}\theta$ (microrad/GHz)', fontsize=25)
                 plt.title(rf'$\nabla_\nu\theta$ vs Frequency Detuning with $P\simeq${power:.0f} μW', fontsize=25)
@@ -136,4 +165,4 @@ if __name__ == "__main__":
     dates = ['06-18-2024', '06-24-2024', '06-25-2024', '06-26-2024', '06-27-2024', '07-01-2024',
                 '05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024',
                 '05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
-    plotter.corr_plot(dates, 'CB', 'raw', 400, 3)
+    plotter.corr_plot(dates, 'CB', 'raw', 0.5, 3)
