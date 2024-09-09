@@ -193,8 +193,8 @@ class Plot:
 
     def plot_settings(self, run, B, power, date, dtype, phytype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
-        # plt.xticks(np.arange(-.7, 1.3, .1), fontsize=25)
+        # plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
@@ -206,18 +206,18 @@ class Plot:
             plt.ylabel(r'Ellipticity (μrad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[X]_Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
             elif dtype == 'R':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[R]_Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(Plots, f'{date}', f'[R]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
         elif phytype == 'CB':
             plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[X]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
             elif dtype == 'R':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[R]_FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(Plots, f'{date}', f'[R]FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=25)
         plt.show()
 
@@ -263,11 +263,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '09-08-2024'
+    date_input = '09-09-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 9, 0.007, 26.4, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 3, 0, 26.8, 'CB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 1, 21.90, 4.05, 25.45)
