@@ -193,8 +193,8 @@ class Plot:
 
     def plot_settings(self, run, B, power, date, dtype, phytype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        # plt.xticks(np.arange(-5, 6, 1), fontsize=25)
-        plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
+        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        # plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
         plt.yticks(fontsize=25)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
@@ -263,11 +263,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
     
     plotter = Plot()
-    date_input = '09-09-2024'
+    date_input = '09-10-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 3, 0, 26.8, 'CB', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 9, 0.005, 2, 'CD', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 1, 21.90, 4.05, 25.45)
