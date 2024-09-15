@@ -54,8 +54,8 @@ class Plot:
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
-        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
-        # plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
+        # plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
         plt.yticks(fontsize=25)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(True)
@@ -136,9 +136,9 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '09-10-2024'
+    date_input = '09-15-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'f', 5, 9, 0.005, 2)
+    plotter.XY_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 9, 0.007, 76.4)
     # plotter.R_vs_nu(Bristol_path, Lockins_path, 'dc', 5, 1, 4.04, 2.01) 
