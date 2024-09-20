@@ -71,14 +71,14 @@ class Analyze:
         try:
             lambda_ubound = 766.72 * 1e-9
             lambda_lbound = 766.68 * 1e-9
-            condition = np.where(lambd < lambda_ubound)
-            # condition = np.logical_and(lambd > lambda_lbound, lambd < lambda_ubound)
+            # condition = np.where(lambd < lambda_ubound)
+            condition = np.logical_and(lambd > lambda_lbound, lambd < lambda_ubound)
             filtered_t = t[condition]
             filtered_lambd = lambd[condition]
             if filtered_lambd.size == 0:
                 raise ValueError("No lambda values found within the specified bounds.")
         except ValueError as e:
-            print(e)
+            # print(e)
             t, lambd = t, lambd
 
         return filtered_t, filtered_lambd
