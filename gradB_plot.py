@@ -65,19 +65,19 @@ class Plot:
                     freq.append(nu)
                     theta.append(y2[sub_idx][idx])
         
-        # Delta_the_6G, Delta_the_5G = [], []
-        # for idx, x_val in enumerate(freq[0]):
-        #     detun = (freq[0] - self.consts.Nu39_D2) * 1e-6 
-        #     idx_6G = np.argmin(np.abs(freq[1] - x_val))
-        #     Delta_the_6G.append(theta[1][idx_6G] - theta[0][idx])
-        # grad_6G = np.gradient(Delta_the_6G, .98)
-        # ax.plot(detun, grad_6G * 1e3, '.', label='6G-5G', markersize=4)
-        # for idx, x_val in enumerate(freq[2]):
-        #     detun = (freq[2] - self.consts.Nu39_D2) * 1e-6 
-        #     idx_5G =  np.argmin(np.abs(freq[0] - x_val))
-        #     Delta_the_5G.append(theta[0][idx_5G] - theta[2][idx])
-        # grad_5G = np.gradient(Delta_the_5G, 1.02)
-        # ax.plot(detun, grad_5G * 1e3, '.', label='5G-4G', markersize=4)
+        Delta_the_6G, Delta_the_5G = [], []
+        for idx, x_val in enumerate(freq[2]):
+            detun = (freq[2] - self.consts.Nu39_D2) * 1e-6 
+            idx_6G = np.argmin(np.abs(freq[1] - x_val))
+            Delta_the_6G.append(theta[1][idx_6G] - theta[2][idx])
+        grad_6G = np.gradient(Delta_the_6G, .98)
+        ax.plot(detun, grad_6G * 1e3, '.', label='6G-5G', markersize=4)
+        for idx, x_val in enumerate(freq[0]):
+            detun = (freq[0] - self.consts.Nu39_D2) * 1e-6 
+            idx_5G =  np.argmin(np.abs(freq[2] - x_val))
+            Delta_the_5G.append(theta[2][idx_5G] - theta[0][idx])
+        grad_5G = np.gradient(Delta_the_5G, 1.02)
+        ax.plot(detun, grad_5G * 1e3, '.', label='5G-4G', markersize=4)
 
         self.plot_settings(power, phytype, datatype)
     
@@ -123,4 +123,4 @@ if __name__ == "__main__":
     dates = ['06-18-2024', '06-24-2024', '06-25-2024', '06-26-2024', '06-27-2024', '07-01-2024',
                 '05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024',
                 '05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
-    plotter.corr_plot(dates, 'CB', 'raw', 400, 3)
+    plotter.corr_plot(dates, 'CB', 'grad', 400, 3)
