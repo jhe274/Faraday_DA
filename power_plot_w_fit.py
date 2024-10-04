@@ -1,7 +1,6 @@
 import os, glob
 import datetime as dt
 import numpy as np
-import scipy.special
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
@@ -149,7 +148,7 @@ class Plot:
             if datatype == 'raw':
                 plt.ylabel(r'Faraday Rotation (microrad.)', fontsize=25)
                 plt.title(f'Faraday Rotation vs Frequency Detuning with $P\simeq${power:.2f} μW', fontsize=25)
-                plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_{power:.0f}microW(fitted).png'))
+                # plt.savefig(os.path.join(plots_path, f'[X]_FR_vs_Detuning_{power:.0f}microW(fitted).png'))
             elif datatype == 'grad':
                 plt.ylabel(r'$\nabla_{\nu}\theta$ (microrad/GHz)', fontsize=25)
                 plt.title(rf'$\nabla_\nu\theta$ vs Frequency Detuning with $P\simeq${power:.0f} μW', fontsize=25)

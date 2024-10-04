@@ -53,17 +53,17 @@ class Theory:
 
         return Delta_Lambda_D2, Delta_nu_D2
     
-    def diamagnetic_FR(self, nu, l, Kn, T, B):
+    def diamagnetic_FR(self, nu, l, Kn, T, B, gamma_D1, gamma_D2):
         """
         Calculations of diamagnetic Faraday rotation
         """
         Delta_Lambda_D1, Delta_nu_D1 = self.Zeeman_D1(B)
         Delta_Lambda_D2, Delta_nu_D2 = self.Zeeman_D2(B)
 
-        print(f"Zeeman splitting of K D1 line with B={round(B*pow(10,4),3)} G is " , 
-              str(Delta_Lambda_D1*pow(10,9)), " nm = ", str(Delta_nu_D1*pow(10,-9)), " GHz")
-        print(f"Zeeman splitting of K D2 line with B={round(B*pow(10,4),3)} G is ",
-              str(Delta_Lambda_D2*pow(10,9)), " nm = ", str(Delta_nu_D2*pow(10,-9)), " GHz")
+        # print(f"Zeeman splitting of K D1 line with B={round(B*pow(10,4),3)} G is " , 
+        #       str(Delta_Lambda_D1*pow(10,9)), " nm = ", str(Delta_nu_D1*pow(10,-9)), " GHz")
+        # print(f"Zeeman splitting of K D2 line with B={round(B*pow(10,4),3)} G is ",
+        #       str(Delta_Lambda_D2*pow(10,9)), " nm = ", str(Delta_nu_D2*pow(10,-9)), " GHz")
         
         delta_nu_D2 = nu - self.consts.Nu39_D2
         delta_nu_D1 = nu - self.consts.Nu39_D1
@@ -71,9 +71,8 @@ class Theory:
         delta_doppler_D1 = self.doppler_broad(self.consts.Nu39_D1, T)
 
         dia_FR1 = ( 
-                (7*(delta_nu_D2**2 - delta_doppler_D2**2/4) / (delta_nu_D2**2 + delta_doppler_D2**2/4)**2) + 
-                (4*(delta_nu_D1**2 - delta_doppler_D1**2/4) / (delta_nu_D1**2 + delta_doppler_D1**2/4)**2) - 
-                (2 / (delta_nu_D2 * delta_nu_D1))) / (3 * self.consts.h)
+                (7*(delta_nu_D2**2 - (gamma_D2*1e6)**2/4) / (delta_nu_D2**2 + (gamma_D2*1e6)**2/4)**2) + 
+                (4*(delta_nu_D1**2 - (gamma_D1*1e6)**2/4) / (delta_nu_D1**2 + (gamma_D1*1e6)**2/4)**2)) / (3 * self.consts.h)
         
         # dia_FR2 = np.sign(B) * ((nu / (self.consts.Nu39_D1 * (nu - self.consts.Nu39_D1))) 
             #                            - (nu / (self.consts.Nu39_D2 * (nu - self.consts.Nu39_D2)))) / (self.consts.k_B * (273.15 + T))
@@ -82,7 +81,7 @@ class Theory:
 
         return dia_theta
     
-    def paramagnetic_FR(self, nu, l, Kn, T, P):
+    def paramagnetic_FR(self, nu, l, Kn, T, P, gamma_D1, gamma_D2):
         """
         Calculations of paramagnetic Faraday rotation
         """
@@ -92,15 +91,16 @@ class Theory:
         delta_doppler_D2 = self.doppler_broad(self.consts.Nu39_D2, T)
         delta_doppler_D1 = self.doppler_broad(self.consts.Nu39_D1, T)
 
-        para_FR = (delta_nu_D2 / ((delta_nu_D2 - delta_doppler_D2) ** 2 + self.doppler_broad(self.consts.Nu39_D2, T)**2/4))
-        - (delta_nu_D1 / ((delta_nu_D1 - delta_doppler_D1) ** 2 + self.doppler_broad(self.consts.Nu39_D1, T)**2/4))
+        para_FR = P * ((delta_nu_D2 / ((delta_nu_D2 - delta_doppler_D2) ** 2 + (gamma_D2*1e6)**2/4))
+        - (delta_nu_D1 / ((delta_nu_D1 - delta_doppler_D1) ** 2 + (gamma_D1*1e6)**2/4)))
         
-        para_theta = self.consts.alpha * Kn * 1e14 * l * P * para_FR                                                            # [rad]
+        para_theta = self.consts.alpha * Kn * 1e14 * l * para_FR                                                            # [rad]
 
         return para_theta
     
-    def resonant_FR(self, nu, Kn, T, B, P, const):
+    def resonant_FR(self, nu, Kn, T, B, P, gamma_D1, gamma_D2, const):
         l = (7.5-0.159*2)*1e-2                                                                                                  # [m]
-        theta = self.diamagnetic_FR(nu, l, Kn, T, B) + self.paramagnetic_FR(nu, l, Kn, T, P) + const
+        theta = (self.diamagnetic_FR(nu, l, Kn, T, B, gamma_D1, gamma_D2) 
+        + self.paramagnetic_FR(nu, l, Kn, T, P, gamma_D1, gamma_D2) + const)
 
         return theta
