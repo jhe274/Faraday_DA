@@ -100,7 +100,7 @@ class Theory:
     
     def resonant_FR(self, nu, Kn, T, B, P, gamma_D1, gamma_D2, const):
         l = (7.5-0.159*2)*1e-2                                                                                                  # [m]
-        theta = (self.diamagnetic_FR(nu, l, Kn, T, B, gamma_D1, gamma_D2) 
-        + self.paramagnetic_FR(nu, l, Kn, T, P, gamma_D1, gamma_D2) + const)
+        theta = self.diamagnetic_FR(nu, l, Kn, T, B, gamma_D1, gamma_D2) 
+        + self.paramagnetic_FR(nu, l, Kn, T, P, gamma_D1, gamma_D2) + const
 
         return theta

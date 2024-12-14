@@ -8,6 +8,7 @@ from constants import Constants as Consts
 from theory import Theory
 from read import Read
 from analyze import Analyze
+from Kadlecek_manipulate import Manipulate
 from scipy.signal import find_peaks
 
 class Plot:
@@ -17,6 +18,7 @@ class Plot:
         self.theory = Theory()
         self.reader = Read()
         self.analyzer = Analyze()
+        self.manip = Manipulate()
     
     def find_closest_indices(self, arrays, power, n):
         arrays = [np.asarray(subarray, dtype=np.float64) for subarray in arrays]
@@ -76,35 +78,35 @@ class Plot:
                             # ax.axvline(x=detun[k], linestyle='--', label=label, markersize=4)
                             # print(detun[k])
         
-                    if sub_idx == 0:
-                        initial_guess = [0.8, 21.85, -4.05, 0, 45*1e-6]
-                        bounds = ([.1, 21.7, -4.15, -1, -100*1e-6], [2, 23, -3.95, 1, 100*1e-6])
-                        params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
-                        Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
-                        print(Kn_fit, T_fit, B_fit, P_fit, const)
-                        label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
-                        ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
-                                label=label_fit, linewidth=3)
+                    # if sub_idx == 0:
+                    #     initial_guess = [0.8, 21.85, -4.05, 0, 45*1e-6]
+                    #     bounds = ([.1, 21.7, -4.15, -1, -100*1e-6], [2, 23, -3.95, 1, 100*1e-6])
+                    #     params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
+                    #     Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
+                    #     print(Kn_fit, T_fit, B_fit, P_fit, const)
+                    #     label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
+                    #     ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
+                    #             label=label_fit, linewidth=3)
                         
-                    elif sub_idx == 14:
-                        initial_guess = [1.4, 20.3, -6.11, 0, 30*1e-6]
-                        bounds = ([.05, 20.3, -6.3, -1, -100*1e-6], [5, 23, -5.9, 1, 100*1e-6])
-                        params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
-                        Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
-                        print(Kn_fit, T_fit, B_fit, P_fit, const)
-                        label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
-                        ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
-                                label=label_fit, linewidth=3)
+                    # elif sub_idx == 14:
+                    #     initial_guess = [1.4, 20.3, -6.11, 0, 30*1e-6]
+                    #     bounds = ([.05, 20.3, -6.3, -1, -100*1e-6], [5, 23, -5.9, 1, 100*1e-6])
+                    #     params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
+                    #     Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
+                    #     print(Kn_fit, T_fit, B_fit, P_fit, const)
+                    #     label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
+                    #     ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
+                    #             label=label_fit, linewidth=3)
                         
-                    elif sub_idx == 6:
-                        initial_guess = [1.1, 20.7, -5.12, 0, 34*1e-6]
-                        bounds = ([.5, 20.7, -5.3, -1, -100*1e-6], [1.5, 23, -4.9, 1, 100*1e-6])
-                        params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
-                        Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
-                        print(Kn_fit, T_fit, B_fit, P_fit, const)
-                        label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
-                        ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
-                                label=label_fit, linewidth=3)
+                    # elif sub_idx == 6:
+                    #     initial_guess = [1.1, 20.7, -5.12, 0, 34*1e-6]
+                    #     bounds = ([.5, 20.7, -5.3, -1, -100*1e-6], [1.5, 23, -4.9, 1, 100*1e-6])
+                    #     params, covariance = curve_fit(self.theory.resonant_FR, nu, y2[sub_idx][idx], p0=initial_guess, bounds=bounds)
+                    #     Kn_fit, T_fit, B_fit, P_fit, const = [np.round(val,4) for val in params[:4]] + [np.round(params[4] * 1e6,4)]
+                    #     print(Kn_fit, T_fit, B_fit, P_fit, const)
+                    #     label_fit = f'[K]={np.round(Kn_fit,2)}$\\times10^{{14}}$ m$^{{-3}}$, $B_z$={np.round(B_fit,2)} G, $P$={np.round(P_fit*1e2,2)}%'
+                    #     ax.plot(detun, self.theory.resonant_FR(nu, Kn_fit, T_fit, B_fit, P_fit, const*1e-6)*1e6, '--', 
+                    #             label=label_fit, linewidth=3)
                     # ax.plot(detun, self.theory.resonant_FR(nu, 0.83, 21.85, -4.05, 0.013, 43.2*1e-6)*1e6, '--', color='red', label='Manual fit')
                     # ax.plot(detun, self.theory.resonant_FR(nu, 1.474, 19.497, -5.12, .002, 60*1e-6)*1e6, '--', color='red', label='Manual fit')
                 elif datatype == 'grad':
@@ -119,8 +121,8 @@ class Plot:
                         for k in indices:
                             ax.axvline(x=detun[k], linestyle='--')
                             print(detun[k])
-
-        self.plot_settings(power, phytype, datatype)
+        self.manip.manipulate_plot(1.5, 21.7, -5, 0, 6, 6, 50)
+        # self.plot_settings(power, phytype, datatype)
     
     def plot_settings(self, power, phytype, datatype):
         plt.xlabel(r'Frequency (GHz)', fontsize=25)
