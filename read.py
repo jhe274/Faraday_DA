@@ -73,7 +73,7 @@ class Read:
         '''
         Read lock-ins data files
         '''
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = [], [], [], [], [], [], [], []
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = [], [], [], [], [], [], [], [], [], []
         for file in sorted(path, key=self.sort_key):
             settings = []                                                                                                           # Store extracted values from the current file
             with open(file, 'r') as f:
@@ -88,7 +88,7 @@ class Read:
                 para.append(settings)
             df = pd.read_csv(file, sep=',', header=None, skiprows=9, 
                                names=['Timestamp', 'X_1f', 'Y_1f',
-                                      'X_2f', 'Y_2f', 'X_dc', 'Y_dc'])
+                                      'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             start_time = df['Timestamp'].iloc[0]
             df['Timestamp'] = (df['Timestamp'] - start_time).dt.total_seconds()
@@ -99,9 +99,11 @@ class Read:
             Y2f.append(df['Y_2f'].to_numpy())                                                                                       # [V]
             Xdc.append(df['X_dc'].to_numpy())                                                                                       # [V]
             Ydc.append(df['Y_dc'].to_numpy())                                                                                       # [V]
+            Xmod.append(df['X_mod'].to_numpy())                                                                                     # [V]
+            Ymod.append(df['Y_mod'].to_numpy())                                                                                     # [V]
         para = np.array(para, dtype=object)
-
-        return para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc
+        
+        return para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod
     
     def ellip_theta(self, path):
         '''

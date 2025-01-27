@@ -12,83 +12,41 @@ class Analyze:
         """
         Calculate the R values from lock-in amplifiers
         """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.lockins(lockins_path)
-        R1f, R2f, Rdc, Rmod = [], [], [], []
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
+        R1f, R2f, Rdc = [], [], []
         for i in range(len(lockins_path)):
-            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                          # [V]
-            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                          # [V]
-            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                          # [V]
-            Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                       # [V]
+            # Rmod.append(np.sqrt(Xmod[i] ** 2 + Ymod[i] ** 2))                                                               # mod Magnitude: [V]   
+            R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                                                                  # 1f Magnitude: [V]
+            R2f.append(np.sqrt(X2f[i] ** 2 + Y2f[i] ** 2))                                                                  # 2f Magnitude: [V]
+            Rdc.append(np.sqrt(Xdc[i] ** 2 + Ydc[i] ** 2))                                                                  # dc Magnitude: [V]
 
-        return para, lockins_t, R1f, R2f, Rdc, Rmod
-    
-    def ellipticity(self, lockins_path, V1f, Vdc):
+        return para, lockins_t, R1f, R2f, Rdc
+        # return para, lockins_t, Rmod, R1f, R2f, Rdc
+
+    def FR_double_Kvapor(self, lockins_path, S1f, S2f, Sdc):
         """
-        Calculate the change of ellipticity and its approximation.
+        Analyzed data from double modulated measurements
         """
-        epsilon, epsilon_approx = [], []
+        epsilon, theta = [], []
         for i in range(len(lockins_path)):
-            # Calculate ellipticity
-            epsilon_value = 0.5 * np.arctanh(V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]))             # [rad]
-            epsilon.append(epsilon_value)
-
-            # Calculate approximate ellipticity
-            epsilon_approx_value = 0.5 * V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i])                        # [rad]
-            epsilon_approx.append(epsilon_approx_value)
+            epsilon.append(S1f[i] / ( 2 * np.pi * scipy.special.jv(1,2.405) * Sdc[i]))                                      # Ellipticity: [rad]
+            theta.append(S2f[i] / (2 * np.pi * scipy.special.jv(2,2.405) * Sdc[i] * np.sqrt(1 - 4 * epsilon[i]**2)))        # Rotation: [rad]
         
-        # print(np.shape(epsilon))
-        return epsilon, epsilon_approx
+        return epsilon, theta
 
-    def angle(self, lockins_path, V1f, V2f, Vdc):
+    def FR_triple_Kvapor(self, lockins_path, S1f, S2f, Sdc, Smod):
         """
-        Calculate the change of polarization rotation angle 
-        according to the appropriate waveform analysis.
+        Analyzed data from triple modulated measurements
         """
-        epsilon, epsilon_approx = self.ellipticity(lockins_path, V1f, Vdc)
-        theta = []
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self. reader.lockins(lockins_path)
+        # para, lockins_t, Rmod, R1f, R2f, Rdc = self.R_lockins(lockins_path)
+        epsilon, theta = [], []
         for i in range(len(lockins_path)):
-            # Calculate rotation angle
-            theta_value = 0.5 * np.arcsin(V2f[i] / (np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * 
-                       np.sqrt(1 - 4 * epsilon_approx[i]**2)))                      # [rad]
-            theta.append(theta_value)
-
-        return theta
-
-    def modulated_angle(self, lockins_path, V1f, V2f, Vdc, Vmod):
-        """
-        Calculate the modulated rotation angle.
-        """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.lockins(lockins_path)
-        epsilon, epsilon_approx = self.ellipticity(lockins_path, V1f, Vdc)
-        theta_mod = []
-        for i in range(len(lockins_path)):
-            # Calculate modulated rotation angle
-            theta_mod_value = 0.5 * (np.sqrt(2) * para[i][3] * Vmod[i] / (
-                5 * np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * 
-                np.sqrt(1 - 4 * epsilon_approx[i]**2)))                             # [rad]
-            theta_mod.append(theta_mod_value)
-
-        return theta_mod
-
-    def absorbance_difference(self, lockins_path, epsilon, l):
-        """
-        Calculate the change of absorbance difference
-        """
-        alpha_diff = []
-        for i in range(len(lockins_path)):
-            alpha_diff.append(4 * epsilon / l)                                                                                           # [rad]
-
-        return alpha_diff
-    
-    def refractive_indices_difference(self, lockins_path, theta, l, wavelength):
-        """
-        Calculate the change of refractive indices difference
-        """
-        n_diff = []
-        for i in range(len(lockins_path)):
-            n_diff.append(wavelength * theta / (np.pi * l))                                                              
-
-        return n_diff
+            epsilon.append(S1f[i] / (2 * np.pi * scipy.special.jv(1,2.405) * Sdc[i]))                                       # Ellipticity: [rad]
+            theta.append(np.sqrt(2) * para[i][3] * Smod[i] / 
+                         (10 * np.pi * scipy.special.jv(2,2.405) * Sdc[i] * np.sqrt(1 - 4 * epsilon[i]**2)))                # Rotation: [rad]
+        
+        return epsilon, theta
 
     def check_calib(self, lambd, theta):
         '''
