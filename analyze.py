@@ -36,7 +36,6 @@ class Analyze:
             epsilon_approx_value = 0.5 * V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i])                        # [rad]
             epsilon_approx.append(epsilon_approx_value)
         
-        # print(np.shape(epsilon))
         return epsilon, epsilon_approx
 
     def angle(self, lockins_path, V1f, V2f, Vdc):
@@ -70,23 +69,21 @@ class Analyze:
 
         return theta_mod
 
-    def absorbance_difference(self, lockins_path, epsilon, l):
+    def absorbance_difference(self, epsilon, l):
         """
         Calculate the change of absorbance difference
         """
         alpha_diff = []
-        for i in range(len(lockins_path)):
-            alpha_diff.append(4 * epsilon / l)                                                                                           # [rad]
+        alpha_diff.append(4 * epsilon / l)                                                                                           # [rad]
 
         return alpha_diff
     
-    def refractive_indices_difference(self, lockins_path, theta, l, wavelength):
+    def refractive_indices_difference(self, theta, l, wavelength):
         """
         Calculate the change of refractive indices difference
         """
         n_diff = []
-        for i in range(len(lockins_path)):
-            n_diff.append(wavelength * theta / (np.pi * l))                                                              
+        n_diff.append(wavelength * theta / (np.pi * l))                                                              
 
         return n_diff
 

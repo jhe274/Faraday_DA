@@ -66,19 +66,6 @@ class Plot:
             
         return wavelength, detuning, ellipticity, angle
     
-    def absorbance_and_refractive_index(self, lambda_path, lockin_path, n, run):
-        """
-        Calculate the absorbance and refractive index from the measured wavelength and voltages
-        """
-        wavelength, detuning, ellipticity, angle = self.ellipticity_and_angle(lambda_path, lockin_path, 'X', n, run)
-
-        # Calculate the absorbance and reractive indices difference
-        for i in self.number_of_runs(run):
-            alpha_diff = self.analyzer.absorbance_difference(lockin_path, ellipticity[i], self.l)
-            n_diff = self.analyzer.refractive_indices_difference(lockin_path, angle[i], self.l, wavelength[i])
-        
-        return alpha_diff, n_diff
-    
     def background_subtraction(self, lambda_path, lockin_path, dtype, n, run):
         """
         Calculate ellipticity/Faraday rotation by subtracting appropriate background values
@@ -157,23 +144,46 @@ class Plot:
         """
         Plot background subtracted ellipticities and optical rotation angles
         """
-        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
+        alpha_diff_vapor, n_diff_vapor = [], []
+        
+        for i in range(len(detuning[0])):
+            alpha_diff_vapor.append(self.analyzer.absorbance_difference(CD_vapor[i]*1e3, self.l))
+            n_diff_vapor.append(self.analyzer.refractive_indices_difference(CB_vapor[i]*1e9, self.l, wavelength[0][i]))
 
         if phytype == 'CD':
             if material == 'empty':
-                ax.plot(x[0], CD_empty, '.', label=r'$\epsilon_\text{empty cell}-\epsilon_\text{air}$', markersize=2)
+                ax.plot(detuning[0], CD_empty, '.', color='red',
+                         label=r'$\epsilon_\text{empty cell}-\epsilon_\text{air}$', markersize=2)
             elif material == 'vapor':
-                ax.plot(x[0], CD_vapor, '.', label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{air}$', markersize=2)
+                ax.plot(detuning[0], CD_vapor, '.', color='red', 
+                        label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{air}$', markersize=2)
             elif material == 'K':
-                ax.plot(x[1], CD_K, '.', label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', markersize=2)
+                ax.plot(detuning[1], CD_K, '.', color='red', 
+                        label=r'$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', markersize=2)
         elif phytype == 'CB':
             if material == 'empty':
-                ax.plot(x[0], CB_empty, '.', label=r'$\theta_\text{empty cell}-\theta_\text{air}$', markersize=2)
+                ax.plot(detuning[0], CB_empty, '.', color='red', 
+                        label=r'$\theta_\text{empty cell}-\theta_\text{air}$', markersize=2)
             elif material == 'vapor':
-                ax.plot(x[0], CB_vapor, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{air}$', markersize=2)
+                ax.plot(detuning[0], CB_vapor, '.', color='red', 
+                        label=r'$\theta_\text{vapor cell}-\theta_\text{air}$', markersize=2)
             elif material == 'K':
-                ax.plot(x[1], CB_K, '.', label=r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$', markersize=2)
+                ax.plot(detuning[1], CB_K, '.', color='red', 
+                        label=r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$', markersize=2)
+        elif phytype == 'absorbance':
+            if material == 'vapor':
+                ax.plot(detuning[0], alpha_diff_vapor, '.', color='red', 
+                        label=r'$\alpha_\text{vapor cell}-\alpha_\text{air}$', markersize=2)
+            else:
+                pass
+        elif phytype == 'refractive index':
+            if material == 'vapor':
+                ax.plot(detuning[0], n_diff_vapor, '.', color='red', 
+                        label=r'$n_\text{vapor cell}-n_\text{air}$', markersize=2)
+            else:
+                pass
 
         # self.peaks_valleys_plot(x[0], CB_vapor)
         self.plot_settings(run, B, power, date, dtype, phytype)
@@ -232,8 +242,8 @@ class Plot:
         plt.yticks(fontsize=25)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
-        plt.grid(True)
-        plt.legend(loc='best', fontsize=25)
+        plt.grid(False)
+        # plt.legend(loc='best', fontsize=25)
         if phytype == 'CD':
             plt.ylabel(r'Ellipticity (μrad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
@@ -249,9 +259,23 @@ class Plot:
             plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[X]FR_vs_Frequency_{date}_run{run}-{run+1}123.png'))
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
             elif dtype == 'R':
                 plt.savefig(os.path.join(Plots, f'{date}', f'[R]FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        elif phytype == 'absorbance':
+            plt.ylabel(r'$\alpha_--\alpha_+$ (1/mm)', fontsize=25)
+            plt.title(f'Absorbance vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+            if dtype == 'X':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]Absorbance_vs_Frequency_{date}_run{run}-{run+1}.pdf'))
+            elif dtype == 'R':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[R]Absorbance_vs_Frequency_{date}_run{run}-{run+1}.png'))
+        elif phytype == 'refractive index':
+            plt.ylabel(r'$n_--n_+$ ($\times10^{-9}$)', fontsize=25)
+            plt.title(f'Refractive index vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+            if dtype == 'X':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[X]Refractive_index_vs_Frequency_{date}_run{run}-{run+1}.pdf'))
+            elif dtype == 'R':
+                plt.savefig(os.path.join(Plots, f'{date}', f'[R]Refractive_index_vs_Frequency_{date}_run{run}-{run+1}.png'))
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=25)
         plt.show()
 
@@ -304,11 +328,11 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '06-07-2024'
+    date_input = '05-22-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 11, -6.105, 0.5, 'CB', 'vapor')
+    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'refractive index', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
