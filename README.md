@@ -156,5 +156,3 @@ Want to **contribute**? Feel free to **open an issue** or **submit a pull reques
 
 ## **📜 License**
 This project is licensed under the **MIT License**. See `LICENSE` for details.
-```
-
