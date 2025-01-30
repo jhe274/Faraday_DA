@@ -66,9 +66,10 @@ Defines **physical constants** used in calculations.
 ### **📌 `data_reader.py`**
 Handles **data extraction** from experimental devices.
 - **Supported Instruments:**
-  - **Bristol 871** – Wavelength meter
-  - **Lock-in Amplifiers** – Synchronous detection
-  - **TC300** – Temperature controller
+  - **Bristol 871A** – Wavelength meter
+  - **DSP7265 Lock-in Amplifiers** – Synchronous homodyne detection
+  - **Thorlabs TC300** – Temperature controller
+  - **Lake Shore DSP475 Gaussmeter** - Magnetic hallprobe
 - **Key Functions:**
   - `read_bristol(path)`: Extracts timestamp and wavelength data.
   - `read_lockins(path)`: Reads harmonic and DC voltage data.
