@@ -66,11 +66,12 @@ Defines **physical constants** used in calculations.
 ### **📌 `data_reader.py`**
 Handles **data extraction** from experimental devices.
 - **Supported Instruments:**
+  - **Toptica DLC pro controller** – Oscilloscope
   - **Bristol 871A** – Wavelength meter
   - **DSP7265 Lock-in Amplifiers** – Synchronous homodyne detection
   - **Thorlabs TC300** – Temperature controller
-  - **Lake Shore DSP475 Gaussmeter** - Magnetic hallprobe
 - **Key Functions:**
+  - `dlcpro_widesca(path)`: Basically an oscilloscope with rarious built-in traces to select from Toptica DLC pro.
   - `read_bristol(path)`: Extracts timestamp and wavelength data.
   - `read_lockins(path)`: Reads harmonic and DC voltage data.
 
@@ -107,6 +108,7 @@ Computes theoretical predictions based on quantum mechanics and atomic physics.
   - **Potassium Number Density (`Kn_density`)** – Calculates atomic vapor density as a function of temperature using experience formula.
   - **Zeeman Effect (`Zeeman_splitting`)** – Computes ground state energy shifts under a magnetic field.
   - **Doppler Broadening (`doppler_broad`)** – Estimates linewidth broadening due to atomic motion.
+  - **Resonant Faraday Effect (`resonant_FR`)** - Calculates resonant Faraday rotation angle.
 
 ✅ **Usage Example**
 ```python
