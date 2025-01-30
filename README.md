@@ -17,18 +17,22 @@ This repository provides a comprehensive **data analysis pipeline** for **Farada
 ---
 
 ## **🛠 Installation**
-
 ### **1️⃣ Clone the Repository**
 ```sh
 git clone https://github.com/YOUR_GITHUB_USERNAME/FaradayRotationAnalysis.git
 cd FaradayRotationAnalysis
-2️⃣ Create a Virtual Environment
+```
+### **2️⃣ Create a Virtual Environment**
+```sh
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-3️⃣ Install Dependencies
+```
+### **3️⃣ Install Dependencies**
+```sh
 pip install -r requirements.txt
-📂 Repository Structure
-
+```
+## **📂 Repository Structure**
+```bash
 FaradayRotationAnalysis/
 │── data_reader.py          # Reads instrument data (Bristol, Lock-in, TC300, etc.)
 │── data_analyzer.py        # Data processing (ellipticity, Faraday rotation, filtering, binning)
@@ -39,7 +43,8 @@ FaradayRotationAnalysis/
 │── README.md               # Project documentation
 │── examples/               # Example datasets and usage scripts
 └── notebooks/              # Jupyter notebooks for quick analysis
-📜 Module Breakdown
+```
+## **📜 Module Breakdown**
 
 📌 constants.py
 Defines physical constants used in calculations.
