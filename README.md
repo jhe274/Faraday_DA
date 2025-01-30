@@ -85,7 +85,7 @@ timestamps, wavelengths = reader.read_bristol("path/to/bristol_data.csv")
 ---
 
 ### **📌 `data_analyzer.py`**
-Processes **ellipticity, Faraday rotation, and refractive index changes**.
+Processes **ellipticity, Faraday rotation, absorbance, and refractive index changes**.
 - **Core Functions:**
   - `ellipticity(lockins_path, V1f, Vdc)`: Computes ellipticity from lock-in amplifier signals.
   - `angle(lockins_path, V1f, V2f, Vdc)`: Extracts rotation angles.
@@ -104,8 +104,8 @@ epsilon, epsilon_approx = analyzer.ellipticity(lockins_path, V1f, Vdc)
 ### **📌 `theory_calculations.py`**
 Computes theoretical predictions based on quantum mechanics and atomic physics.
 - **Implemented Models:**
-  - **Potassium Number Density (`Kn_density`)** – Calculates atomic vapor density as a function of temperature.
-  - **Zeeman Effect (`Zeeman_splitting`)** – Computes energy shifts under a magnetic field.
+  - **Potassium Number Density (`Kn_density`)** – Calculates atomic vapor density as a function of temperature using experience formula.
+  - **Zeeman Effect (`Zeeman_splitting`)** – Computes ground state energy shifts under a magnetic field.
   - **Doppler Broadening (`doppler_broad`)** – Estimates linewidth broadening due to atomic motion.
 
 ✅ **Usage Example**
