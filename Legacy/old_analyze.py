@@ -1,18 +1,19 @@
 import numpy as np
-from read import Read
+from data_reader import DataReader as Read
 import scipy.special
 from scipy.optimize import curve_fit
 
 class Analyze:
 
     def __init__(self):
+        """Initializes the Analyze class with a DataReader instance."""
         self.reader = Read()
 
     def R_lockins(self, lockins_path):
         """
         Calculate the R values from lock-in amplifiers
         """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.lockins(lockins_path)
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockins_path)
         R1f, R2f, Rdc, Rmod = [], [], [], []
         for i in range(len(lockins_path)):
             R1f.append(np.sqrt(X1f[i] ** 2 + Y1f[i] ** 2))                          # [V]
@@ -126,15 +127,15 @@ class Analyze:
         '''
         Trimming data based on the shorter measurement from either Bristol or lock-ins
         '''
-        if x1[-1] > x2[-1]:
-            print(y1[-1], x2[-1])
-            idx = np.argmin(np.abs(x1 - x2[-1]))
+        if x1[-1] > x2[-1]:  # Case where x1 extends beyond x2
+            idx = np.argmin(np.abs(x1 - x2[-1]))  # Find the cutoff index
             trim_x1, trim_y1, trim_x2, trim_y2 = x1[:idx+1], y1[:idx+1], x2, y2
-        else:
+        else:  # Case where x2 extends beyond x1
             idx = np.argmin(np.abs(x2 - x1[-1]))
             trim_x1, trim_y1, trim_x2, trim_y2 = x1, y1, x2[:idx+1], y2[:idx+1]
 
         return trim_x1, trim_y1, trim_x2, trim_y2
+
 
     def calculate_interval_and_indices(self, x1, x2, TC, n):
         '''
@@ -151,6 +152,7 @@ class Analyze:
         else:
             x2_idx = np.arange(n,len(x2)-1,1)
             x1_idx = np.searchsorted(x1, x2[x2_idx], side='left')
+            print(x2_idx, x1_idx)
 
         # Removing duplicate timestamps from x1_idx, and their corresponding timestamps in x2
         uni_idx = np.unique(x1_idx, return_index=True)[1]

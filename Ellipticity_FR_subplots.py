@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from constants import Constants as Consts
-from theory import Theory
-from read import Read
-from analyze import Analyze
+from theory_calculations import Theory
+from data_reader import DataReader as Read
+from data_analyzer import DataAnalyzer as Analyze
 
 dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
 # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')

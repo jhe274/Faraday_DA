@@ -1,5 +1,5 @@
 import os
-import analyze
+import data_analyzer
 
 class Write:
 
@@ -8,7 +8,7 @@ class Write:
             Append measured polarization rotation and wavelength data to csv file
         '''
         file_name = "Polarization_rotations_vs_wavelength.csv"
-        N, A_fit, Lambda_ave, Lambda_std, Lambda_ste, Theta_ave, Theta_std, Theta_ste = analyze.filtered_theta_and_lambda(lambda_path, lock_in_path, i, n)
+        N, A_fit, Lambda_ave, Lambda_std, Lambda_ste, Theta_ave, Theta_std, Theta_ste = data_analyzer.filtered_theta_and_lambda(lambda_path, lock_in_path, i, n)
 
         # Create a list of data points
         data = [date, N, A_fit, Lambda_ave, Lambda_std, Lambda_ste, Theta_ave, Theta_std, Theta_ste]

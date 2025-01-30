@@ -1,0 +1,161 @@
+import re
+import numpy as np
+import pandas as pd
+
+class DataReader:
+    """
+    A class to read and process various experimental data files related to 
+    laser scans, wavelength measurements, temperature logs, lock-in amplifier 
+    signals, and processed data analysis.
+    """
+
+    @staticmethod
+    def sort_key(path):
+        """
+        Extracts the numeric part from filenames to ensure proper sorting.
+        Files with numeric suffixes are sorted numerically; others appear first.
+        """
+        match = re.search(r'_(\d+)(?=\.[^.]*$|$)', path)
+        return int(match.group(1)) if match else -1
+    
+    @staticmethod
+    def read_csv_data(path, **kwargs):
+        """
+        Reads multiple CSV files, sorts them using `sort_key`, and loads them into DataFrames.
+        Returns a list of DataFrames.
+        """
+        return [pd.read_csv(file, **kwargs) for file in sorted(path, key=DataReader.sort_key)]
+        
+    def read_dlcpro_widescan(self, path):
+        """
+        Reads and processes Toptica DLC Pro wide scan output files.
+        Returns: 
+            - x: Piezo voltage array [V]
+            - y1: Fine In 1 array [V], depending on the settings
+            - y2: Monitor photodiode array (non-linear), depending on the settings
+            - timestamp: Time array [s]
+        """
+        dfs = self.read_csv_data(path, sep=',', header=None, skiprows=1,
+                                 names=['Piezo Voltage (V)', 'Fine In 1 (V)', 
+                                        'Monitor Photodiode (non-linear)', 'time (ms)'])
+        x, y1, y2, timestamp = [], [], [], []
+        for df in dfs:
+            x.append(df['Piezo Voltage (V)'].to_numpy())
+            y1.append(df['Fine In 1 (V)'].to_numpy())
+            y2.append(df['Monitor Photodiode (non-linear)'].to_numpy())
+            timestamp.append(df['time (ms)'].to_numpy() * 1e-3)
+
+        return x, y1, y2, timestamp
+    
+    def read_bristol(self, path):
+        """
+        Reads wavelength measurements from a Bristol 871 wavelength meter.
+        Returns:
+            - timestamp: Time array [s]
+            - wavelength: Wavelength array [m]
+        """
+        dfs = self.read_csv_data(path, sep=',', header=None, skiprows=1,
+                                 names=['Timestamp', 'Instrument Status', 
+                                        'Instrument Wavelength', 'Instrument Intensity'])
+        timestamp, wavelength = [], []
+        for df in dfs:
+            t0 = pd.to_datetime(df['Timestamp']).iloc[0]  # Reference timestamp
+            timestamp.append(pd.to_datetime(df['Timestamp']).sub(t0).dt.total_seconds().to_numpy())
+            wavelength.append(df['Instrument Wavelength'].to_numpy(dtype=np.float64) * 1e-9)
+
+        return timestamp, wavelength
+
+    def read_tc300(self, path):
+        """
+        Reads temperature measurements from TC300 data logs.
+        Returns:
+            - timestamp: Time array [s]
+            - temp_T1: Actual temperature sensor 1 [°C]
+            - temp_T2: Actual temperature sensor 2 [°C]
+        """
+        dfs = self.read_csv_data(path, sep=',', header=None, skiprows=1,
+                                 names=['Time', 'TargetTemp1', 'ActualTemp1', 'TargetCurrent1', 'ActualCurrent1', 'Voltage1',
+                                        'TargetTemp2', 'ActualTemp2', 'TargetCurrent2', 'ActualCurrent2', 'Voltage2'])
+        timestamp, temp_T1, temp_T2 = [], [], []
+        for df in dfs:
+            time_dt = pd.to_datetime(df['Time'], format='%H:%M:%S')
+            time_seconds = time_dt.dt.hour * 3600 + time_dt.dt.minute * 60 + time_dt.dt.second
+            timestamp.append(time_seconds.to_numpy())
+            temp_T1.append(df['ActualTemp1'].to_numpy())
+            temp_T2.append(df['ActualTemp2'].to_numpy())
+
+        return timestamp, temp_T1, temp_T2
+
+    def read_lockins(self, path):
+        """
+        Reads lock-in amplifier data files.
+        Returns:
+            - para: Extracted metadata parameters
+            - timestamp: Time array [s]
+            - X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod: Lock-in measurement arrays [V]
+        """
+        para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = [], [], [], [], [], [], [], [], [], []
+        
+        for file in sorted(path, key=self.sort_key):
+            settings = []
+            with open(file, 'r') as f:
+                for line in f:
+                    if line.startswith('#'):
+                        parts = line.split()
+                        if len(parts) >= 2 and parts[1].lower() not in ['input', 'gain']:
+                            settings.append(float(parts[1]))
+                para.append(settings)
+
+            df = pd.read_csv(file, sep=',', header=None, skiprows=9,
+                             names=['Timestamp', 'X_1f', 'Y_1f', 'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+            df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()
+
+            timestamp.append(df['Timestamp'].to_numpy())
+            X1f.append(df['X_1f'].to_numpy())
+            Y1f.append(df['Y_1f'].to_numpy())
+            X2f.append(df['X_2f'].to_numpy())
+            Y2f.append(df['Y_2f'].to_numpy())
+            Xdc.append(df['X_dc'].to_numpy())
+            Ydc.append(df['Y_dc'].to_numpy())
+            Xmod.append(df['X_mod'].to_numpy())
+            Ymod.append(df['Y_mod'].to_numpy())
+
+        return para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod
+    
+    def read_processed_da(self, path):
+        """
+        Reads processed data analysis files containing wavelength, ellipticity, and Faraday rotation.
+        Returns:
+            - date: Date of the experiment
+            - temp: Temperature [°C]
+            - Bz: Longitudinal magnetic field strength [G]
+            - power: Laser power [µW]
+            - wl: Wavelength array [m]
+            - ellipticity: Ellipticity array [rad]
+            - angle: Faraday rotation angle array [rad]
+        """
+        def read_header(file):
+            df = pd.read_csv(file, header=None, usecols=[1], nrows=4)
+            return df.iloc[:, 0].tolist()
+
+        def read_data(file):
+            df = pd.read_csv(file, sep=',', header=None, skiprows=5,
+                             names=['Wavelength (m)', 'Ellipticity (radian)', 'Faraday rotation (radian)'])
+            return df['Wavelength (m)'].to_numpy(), df['Ellipticity (radian)'].to_numpy(), df['Faraday rotation (radian)'].to_numpy()
+
+        date, temp, Bz, power, wl, ellip, angle = [], [], [], [], [], [], []
+
+        for file in sorted(path, key=self.sort_key):
+            d, t, b, p = read_header(file)
+            date.append(d)
+            temp.append(t)
+            Bz.append(b)
+            power.append(p)
+
+            w, e, a = read_data(file)
+            wl.append(w)
+            ellip.append(e)
+            angle.append(a)
+
+        return date, temp, Bz, power, wl, ellip, angle

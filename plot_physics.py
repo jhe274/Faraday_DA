@@ -5,9 +5,9 @@ import scipy.special
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from constants import Constants as Consts
-from theory import Theory
-from read import Read
-from analyze import Analyze
+from theory_calculations import Theory
+from data_reader import DataReader as Read
+from data_analyzer import DataAnalyzer as Analyze
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
@@ -44,12 +44,12 @@ class Plot:
         :return: Processed wavelength, detuning, ellipticity, and rotation angle
         """
         # Read wavelength data from Bristol wavelength meter
-        B_t, Lambda = self.reader.Bristol(lambda_path)
+        B_t, Lambda = self.reader.read_bristol(lambda_path)
 
         # Process data based on the selected dtype
         if dtype == 'X':
             # Extract in-phase components and calculate ellipticity/angle
-            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.lockins(lockin_path)
+            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockin_path)
             epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, X1f, Xdc)
             theta = self.analyzer.angle(lockin_path, X1f, X2f, Xdc)
         elif dtype == 'R':
@@ -65,17 +65,17 @@ class Plot:
         for i in self.number_of_runs(run):
             # Filter and trim data for the current run
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
-            B_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], epsilon[i])
-            B_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], theta[i])
+            B_t[i], Lambda[i], lockins_t[i], epsilon_trimmed = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], epsilon[i])
+            B_t[i], Lambda[i], lockins_t[i], theta_trimmed = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], theta[i])
 
             # Calculate intervals and averages for ellipticity and angle
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(B_t[i], lockins_t[i], para[i][2], n)
-            Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon[i][l_idx])
-            Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
+            Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon_trimmed[l_idx])
+            Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta_trimmed[l_idx])
 
             # Append processed data to the respective lists
             wavelength.append(Lambd)  # [m]
-            detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)  # [GHz]
+            detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
             ellipticity.append(ep)  # [rad]
             angle.append(th)  # [rad]
 
@@ -119,7 +119,7 @@ class Plot:
 
         return wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K
     
-    def raw_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material):
+    def raw_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
         """
         Plot raw ellipticities and Faraday rotation angles measured by the lock-in amplifiers.
         :param lambda_path: Path to wavelength data
@@ -156,7 +156,7 @@ class Plot:
         
         self.plot_settings(n, B, power, date, dtype, phytype)
 
-    def background_subtracted_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material):
+    def background_subtracted_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
         """
         Plot background-subtracted ellipticities and optical rotation angles.
         :param lambda_path: Path to wavelength data
@@ -212,7 +212,6 @@ class Plot:
 
         # Apply consistent plot settings (e.g., labels, title, grid) using a helper method
         self.plot_settings(run, B, power, date, dtype, phytype)
-
 
     def peaks_valleys_plot(self, x, y):
         """
@@ -327,7 +326,7 @@ class Plot:
         """
         # Extract processed data required for writing to CSV
         x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = \
-            self.physics_extraction(lambda_path, lockin_path, dtype, n, run)
+            self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
         
         # Data to be written (wavelength, ellipticity, Faraday rotation)
         data = [x0[0], CD_vapor, CB_vapor]
@@ -393,7 +392,7 @@ if __name__ == "__main__":
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
     # plotter.raw_plot(Bristol_path, Lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
-    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'refractive index', 'vapor')
+    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'refractive index', 'vapor', date)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

@@ -5,25 +5,44 @@ from constants import Constants as Consts
 class Theory:
     
     def __init__(self):
+        """
+        Initializes the Theory class with physical constants.
+        """
         self.consts = Consts()
 
     def Kn_density(self, T):
-        '''
-        Potassium number density based on experienced formula
-        '''
+        """
+        Calculates Potassium number density based on an empirical formula.
+        
+        Parameters:
+            T (float): Temperature in Celsius.
+        
+        Returns:
+            float: Potassium number density [m^-3].
+        """
         if 24.85 < T <= 63.35:
-            Kp = 10 ** (9.967 - 4646 / (273.15 + T))                                                                                    # [Pa]
-        elif 63.35 < T:
-            Kp = 10 ** (9.408 - 4453 / (273.15 + T))                                                                                    # [Pa]
+            Kp = 10 ** (9.967 - 4646 / (273.15 + T))  # [Pa]
+        elif T > 63.35:
+            Kp = 10 ** (9.408 - 4453 / (273.15 + T))  # [Pa]
         else:
             raise ValueError("Temperature T must be above 24.85°C")
         
-        return Kp / (self.consts.k_B * (273.15 + T))                                                                                    # [m^-3]
+        return Kp / (self.consts.k_B * (273.15 + T))  # [m^-3]
     
     def doppler_broad(self, nu0, T):
-        Delta_D = nu0 * np.sqrt((8 * self.consts.k_B * (273.15+T) * math.log(2)) / (self.consts.m_K39 * self.consts.c**2))
-
-        return Delta_D
+        """
+        Calculates HWHM Doppler broadening for a given transition.
+        
+        Parameters:
+            nu0 (float): Central frequency [Hz].
+            T (float): Temperature in Celsius.
+        
+        Returns:
+            float: Doppler broadening [Hz].
+        """
+        return nu0 * np.sqrt(
+            (8 * self.consts.k_B * (273.15 + T) * math.log(2)) / (self.consts.m_K39 * self.consts.c**2)
+        )
 
     def Zeeman_ground(self, B):
         '''

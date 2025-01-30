@@ -1,5 +1,5 @@
 import numpy as np
-from read import Read
+from Legacy.old_read import Read
 import scipy.special
 from scipy.optimize import curve_fit
 

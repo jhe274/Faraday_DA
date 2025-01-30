@@ -1,11 +1,11 @@
 import os, glob
 import datetime as dt
-from constants import Constants as Consts
-from theory import Theory
-from read import Read
-from write import Write
-from analyze import Analyze
-from plot import Plot
+from Constants import Constants as Consts
+from Theory import Theory
+from Read import Read
+from Write import Write
+from Analyze import Analyze
+from Plot import Plot
 import matplotlib.pyplot as plt
 
 cwd = os.getcwd()
@@ -15,42 +15,45 @@ TC300 = os.path.join(dir_path, 'TC300 data')
 TriMod = os.path.join(dir_path, 'Triple modulation data')
 Analysis = os.path.join(dir_path, 'Data Analysis')
 
+class main:
+    def __init__(self):
+        self.Write = Write()
+        self.Plot = Plot()
 
+    def write_theta_vs_lambda(i, n):
+        Write.Theta_and_lambda_data_to_txt(date, Bristol_path, TriMod_path, i, n)
 
-def write_theta_vs_lambda(i, n):
-    Write.Theta_and_lambda_data_to_txt(date, Bristol_path, TriMod_path, i, n)
+    def plot_theta_theory_vs_lambda():
+        # Plot.theta_theory_vs_lambda(1.91*pow(10,-2), 12000*pow(10,-4))
+        Plot.theta_theory_vs_lambda((7.5-0.159*2)*1e-2, -9.68*1e-4, range(40,50,10), Consts.Lambda_D1, Consts.Lambda_D2)
 
-def plot_theta_theory_vs_lambda():
-    # Plot.theta_theory_vs_lambda(1.91*pow(10,-2), 12000*pow(10,-4))
-    Plot.theta_theory_vs_lambda((7.5-0.159*2)*1e-2, -9.68*1e-4, range(40,50,10), Consts.Lambda_D1, Consts.Lambda_D2)
+    def plot_temp_vs_time(i):
+        Plot.temp_vs_time(TC300_path, TriMod_path, i)
 
-def plot_temp_vs_time(i):
-    Plot.temp_vs_time(TC300_path, TriMod_path, i)
+    def plot_lambda_vs_time(i, n):
+        Plot.lambda_vs_time(Bristol_path, TriMod_path, i, n)
 
-def plot_lambda_vs_time(i, n):
-    Plot.lambda_vs_time(Bristol_path, TriMod_path, i, n)
+    def plot_Vdc_vs_time(i):
+        Plot.Vdc_vs_time(TriMod_path, i)
 
-def plot_Vdc_vs_time(i):
-    Plot.Vdc_vs_time(TriMod_path, i)
+    def plot_V2f_vs_time(i):
+        Plot.V2f_vs_time(TriMod_path, i)
 
-def plot_V2f_vs_time(i):
-    Plot.V2f_vs_time(TriMod_path, i)
+    def plot_Vmod_vs_time(i):
+        Plot.Vmod_vs_time(TriMod_path, i)
 
-def plot_Vmod_vs_time(i):
-    Plot.Vmod_vs_time(TriMod_path, i)
+    def plot_theta_mea_vs_time(i, n):
+        Plot.theta_mea_vs_time(Bristol_path, TriMod_path, i, n)
 
-def plot_theta_mea_vs_time(i, n):
-    Plot.theta_mea_vs_time(Bristol_path, TriMod_path, i, n)
+    def plot_theta_mea_vs_lambda(i, n):
+        Plot.theta_mea_vs_lambda(Bristol_path, TriMod_path, i, n)
 
-def plot_theta_mea_vs_lambda(i, n):
-    Plot.theta_mea_vs_lambda(Bristol_path, TriMod_path, i, n)
+    def plot_theta_mea_vs_nu(self, i, n):
+        self.Plot.theta_mea_vs_nu(Bristol_path, TriMod_path, i, n)
+        plt.savefig(os.path.join(Analysis , 'Plots', f'{date}', f'Theta_vs_nu_{date}_run{i+1}.png'))
 
-def plot_theta_mea_vs_nu(i, n):
-    Plot.theta_mea_vs_nu(Bristol_path, TriMod_path, i, n)
-    plt.savefig(os.path.join(Analysis , 'Plots', f'{date}', f'Theta_vs_nu_{date}_run{i+1}.png'))
-
-def plot_combined_theta_vs_lambda():
-    Plot.combined_theta_vs_lambda()
+    def plot_combined_theta_vs_lambda():
+        Plot.combined_theta_vs_lambda()
 
 # Function to get date and file paths
 def get_date_and_paths():
@@ -63,17 +66,17 @@ def get_date_and_paths():
 
 # Menu options
 options = {
-    "1": write_theta_vs_lambda,
-    "2": plot_theta_theory_vs_lambda,
-    "3": plot_temp_vs_time,
-    "4": plot_lambda_vs_time,
-    "5": plot_Vdc_vs_time,
-    "6": plot_V2f_vs_time,
-    "7": plot_Vmod_vs_time,
-    "8": plot_theta_mea_vs_time,
-    "9": plot_theta_mea_vs_lambda,
-    "10": plot_theta_mea_vs_nu,
-    "11": plot_combined_theta_vs_lambda
+    "1": main.write_theta_vs_lambda,
+    "2": main.plot_theta_theory_vs_lambda,
+    "3": main.plot_temp_vs_time,
+    "4": main.plot_lambda_vs_time,
+    "5": main.plot_Vdc_vs_time,
+    "6": main.plot_V2f_vs_time,
+    "7": main.plot_Vmod_vs_time,
+    "8": main.plot_theta_mea_vs_time,
+    "9": main.plot_theta_mea_vs_lambda,
+    "10": main.plot_theta_mea_vs_nu,
+    "11": main.plot_combined_theta_vs_lambda
 }
 
 # Main menu
@@ -95,27 +98,27 @@ option = input("Option: ")
 if option in options:
     try:
         selected_function = options[option]
-        if selected_function == plot_theta_theory_vs_lambda:
-            plot_theta_theory_vs_lambda()
-        elif selected_function == plot_combined_theta_vs_lambda:
-                plot_combined_theta_vs_lambda()
+        if selected_function == main.plot_theta_theory_vs_lambda:
+            main.plot_theta_theory_vs_lambda()
+        elif selected_function == main.plot_combined_theta_vs_lambda:
+                main.plot_combined_theta_vs_lambda()
         else:
             date, Bristol_path, TC300_path, TriMod_path = get_date_and_paths()
             i = input("Select the number of run: ")
             i = int(i) - 1
-            if selected_function == plot_temp_vs_time:
-                plot_temp_vs_time(i)
-            elif selected_function == plot_Vdc_vs_time:
-                plot_Vdc_vs_time(i)
-            elif selected_function == plot_V2f_vs_time:
-                plot_V2f_vs_time(i)
-            elif selected_function == plot_Vmod_vs_time:
-                plot_Vmod_vs_time(i)
+            if selected_function == main.plot_temp_vs_time:
+                main.plot_temp_vs_time(i)
+            elif selected_function == main.plot_Vdc_vs_time:
+                main.plot_Vdc_vs_time(i)
+            elif selected_function == main.plot_V2f_vs_time:
+                main.plot_V2f_vs_time(i)
+            elif selected_function == main.plot_Vmod_vs_time:
+                main.plot_Vmod_vs_time(i)
             else:
                 n = input("Select the number of integer multiples of time constants to skip in the measurements: ")
                 n = int(n)
-                if selected_function == write_theta_vs_lambda:
-                    write_theta_vs_lambda(i, n)
+                if selected_function == main.write_theta_vs_lambda:
+                    main.write_theta_vs_lambda(i, n)
                 else:
                     selected_function(i, n)
     except ValueError:

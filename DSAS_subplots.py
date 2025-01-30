@@ -6,9 +6,9 @@ from scipy.signal import savgol_filter
 from scipy.interpolate import CubicSpline
 from scipy.signal import find_peaks
 from constants import Constants as Consts
-from theory import Theory
-from read import Read
-from analyze import Analyze
+from theory_calculations import Theory
+from data_reader import DataReader as Read
+from data_analyzer import DataAnalyzer as Analyze
 
 fig, ax = plt.subplots()
 dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')

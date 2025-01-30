@@ -5,9 +5,9 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from constants import Constants as Consts
-from theory import Theory
-from read import Read
-from analyze import Analyze
+from theory_calculations import Theory
+from data_reader import DataReader as Read
+from data_analyzer import DataAnalyzer as Analyze
 from Kadlecek_manipulate import Manipulate
 from scipy.signal import find_peaks
 

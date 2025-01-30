@@ -15,7 +15,7 @@ class Read:
         # If no underscore and number, return a very low value to sort these files first
         return -1
         
-    def DLCpro_WideScan(self, path):
+    def read_dlcpro_widescan(self, path):
         '''
         Read Toptica DLC pro wide scan output
         '''
@@ -31,7 +31,7 @@ class Read:
         
         return x, y, Y, DLCpro_t
 
-    def Bristol(self, path):
+    def read_bristol(self, path):
         '''
         Read Wavelength measurements from Brilstol 871 wavelength meter
         '''
@@ -41,16 +41,15 @@ class Read:
                              names=['Timestamp', 'Instrument Status',
                                     'Instrument Wavelength', 'Instrument Intensity'])
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-            start_time = df['Timestamp'].iloc[0]
-            df['Timestamp'] = (df['Timestamp'] - start_time).dt.total_seconds()
+            df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()
             # Filter out error readings & mode hop readings
             # filtered_data = df[(df['Instrument Wavelength'] != 0) & (df['Instrument Wavelength'] < 767)]
             B_t.append(df['Timestamp'].to_numpy())                                                                                 # [s]
             B_lambda.append(np.float64(df['Instrument Wavelength'].to_numpy()) * 1e-9)                                             # [m]
-            
+        print(B_t, B_lambda)
         return B_t, B_lambda
 
-    def TC300(self, path):
+    def read_tc300(self, path):
         '''
         Read temperature measurements from TC300 data logs
         '''
@@ -69,7 +68,7 @@ class Read:
         
         return T_t, T_T1, T_T2
 
-    def lockins(self, path):
+    def read_lockins(self, path):
         '''
         Read lock-ins data files
         '''
@@ -86,6 +85,7 @@ class Read:
                             if value.lower() not in ['input', 'gain']:
                                 settings.append(float(value))                                                                       # Convert to float and append to list
                 para.append(settings)
+
             df = pd.read_csv(file, sep=',', header=None, skiprows=9, 
                                names=['Timestamp', 'X_1f', 'Y_1f',
                                       'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
@@ -105,7 +105,7 @@ class Read:
         
         return para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod
     
-    def ellip_theta(self, path):
+    def read_processed_da(self, path):
         '''
         Read wavelength, ellipticities and Faraday rotations
         '''

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from constants import Constants as Consts
-from theory import Theory
+from theory_calculations import Theory
 
 class Manipulate:
 

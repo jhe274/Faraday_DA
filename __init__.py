@@ -1,2 +1,2 @@
-from FR_DA.FR_consts import Constants
-from FR_DA.FR_theory import Theory
+from constants import Constants
+from theory_calculations import Theory
