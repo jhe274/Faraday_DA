@@ -150,7 +150,6 @@ Want to **contribute**? Feel free to **open an issue** or **submit a pull reques
 
 ## **🔗 References**
 - [Faraday Rotation Effect - Wikipedia](https://en.wikipedia.org/wiki/Faraday_effect)
-- [Lock-in Amplifier Theory](https://www.zhinst.com/knowledge)
 
 ---
 
