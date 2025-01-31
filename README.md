@@ -139,7 +139,6 @@ plotter.raw_plot(Bristol_path, Lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air
 
 ## **📌 Future Expansion**
 This repository is **actively maintained** and will expand to include:
-- ✅ Additional support for new **experimental instruments**.
 - ✅ More **automated data pre-processing** methods.
 - ✅ Enhanced **interactive visualization tools** (e.g., Jupyter notebooks).
 - ✅ Machine learning models for **pattern recognition in data**.
