@@ -371,14 +371,19 @@ class Plot:
 
 
 if __name__ == "__main__":
+    # dir_path = os.path.join(
+    # os.path.expanduser('~'),  # Expands to your home directory
+    # 'OneDrive', 
+    # 'Files', 
+    # 'Graduate_study', 
+    # 'Research', 
+    # 'PhD_project', 
+    # 'Faraday_rotation_measurements'
+    # )
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Expands to your home directory
-    'OneDrive', 
-    'Files', 
-    'Graduate_study', 
-    'Research', 
-    'PhD_project', 
-    'Faraday_rotation_measurements'
+    os.path.expanduser('~'),
+    'Bruce', 
+    'Faraday_rotation_measurements', 
     )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     Bristol = os.path.join(K_vapor, 'Bristol_data')
@@ -387,12 +392,13 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '06-07-2024'
+    date_input = '01-23-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
+    print(Bristol_path)
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
     # plotter.raw_plot(Bristol_path, Lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
-    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'refractive index', 'vapor', date)
+    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'CD', 'vapor', date)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
