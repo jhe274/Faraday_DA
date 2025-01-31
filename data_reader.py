@@ -106,7 +106,7 @@ class DataReader:
                             settings.append(float(parts[1]))
                 para.append(settings)
             
-            df = pd.read_csv(file, sep=',', header=None, skiprows=11,   # Measurements before 2025 should use skiprows=9
+            df = pd.read_csv(file, sep=',', header=None, skiprows=11,   # Measurements before 01/01/2025 should use skiprows=9
                              names=['Timestamp', 'X_1f', 'Y_1f', 'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()

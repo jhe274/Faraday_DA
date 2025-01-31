@@ -380,9 +380,7 @@ if __name__ == "__main__":
     # 'PhD_project', 
     # 'Faraday_rotation_measurements'
     # )
-    dir_path = os.path.join(
-    os.path.expanduser('~'),
-    'Bruce', 
+    dir_path = os.path.join(os.getcwd(),  
     'Faraday_rotation_measurements', 
     )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
@@ -398,7 +396,7 @@ if __name__ == "__main__":
     print(Bristol_path)
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
     # plotter.raw_plot(Bristol_path, Lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
-    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'CD', 'vapor', date)
+    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'CB', 'vapor', date)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
