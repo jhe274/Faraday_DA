@@ -156,3 +156,8 @@ Want to **contribute**? Feel free to **open an issue** or **submit a pull reques
 
 ## **📜 License**
 This project is licensed under the **MIT License**. See `LICENSE` for details.
+
+## Contact
+🔬 **Maintainer:** Jiachen He  
+📧 Email: jiachen.he@outlook.com  
+🌐 Website: [https://jhe274.github.io/portfolio-bruce.github.io//]
