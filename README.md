@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
 ## **Overview**
-This repository provides a comprehensive **data analysis pipeline** for **Faraday rotation measurements** using Python. It includes modules for **data acquisition, processing, visualization, and theoretical calculations** to support experimental physics research.
+This repository provides a comprehensive **data analysis pipeline** for **polarization modulation ellipsometer (PME) measurements** using Python. It includes modules for **data acquisition, processing, visualization, theoretical calculations, and curve fitting** to support experimental atomic physics research.
 
 ### **Features**
 - 📊 **Data Processing**: Extract and clean experimental data from various instruments.
