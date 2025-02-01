@@ -40,8 +40,8 @@ class DataAnalyzer:
         Returns:
             tuple: (epsilon, epsilon_approx) in radians.
         """
-        epsilon = [0.5 * np.arctanh(np.clip(V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]), -1, 1)) for i in range(len(lockins_path))]
-        epsilon_approx = [0.5 * V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]) for i in range(len(lockins_path))]
+        epsilon = [0.5 * np.arctanh(np.clip(2 * V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]), -1, 1)) for i in range(len(lockins_path))]
+        epsilon_approx = [V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]) for i in range(len(lockins_path))]
 
         return epsilon, epsilon_approx
 
@@ -61,7 +61,7 @@ class DataAnalyzer:
         epsilon, epsilon_approx = self.ellipticity(lockins_path, V1f, Vdc)
         theta = [
             0.5 * np.arcsin(
-                np.clip(V2f[i] / (np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * np.sqrt(1 - 4 * epsilon_approx[i]**2)), -1, 1)
+                np.clip(2 * V2f[i] / (np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * np.sqrt(1 - 4 * epsilon_approx[i]**2)), -1, 1)
             )
             for i in range(len(lockins_path))
         ]
@@ -82,10 +82,11 @@ class DataAnalyzer:
         """
         para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockins_path)
         epsilon, epsilon_approx = self.ellipticity(lockins_path, V1f, Vdc)
-
+        print([para[i][3] for i in range(len(lockins_path))])
         theta_mod = [
-            0.5 * (np.sqrt(2) * para[i][3] * Vmod[i] / (
-                5 * np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * np.sqrt(1 - 4 * epsilon_approx[i]**2))
+            0.5 * np.arcsin(
+                np.clip(np.sqrt(2) * para[i][3] * Vmod[i] / (
+                5 * np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * np.sqrt(1 - 4 * epsilon_approx[i]**2)), -1, 1)
             ) 
             for i in range(len(lockins_path))
         ]

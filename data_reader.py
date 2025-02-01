@@ -101,13 +101,32 @@ class DataReader:
             with open(file, 'r') as f:
                 for line in f:
                     if line.startswith('#'):
-                        parts = line.split()
-                        if len(parts) >= 2 and parts[1].lower() not in ['input', 'gain']:
-                            settings.append(float(parts[1]))
-                para.append(settings)
+                        parts = line.strip('#').strip()
+                        
+                        # Old format: "#SENS_1f[V] 0.01"
+                        if re.match(r'.*\s[\d\.Ee+-]+$', parts):
+                            key, value = parts.rsplit(' ', 1)
+                        # New format: "#1f Sensitivity [V]: 0.002"
+                        elif ':' in parts:
+                            key, value = parts.split(':', 1)
+                        else:
+                            continue  # Skip lines without numerical metadata
+                        
+                        try:
+                            settings.append(float(value.strip()))
+                        except ValueError:
+                            pass  # Skip non-numeric metadata entries
+                    
+            para.append(settings)
+
+            # Determine correct skiprows value dynamically
+            with open(file, 'r') as f:
+                lines = f.readlines()
+                skiprows = sum(1 for line in lines if line.startswith('#')) + 1
+
+            df = pd.read_csv(file, sep=',', header=None, skiprows=skiprows, 
+                            names=['Timestamp', 'X_1f', 'Y_1f', 'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
             
-            df = pd.read_csv(file, sep=',', header=None, skiprows=11,   # Measurements before 01/01/2025 should use skiprows=9
-                             names=['Timestamp', 'X_1f', 'Y_1f', 'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()
 

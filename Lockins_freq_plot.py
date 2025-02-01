@@ -25,7 +25,7 @@ class Plot:
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
             Lambd, X[i] = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], X[i][l_idx])
             Lambd, Y[i] = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], Y[i][l_idx])
-            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
+            x = self.consts.c / Lambd * 1e-9 - self.consts.K39_D2_Hz * 1e-9                                                   # Frequency: [GHz]
             colors = 'b' if i == run else ('g' if i == run+1 else ('r' if i ==run+2 else 'c'))
 
             if name == 'f':
@@ -71,7 +71,7 @@ class Plot:
             Bristol_t[i], Lambda[i], y_t[i], R[i] = self.analyzer.trim_data(Bristol_t[i], Lambda[i], y_t[i], R[i])
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(Bristol_t[i], y_t[i], para[i][2], n)
             Lambd, y = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], R[i][l_idx])
-            x = self.consts.c / Lambd * 1e-9 - self.consts.Nu39_D2 * 1e-9                                                   # Frequency: [GHz]
+            x = self.consts.c / Lambd * 1e-9 - self.consts.K39_D2_Hz * 1e-9                                                   # Frequency: [GHz]
             y = y * 1e3                                                                                                     # RMS Voltage: [mV]                            
             # y = y * 1e6                                                                                                     # RMS Voltage: [μV]
 
@@ -94,8 +94,8 @@ class Plot:
         plt.show()
 
     def XY_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
-        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockins_path)
+        Bristol_t, Lambda = self.reader.read_bristol(lambda_path)
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.read_lockins(lockins_path)
 
         if name == 'f':
             self.XYplot(Bristol_t, Lambda, para, lockins_t, X1f, Y1f, n, run-1, name, 'Frequency (GHz)',
@@ -111,7 +111,7 @@ class Plot:
                                   f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
             
     def R_vs_nu(self, lambda_path, lockins_path, name, n, run, B, power):
-        Bristol_t, Lambda = self.reader.Bristol(lambda_path)
+        Bristol_t, Lambda = self.reader.read_bristol(lambda_path)
         para, lockins_t, R1f, R2f, Rdc = self.analyzer.R_lockins(lockins_path)
 
         if name == 'f':
@@ -128,8 +128,8 @@ class Plot:
                                   f', $B_z$={-B} G, $P$={power} μW' + ' @'+ str(date))
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
+    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
+    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
     K_vapor = os.path.join(dir_path, 'K vapor cell')
     Bristol = os.path.join(K_vapor, 'Bristol data')
     Lockins = os.path.join(K_vapor, 'Lockins data')
