@@ -1,4 +1,4 @@
-# Faraday Rotation Data Analysis
+# Polarization Modulation Ellipsometry Data Analysis
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
