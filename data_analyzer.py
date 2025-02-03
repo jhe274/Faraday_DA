@@ -42,7 +42,7 @@ class DataAnalyzer:
         """
         epsilon = [0.5 * np.arctanh(np.clip(2 * V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]), -1, 1)) for i in range(len(lockins_path))]
         epsilon_approx = [V1f[i] / (np.pi * scipy.special.jv(1, 2.405) * Vdc[i]) for i in range(len(lockins_path))]
-
+        
         return epsilon, epsilon_approx
 
     def angle(self, lockins_path, V1f, V2f, Vdc):
@@ -65,6 +65,7 @@ class DataAnalyzer:
             )
             for i in range(len(lockins_path))
         ]
+
         return theta
     
     def modulated_angle(self, lockins_path, V1f, Vdc, Vmod):
@@ -82,7 +83,6 @@ class DataAnalyzer:
         """
         para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockins_path)
         epsilon, epsilon_approx = self.ellipticity(lockins_path, V1f, Vdc)
-        print([para[i][3] for i in range(len(lockins_path))])
         theta_mod = [
             0.5 * np.arcsin(
                 np.clip(np.sqrt(2) * para[i][3] * Vmod[i] / (
@@ -95,11 +95,11 @@ class DataAnalyzer:
     
     def absorbance_difference(self, epsilon, l):
         """Computes absorbance difference."""
-        return 4 * np.array(epsilon) / l
+        return 4 * np.array(epsilon) / l # [rad/m]
 
     def refractive_indices_difference(self, theta, l, wavelength):
         """Computes refractive indices difference."""
-        return np.array(wavelength) * np.array(theta) / (np.pi * l)
+        return np.array(wavelength) * np.array(theta) / (l * np.pi) # [rad]
 
     def check_calib(self, x, y):
         """

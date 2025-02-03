@@ -27,7 +27,7 @@ class Plot:
     def XYplot(self, t, X, Y, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
         for i in self.number_of_runs(run):
-            if name == 'f':
+            if name == '1f':
                 scale_factor = 1e3  # RMS Voltage: [mV]
             elif name == '2f':
                 scale_factor = 1e3  # RMS Voltage: [mV]
@@ -44,14 +44,16 @@ class Plot:
             label_x = (r'$\text{X}_\text{f}$' if name == 'f' else 
                     r'$\text{X}_\text{2f}$' if name == '2f' else 
                     r'$\text{X}_\text{dc}$' if name == 'dc' else
-                    r'$\text{Y}_\text{mod}$')
+                    r'$\text{X}_\text{mod}$')
             label_y = (r'$\text{Y}_\text{f}$' if name == 'f' else 
                     r'$\text{Y}_\text{2f}$' if name == '2f' else 
                     r'$\text{Y}_\text{dc}$' if name == 'dc' else
                     r'$\text{Y}_\text{mod}$')
 
-            ax.plot(t[i], X[i], color='r', label=label_x, linestyle='-', linewidth=1, marker='^', markevery=5, markersize=10)
-            ax.plot(t[i], Y[i], color='b', label=label_y, linestyle='-', linewidth=1, marker='x', markevery=5, markersize=10)
+            ax.scatter(t[i][8:]/60, X[i][8:], label=label_x, color='r', s=30)
+            ax.plot(t[i][8:]/60, X[i][8:], color='r', linestyle='-', linewidth=1)
+            ax.scatter(t[i][8:]/60, Y[i][8:], label=label_y, color='b', s=30)
+            ax.plot(t[i][8:]/60, Y[i][8:], color='b', linestyle='-', linewidth=1)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -62,13 +64,13 @@ class Plot:
         # plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         plt.title(title, fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'XY{name}_{date}_run{i}-{i+1}.pdf'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'XY{name}_{date}_run{run}.png'))
         plt.show()
 
     def Rplot(self, t, R, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25, 12))
         for i in self.number_of_runs(run):
-            if name == 'f':
+            if name == '1f':
                 scale_factor = 1e3  # RMS Voltage: [mV]
             elif name == '2f':
                 scale_factor = 1e3  # RMS Voltage: [mV]
@@ -80,11 +82,12 @@ class Plot:
             # Apply the scaling factor to X and Y arrays
             R[i] = R[i] * scale_factor
 
-            label_R = (r'$\text{R}_\text{f}$' if name == 'f' else 
+            label_R = (r'$\text{R}_\text{1f}$' if name == 'f' else 
                     r'$\text{R}_\text{2f}$' if name == '2f' else 
                     r'$\text{R}_\text{dc}$' if name == 'dc' else
                     r'$\text{R}_\text{mod}$')
-            ax.scatter(t[i], R[i], label=label_R, color='r', s=10)
+            ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='r', s=30)
+            ax.plot(t[i][8:]/60, R[i][8:], color='r', linestyle='-', linewidth=1, markersize=10)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -94,49 +97,65 @@ class Plot:
         # plt.grid(True)
         # ax.legend(loc='best', fontsize=25)
         plt.title(title, fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'R{name}_{date}_run{i}-{i+1}.png'))
-        # plt.savefig(os.path.join(Plots, f'{date}', f'{name}_{date}_run{i}.png'))
+        plt.savefig(os.path.join(Plots, f'{date}', f'R{name}_{date}_run{run}.png'))
         plt.show()
 
-    def XY_vs_time(self, lockins_path, name, run, B, power):
+    def XY_vs_time(self, lockins_path, name, run, power):
         para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockins_path)
-        if name == 'f':
-            self.XYplot(lockins_t, X1f, Y1f, run-1, name, 'Time (s)',
-                                  r'$\text{XY}_{1f}$ (mV)', r'$\text{XY}_{1f}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+        B_ave, B_variration = self.B_field()
+
+        if name == '1f':
+            self.XYplot(lockins_t, X1f, Y1f, run, name, 'Time (min)',
+                                  r'$\text{XY}_{1f}$ (mV)', r'$\text{XY}_{1f}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
         elif name == '2f':
-            self.XYplot(lockins_t, X2f, Y2f, run-1, name, 'Time (s)',
-                                  r'$\text{XY}_{2f}$ (mV)', r'$\text{XY}_{2f}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+            self.XYplot(lockins_t, X2f, Y2f, run, name, 'Time (min)',
+                                  r'$\text{XY}_{2f}$ (mV)', r'$\text{XY}_{2f}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
         elif name == 'dc':
-            self.XYplot(lockins_t, Xdc, Ydc, run-1, name, 'Time (s)',
-                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+            self.XYplot(lockins_t, Xdc, Ydc, run, name, 'Time (min)',
+                                  r'$\text{XY}_\text{dc}$ (mV)', r'$\text{XY}_\text{dc}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
         elif name == 'mod':
-            self.XYplot(lockins_t, Xmod, Ymod, run-1, name, 'Time (s)',
-                                  r'$\text{XY}_\text{mod}$ (mV)', r'$\text{XY}_\text{mod}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+            self.XYplot(lockins_t, Xmod, Ymod, run, name, 'Time (min)',
+                                  r'$\text{XY}_\text{mod}$ (mV)', r'$\text{XY}_\text{mod}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
             
-    def R_vs_time(self, lockins_path, name, run, B, power):
+    def R_vs_time(self, lockins_path, name, run, power):
         para, lockins_t, R1f, R2f, Rdc, Rmod = self.analyzer.R_lockins(lockins_path)
+        B_ave, B_variration = self.B_field()
 
-        if name == 'f':
-            self.Rplot(lockins_t, R1f, run-1, name, 'Time (s)',
-                                  r'$\text{R}_{1f}$ (mV)', r'$\text{R}_{1f}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+        if name == '1f':
+            self.Rplot(lockins_t, R1f, run, name, 'Time (min)',
+                                  r'$\text{R}_{1f}$ (mV)', r'$\text{R}_{1f}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
         elif name == '2f':
-            self.Rplot(lockins_t, R2f, run-1, name, 'Time (s)',
-                                  r'$\text{R}_{2f}$ (mV)', r'$\text{R}_{2f}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+            self.Rplot(lockins_t, R2f, run, name, 'Time (min)',
+                                  r'$\text{R}_{2f}$ (mV)', r'$\text{R}_{2f}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
         elif name == 'dc':
-            self.Rplot(lockins_t, Rdc, run-1, name, 'Time (s)',
-                                  r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+            self.Rplot(lockins_t, Rdc, run, name, 'Time (min)',
+                                  r'$\text{R}_\text{dc}$ (mV)', r'$\text{R}_\text{dc}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
         elif name == 'mod':
-            self.Rplot(lockins_t, Rmod, run-1, name, 'Time (s)',
-                                  r'$\text{R}_\text{mod}$ (mV)', r'$\text{R}_\text{mod}$ vs Time, run' + f'{run}-{run+1}' + 
-                                  f', $B_z$={B} G, $P$={power} μW' + ' @'+ str(date))
+            self.Rplot(lockins_t, Rmod, run, name, 'Time (min)',
+                                  r'$\text{R}_\text{mod}$ (mV)', r'$\text{R}_\text{mod}$ vs Time, run' + f'{run}' + 
+                                  f', $B_z$={B_ave}$\pm${B_variration} G, $P$={power} μW' + ' @'+ str(date))
 
+    def B_field(self):
+        B_max = np.array([5.2934, 5.2915, 5.2932, 5.2927, 5.2935])
+        B_min = np.array([5.2848, 5.2834, 5.2842, 5.2839, 5.2837])
+
+        # Compute the average field
+        B_avg = np.round(0.5 * (np.mean(B_max) + np.mean(B_min)),3)
+        print("Average Magnetic Field:", B_avg)
+
+        # Compute mean absolute deviation (MAD)
+        B_spread = np.round(0.5 * (np.mean(np.abs(B_max - B_avg)) + np.mean(np.abs(B_min - B_avg))),3)
+        print("Average Magnetic Field Spread (Variation):", B_spread)
+
+        return B_avg, B_spread
+    
 if __name__ == "__main__":
     dir_path = os.path.join(
     os.path.expanduser('~'),  # Directory path on personal computer
@@ -160,5 +179,5 @@ if __name__ == "__main__":
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    # plotter.XY_vs_time(Lockins_path, 'mod', 1, (5.283,5.293), 270)
-    plotter.R_vs_time(Lockins_path, 'mod', 1, (5.283,5.293), 270) 
+    plotter.XY_vs_time(Lockins_path, 'mod', 1, 270)
+    plotter.R_vs_time(Lockins_path, 'mod', 1, 270) 
