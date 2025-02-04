@@ -92,9 +92,9 @@ class DataReader:
         Returns:
             - para: Extracted metadata parameters
             - timestamp: Time array [s]
-            - X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod: Lock-in measurement arrays [V]
+            - X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f: Lock-in measurement arrays [V]
         """
-        para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = [], [], [], [], [], [], [], [], [], []
+        para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = [], [], [], [], [], [], [], [], [], []
         
         for file in sorted(path, key=self.sort_key):
             settings = []
@@ -125,7 +125,7 @@ class DataReader:
                 skiprows = sum(1 for line in lines if line.startswith('#')) + 1
 
             df = pd.read_csv(file, sep=',', header=None, skiprows=skiprows, 
-                            names=['Timestamp', 'X_1f', 'Y_1f', 'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_mod', 'Y_mod'])
+                            names=['Timestamp', 'X_1f', 'Y_1f', 'X_2f', 'Y_2f', 'X_dc', 'Y_dc', 'X_m2f', 'Y_m2f'])
             
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()
@@ -137,10 +137,10 @@ class DataReader:
             Y2f.append(df['Y_2f'].to_numpy())
             Xdc.append(df['X_dc'].to_numpy())
             Ydc.append(df['Y_dc'].to_numpy())
-            Xmod.append(df['X_mod'].to_numpy())
-            Ymod.append(df['Y_mod'].to_numpy())
+            Xm2f.append(df['X_m2f'].to_numpy())
+            Ym2f.append(df['Y_m2f'].to_numpy())
 
-        return para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod
+        return para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f
     
     def read_processed_da(self, path):
         """

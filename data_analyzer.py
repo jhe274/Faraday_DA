@@ -17,16 +17,16 @@ class DataAnalyzer:
             lockins_path (list): List of lock-in amplifier file paths.
         
         Returns:
-            tuple: (para, lockins_t, R1f, R2f, Rdc, Rmod) with R values in volts.
+            tuple: (para, lockins_t, R1f, R2f, Rdc, Rm2f) with R values in volts.
         """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockins_path)
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockins_path)
 
         R1f = [np.hypot(X1f[i], Y1f[i]) for i in range(len(lockins_path))]
         R2f = [np.hypot(X2f[i], Y2f[i]) for i in range(len(lockins_path))]
         Rdc = [np.hypot(Xdc[i], Ydc[i]) for i in range(len(lockins_path))]
-        Rmod = [np.hypot(Xmod[i], Ymod[i]) for i in range(len(lockins_path))]
+        Rm2f = [np.hypot(Xm2f[i], Ym2f[i]) for i in range(len(lockins_path))]
 
-        return para, lockins_t, R1f, R2f, Rdc, Rmod
+        return para, lockins_t, R1f, R2f, Rdc, Rm2f
     
     def ellipticity(self, lockins_path, V1f, Vdc):
         """
@@ -68,7 +68,7 @@ class DataAnalyzer:
 
         return theta
     
-    def modulated_angle(self, lockins_path, V1f, Vdc, Vmod):
+    def modulated_angle(self, lockins_path, V1f, Vdc, Vm2f):
         """
         Computes the modulated rotation angle.
 
@@ -76,22 +76,22 @@ class DataAnalyzer:
             lockins_path (list): List of lock-in amplifier file paths.
             V1f (list): First harmonic voltage component.
             Vdc (list): DC voltage component.
-            Vmod (list): Modulation voltage component.
+            Vm2f (list): B-field modulation voltage component.
 
         Returns:
             tuple: (theta) in radians.
         """
-        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockins_path)
+        para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockins_path)
         epsilon, epsilon_approx = self.ellipticity(lockins_path, V1f, Vdc)
-        theta_mod = [
+        theta_m2f = [
             0.5 * np.arcsin(
-                np.clip(np.sqrt(2) * para[i][3] * Vmod[i] / (
+                np.clip(np.sqrt(2) * para[i][3] * Vm2f[i] / (
                 5 * np.pi * scipy.special.jv(2, 2.405) * Vdc[i] * np.sqrt(1 - 4 * epsilon_approx[i]**2)), -1, 1)
             ) 
             for i in range(len(lockins_path))
         ]
 
-        return theta_mod
+        return theta_m2f
     
     def absorbance_difference(self, epsilon, l):
         """Computes absorbance difference."""
@@ -123,9 +123,12 @@ class DataAnalyzer:
             x (array-like): Data array (e.g., wavelength).
         
         Returns:
-            tuple: (filtered_t, filtered_x)
+            np.ndarray, np.ndarray: Filtered time and data arrays.
         """
-        x_ubound, x_lbound = 766.72e-9, 766.68e-9
+        t = np.asarray(t)
+        x = np.asarray(x)
+
+        x_ubound, x_lbound = 766.701e-9, 766.699e-9
         condition = np.logical_and(x > x_lbound, x < x_ubound)
 
         filtered_t = t[condition]
@@ -133,6 +136,7 @@ class DataAnalyzer:
 
         if filtered_x.size == 0:
             raise ValueError("No values found within the specified bounds.")
+        
 
         return filtered_t, filtered_x
     

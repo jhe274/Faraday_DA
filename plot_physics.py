@@ -48,12 +48,12 @@ class Plot:
         # Process data based on the selected dtype
         if dtype == 'X':
             # Extract in-phase components and calculate ellipticity/angle
-            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xmod, Ymod = self.reader.read_lockins(lockin_path)
+            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockin_path)
             epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, X1f, Xdc)
             theta = self.analyzer.angle(lockin_path, X1f, X2f, Xdc)
         elif dtype == 'R':
             # Extract magnitude components and calculate ellipticity/angle
-            para, lockins_t, R1f, R2f, Rdc = self.analyzer.R_lockins(lockin_path)
+            para, lockins_t, R1f, R2f, Rdc, Rm2f = self.analyzer.R_lockins(lockin_path)
             epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, R1f, Rdc)
             theta = self.analyzer.angle(lockin_path, R1f, R2f, Rdc)
 
@@ -75,8 +75,8 @@ class Plot:
             # Append processed data to the respective lists
             wavelength.append(Lambd)  # [m]
             detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
-            ellipticity.append(ep)  # [rad]
-            angle.append(th)  # [rad]
+            ellipticity.append(ep*1e3)  # [mrad]
+            angle.append(th*1e3)  # [mrad]
 
         return wavelength, detuning, ellipticity, angle
     
@@ -116,7 +116,19 @@ class Plot:
                 CD_vapor.append(ellipticity[1][idx_vapor] - ellipticity[0][idx])
                 CB_vapor.append(angle[1][idx_vapor] - angle[0][idx])
 
-        return wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K
+        # Initialize lists to store absorbance difference and refractive index difference
+        alpha_diff_vapor, n_diff_vapor = [], []
+
+        # Calculate absorbance and refractive index differences for vapor material
+        for i in range(len(detuning[0])):
+            alpha_diff_vapor.append(
+                self.analyzer.absorbance_difference(CD_vapor[i], self.l)
+            )  # Convert ellipticity to mrad for absorbance calculation
+            n_diff_vapor.append(
+                self.analyzer.refractive_indices_difference(CB_vapor[i] * 1e6, self.l, wavelength[0][i])
+            )
+
+        return wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, alpha_diff_vapor, n_diff_vapor
     
     def raw_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
         """
@@ -172,20 +184,8 @@ class Plot:
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         # Perform background subtraction and retrieve processed data
-        wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = \
+        wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, alpha_diff_vapor, n_diff_vapor = \
             self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
-
-        # Initialize lists to store absorbance difference and refractive index difference
-        alpha_diff_vapor, n_diff_vapor = [], []
-
-        # Calculate absorbance and refractive index differences for vapor material
-        for i in range(len(detuning[0])):
-            alpha_diff_vapor.append(
-                self.analyzer.absorbance_difference(CD_vapor[i] * 1e3, self.l)
-            )  # Convert ellipticity to mrad for absorbance calculation
-            n_diff_vapor.append(
-                self.analyzer.refractive_indices_difference(CB_vapor[i] * 1e9, self.l, wavelength[0][i])
-            )  # Convert Faraday rotation to nanoradians for refractive index calculation
 
         # Define the mapping for plotting parameters based on physical type and material
         plot_params = {
@@ -210,7 +210,84 @@ class Plot:
         # self.peaks_valleys_plot(x[0], CB_vapor)
 
         # Apply consistent plot settings (e.g., labels, title, grid) using a helper method
-        self.plot_settings(run, B, power, date, dtype, phytype)
+        self.single_axis_plot_settings(run, B, power, date, dtype, phytype)
+    
+    def two_axes_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
+        """
+        Plot background-subtracted ellipticities and optical rotation angles.
+        :param lambda_path: Path to wavelength data
+        :param lockin_path: Path to lock-in data
+        :param dtype: Data type ('X' or 'R')
+        :param n: Skipping data points equal to n x Time Constant
+        :param run: Current run index
+        :param B: Magnetic field strength [G]
+        :param power: Laser power [μW]
+        :param phytype: Physical quantity type ('CD', 'CB', 'absorbance', 'refractive index')
+        :param material: Measurement material ('air', 'empty', 'vapor', etc.)
+        """
+        # Create a figure and axes for plotting
+        fig, ax1 = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        # Create second Y-axis
+        ax2 = ax1.twinx()  # Create a second y-axis that shares the same x-axis
+
+        # Perform background subtraction and retrieve processed data
+        wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, alpha_diff_vapor, n_diff_vapor = \
+            self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
+
+        # Define the mapping for plotting parameters based on physical type and material
+        plot_params = {
+            ('CD', 'empty'): (detuning[0], CD_empty, CB_empty, \
+                              r'$\Longleftarrow$$\epsilon_\text{empty cell}-\epsilon_\text{air}$', \
+                                r'$\theta_\text{empty cell}-\theta_\text{air}$$\Longrightarrow$' \
+                                  r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
+                                    f'[{dtype}]Ellipticity_and_Rotation_empty_{date}_run{run}-{run+1}.png'),
+            ('CD', 'vapor'): (detuning[0], CD_vapor, CB_vapor, \
+                              r'$\Longleftarrow$$\epsilon_\text{vapor cell}-\epsilon_\text{air}$', \
+                                r'$\theta_\text{vapor cell}-\theta_\text{air}$$\Longrightarrow$', \
+                                  r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
+                                    f'[{dtype}]Ellipticity_and_Rotation_vapor_{date}_run{run}-{run+1}.png'),
+            ('CD', 'K'): (detuning[1], CD_K, CB_K, \
+                          r'$\Longleftarrow$$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', \
+                            r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$$\Longrightarrow$', \
+                              r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
+                                f'[{dtype}]Ellipticity_and_Rotation_K_{date}_run{run}-{run+1}.png'),
+
+            ('absorbance', 'vapor'): (detuning[0], alpha_diff_vapor, n_diff_vapor, \
+                                      r'$\Longleftarrow$$\alpha_--\alpha_+$', r'$n_--n_+$$\Longrightarrow$', \
+                                        r'Absorbance difference (1/m)', r'Refractive indices difference ($\times10^{-6}$)', \
+                                            f'[{dtype}]Absorbance_and_refractive_index_vapor_{date}_run{run}-{run+1}.png'),
+        }
+
+        # Check if the combination of phytype and material exists in the mapping
+        key = (phytype, material)
+        if key in plot_params:
+            # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
+            x, y1, y2, label_y1, label_y2, ylabel_y1, ylabel_y2, file_name = plot_params[key]
+
+            ax1.scatter(x, y1, color='r', label=label_y1, s=2)
+            # ax1.plot(x, y1, color='r', linestyle='-', linewidth=1)
+            ax1.set_xlabel(r'Detuning (GHz)', fontsize=25)
+            ax1.set_xticks(np.arange(-5, 6, 1))
+            ax1.set_ylabel(ylabel_y1, fontsize=25)
+            ax1.tick_params(axis='x', labelsize=25)
+            ax1.tick_params(axis='y', labelsize=25)
+
+            ax2.scatter(x, y2, color='b', label=label_y2, s=2)
+            # ax2.plot(x, y2, '.', color='b', linestyle='-', linewidth=1)
+            ax2.set_ylabel(ylabel_y2, fontsize=25)
+            ax2.tick_params(axis='y', labelsize=25)
+
+            plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+            
+        
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
+        plt.grid(False)
+        save_path = os.path.join(Plots, date, file_name)
+        plt.savefig(save_path)
+        plt.show()
+        
 
     def peaks_valleys_plot(self, x, y):
         """
@@ -259,7 +336,56 @@ class Plot:
         # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, Kn, T, Bz, PK, const), '--', color='red', label='Curve fit')
         # plt.plot(x*1e-9 - nu_D2 * 1e-9, FR(x, 1.474, 19.497, -5.103, -.002, -60), '--', color='green', label='Manual fit')
 
-    def plot_settings(self, run, B, power, date, dtype, phytype):
+    def single_axis_plot_settings(self, run, B, power, date, dtype, phytype):
+        """
+        Configure plot settings for consistent visualization.
+        :param run: Current run index
+        :param B: Magnetic field strength [G]
+        :param power: Laser power [μW]
+        :param dtype: Data type ('X' or 'R')
+        :param phytype: Physical quantity type ('CD', 'CB', etc.)
+        """
+        plt.xlabel(r'Frequency (GHz)', fontsize=25)
+        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
+        # plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
+        plt.yticks(fontsize=25)
+        # plt.ylim(400,-650)
+        # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
+        plt.grid(False)
+        # plt.legend(loc='best', fontsize=25)
+        plot_labels = {
+        'CD': r'Ellipticity (mrad)',
+        'CB': r'Faraday Rotation (mrad)',
+        'absorbance': r'$\alpha_--\alpha_+$ (1/mm)',
+        'refractive index': r'$n_--n_+$ ($\times10^{-9}$)',
+        }
+
+        plot_titles = {
+            'CD': f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
+            'CB': f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
+            'absorbance': f'Absorbance vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
+            'refractive index': f'Refractive index vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
+        }
+
+        file_names = {
+            'CD': f'[{dtype}]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png',
+            'CB': f'[{dtype}]FR_vs_Frequency_{date}_run{run}-{run+1}.png',
+            'absorbance': f'[{dtype}]Absorbance_vs_Frequency_{date}_run{run}-{run+1}.png',
+            'refractive index': f'[{dtype}]Refractive_index_vs_Frequency_{date}_run{run}-{run+1}.png',
+        }
+
+        if phytype in plot_labels:
+            plt.ylabel(plot_labels[phytype], fontsize=25)
+            plt.title(plot_titles[phytype], fontsize=25)
+            
+            file_name = file_names[phytype].format(dtype=dtype, date=date, run=run)
+            save_path = os.path.join(Plots, date, file_name)
+            plt.savefig(save_path)
+
+        # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=25)
+        plt.show()
+
+
         """
         Configure plot settings for consistent visualization.
         :param run: Current run index
@@ -284,7 +410,7 @@ class Plot:
         }
 
         plot_titles = {
-            'CD': f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
+            'CD': f'$B_z$={B} G, $P$={power} μW @{date}',
             'CB': f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
             'absorbance': f'Absorbance vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
             'refractive index': f'Refractive index vs Frequency, $B_z$={B} G, $P$={power} μW @{date}',
@@ -389,13 +515,13 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '06-07-2024'
+    date_input = '05-19-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
-    print(Bristol_path)
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
     # plotter.raw_plot(Bristol_path, Lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
-    plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, -6.05, 402.3, 'CB', 'vapor', date)
+    # plotter.background_subtracted_plot(Bristol_path, Lockins_path, 'X', 5, 13, -5.09, 301.1, 'CB', 'vapor', date)
+    plotter.two_axes_plot(Bristol_path, Lockins_path, 'R', 5, 13, -5.09, 301.1, 'CD', 'vapor', date)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

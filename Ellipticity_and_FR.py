@@ -19,38 +19,43 @@ class Plot:
         self.reader = Read()
         self.analyzer = Analyze()
 
+    def number_of_runs(self, run):
+        """
+        Determine the range of runs to analyze.
+        :param run: Current run index
+        :return: A range of run indices
+        """
+        return range(run-1, run+1)
+
     def read_data(self, lambda_path, lockin_path, dtype, n, run):
         """
         Read measured wavelength and voltages and calculate the ellipticities and Faraday rotations
         """
-        B_t, Lambda = self.reader.Bristol(lambda_path)
+        B_t, Lambda = self.reader.read_bristol(lambda_path)
         if dtype == 'X':
-            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc = self.reader.lockins(lockin_path)
-            epsilon = self.analyzer.ellipticity(lockin_path, X1f, Xdc)
+            para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockin_path)
+            epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, X1f, Xdc)
             theta = self.analyzer.angle(lockin_path, X1f, X2f, Xdc)
         elif dtype == 'R':
-            para, lockins_t, R1f, R2f, Rdc = self.analyzer.R_lockins(lockin_path)
-            epsilon = self.analyzer.ellipticity(lockin_path, R1f, Rdc)
+            para, lockins_t, R1f, R2f, Rdc, Rm2f = self.analyzer.R_lockins(lockin_path)
+            epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, R1f, Rdc)
             theta = self.analyzer.angle(lockin_path, R1f, R2f, Rdc)
         x, x0, Eps, The = [], [], [], []
-
-        runs = range(run-1, run+1)
-
-        for i in runs:
+        
+        for i in self.number_of_runs(run):
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
-
-            B_t[i], Lambda[i], lockins_t[i], epsilon[i] = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], epsilon[i])
-            B_t[i], Lambda[i], lockins_t[i], theta[i] = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], theta[i])
+            B_t[i], Lambda[i], lockins_t[i], epsilon_trimmed = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], epsilon[i])
+            B_t[i], Lambda[i], lockins_t[i], theta_trimmed = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], theta[i])
 
             l_idx, b_idx = self.analyzer.calculate_interval_and_indices(B_t[i], lockins_t[i], para[i][2], n)
-            Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon[i][l_idx])
-            Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta[i][l_idx])
+            Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon_trimmed[l_idx])
+            Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta_trimmed[l_idx])
 
             x0.append(Lambd)                                                                                                                                # [m]
-            x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.Nu39_D2 * 1e-9)                                                                   # [GHz]
+            x.append(self.consts.c / x0[i - run + 1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)                                                                   # [GHz]
             Eps.append(ep)                                                                  # [rad]                                                                                                                # [μrad]
             The.append(th)                                                                  # [rad]                                                                                 # [μrad]
-            
+        
         return x0, x, Eps, The
     
     def physics_extraction(self, lambda_path, lockin_path, dtype, n, run):
@@ -59,10 +64,8 @@ class Plot:
         """
         x0, x, Eps, The = self.read_data(lambda_path, lockin_path, dtype, n, run)
         CD_empty, CD_vapor, CD_K, CB_empty, CB_vapor, CB_K = [], [], [], [], [], []
-
-        runs = range(run-1, run+1)
-
-        if len(runs) > 2:
+        
+        if len(self.number_of_runs(run)) > 2:
             for idx, x_val in enumerate(x0[0]):
                 # Considr air ellipticity/FR as background measurement
                 idx_empty = np.argmin(np.abs(x0[1] - x_val))
@@ -92,11 +95,9 @@ class Plot:
         x0, x, Eps, The = self.read_data(lambda_path, lockin_path, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
-        runs = range(run-1, run+1)
-
-        if len(runs) > 2:
-            for i in runs:
-                if dtype == 'CD':
+        if len(self.number_of_runs(run)) > 2:
+            for i in self.number_of_runs(run):
+                if dtype == 'CDCB':
                     ax.plot(x[i - run + 1], Eps[i - run + 1][1:], label=(r'$\epsilon_\text{air}$' if i-run+1 == 0 
                                                                 else (r'$\epsilon_\text{empty cell}$' if i-run == 0
                                                                     else r'$\epsilon_\text{vapor cell}$')
@@ -109,7 +110,7 @@ class Plot:
                                                             )
                             )
         else:
-            for i in runs:
+            for i in self.number_of_runs(run):
                 if dtype == 'CD':
                     ax.plot(x[i - run + 1], Eps[i - run + 1][1:], label=(r'$\epsilon_\text{air}$' if i-run+1 == 0 
                                                         else r'$\epsilon_\text{vapor cell}$')
@@ -256,20 +257,30 @@ class Plot:
             print(f"An error occurred while saving data to the file: {e}")
 
 if __name__ == "__main__":
-    dir_path = os.path.join(os.getcwd(), 'Research', 'PhD Project', 'Faraday Rotation Measurements')
-    # dir_path = os.path.join(os.getcwd(), 'Faraday Rotation Measurements')
-    K_vapor = os.path.join(dir_path, 'K vapor cell')
-    Bristol = os.path.join(K_vapor, 'Bristol data')
-    Lockins = os.path.join(K_vapor, 'Lockins data')
+    dir_path = os.path.join(
+    os.path.expanduser('~'),  # Directory path on personal computer
+    'OneDrive', 
+    'Files', 
+    'Graduate_study', 
+    'Research', 
+    'PhD_project', 
+    'Faraday_rotation_measurements'
+    )
+    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    # 'Faraday_rotation_measurements', 
+    # )
+    K_vapor = os.path.join(dir_path, 'K_vapor_cell')
+    Bristol = os.path.join(K_vapor, 'Bristol_data')
+    Lockins = os.path.join(K_vapor, 'Lockins_data')
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
-    processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed data')
+    processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '09-17-2024'
+    date_input = '05-19-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    # plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 1, 0.005, 59.4, 'CD', 'vapor')
+    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 13, -5.09, 301.1, 'CD', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
-    plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
+    # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

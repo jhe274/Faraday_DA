@@ -32,7 +32,7 @@ class LaserDrift:
     def drift_fit(self, x, y):
         # Perform linear regression
         slope, intercept, _, _, _ = linregress(x, y)
-        print(x)
+        
         # Compute fitted values
         y_fit = slope * x + intercept
 
@@ -46,27 +46,27 @@ class LaserDrift:
         return y_fit, slope, y_mean, y_std
     
     def process(self, t, y1, y2, dtype, run):
-        for i in self.number_of_runs(run):
-            if dtype == 'wavelength':
-                scale_factor = 1e9  # wavelenght: [nm]
-                y = y1[i] * scale_factor
-                x = t[i] / 60  # Convert time to minutes
-                y_fit, slope, y_std = self.drift_fit(x, y)
-            elif dtype == 'frequency':
-                scale_factor = 1e-9  # frequency: [GHz]
-                y = y2[i] * scale_factor
-                x = t[i] / 60  # Convert time to minutes
-                y_fit, slope, y_std = self.drift_fit(x, y)
+        if dtype == 'wavelength':
+            scale_factor = 1e9  # wavelenght: [nm]
+            y = y1 * scale_factor
+            x = t / 60  # Convert time to minutes
+            y_fit, slope, y_mean, y_std = self.drift_fit(x, y)
+        elif dtype == 'frequency':
+            scale_factor = 1e-9  # frequency: [GHz]
+            y = y2 * scale_factor
+            x = t / 60  # Convert time to minutes
+            y_fit, slope, y_mean, y_std = self.drift_fit(x, y)
 
-        return x, y, y_fit, slope, y_std
+        return x, y, y_fit, slope, y_mean, y_std
     
     def plot_process(self, t, y1, y2, dtype, run, name, unit, xlabel, ylabel, title, date):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
-        x, y, y_fit, slope, y_std = self.process(t, y1, y2, dtype, run)
+        x, y, y_fit, slope, y_mean, y_std = self.process(t, y1, y2, dtype, run)
 
         ax.scatter(x, y, color='r', s=5)
+        unitfactor = 1e3
         ax.plot(x, y_fit, '--', color='b', 
-            label=f'Linear fit: $\\nabla_t {name}$={slope * 1e6:.3f} {unit}/min, $\\Delta$={y_std * 1e6:.3f} {unit}')
+            label=f'Linear fit: $\\nabla_t {name}$={slope * unitfactor:.3f} {unit}/min, $\\Delta$={y_std * unitfactor:.3f} {unit}')
         
         ax.ticklabel_format(useOffset=False, style='plain')
         plt.xlabel(xlabel, fontsize=25)
@@ -80,22 +80,24 @@ class LaserDrift:
         plt.savefig(os.path.join(Plots, f'{date}', f'{dtype}_vs_time_{date}_run{run}.png'))
         plt.show()
         
-    def wavelength_frequency(self, bristol_path, run, date, dtype):
+    def wavelength_frequency(self, bristol_path, date, run, dtype):
         # Read wavelength data from Bristol wavelength meter
         timestamp, wavelength = self.reader.read_bristol(bristol_path)
-        frequency = [self.consts.c / wavelength[i] for i in range(len(wavelength))]  # [GHz]
+        t, wl = self.analyzer.filter_data(timestamp, wavelength)
+        nu = np.array([self.consts.c / wl[i] for i in range(len(wl))])  # [GHz]
+
         for i in self.number_of_runs(run):
             if dtype == 'wavelength':
                 name = '\\lambda'
-                unit = 'fm'
-                self.plot_process(timestamp, wavelength, frequency, dtype, run, name, unit, 
-                                'Time (min)', r'$\lambda$ (nm)', 'Wavelength vs Time, run' +
+                unit = 'pm'
+                self.plot_process(t, wl, nu, dtype, run, name, unit, 
+                                'Time (min)', r'Wavelength (nm)', 'Wavelength vs Time, run' +
                                 f'{run}' + ' @'+ str(date), date)
             elif dtype == 'frequency':
                 name = '\\nu'
                 unit = 'MHz'
-                self.plot_process(timestamp, wavelength, frequency, dtype, run, name, unit, 
-                                'Time (min)', r'$\nu$ (GHz)', 'Frequency vs Time, run' +
+                self.plot_process(t, wl, nu, dtype, run, name, unit, 
+                                'Time (min)', r'Frequency (GHz)', 'Frequency vs Time, run' +
                                 f'{run}' + ' @'+ str(date), date)
 
 if __name__ == "__main__":
@@ -117,7 +119,7 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = LaserDrift()
-    date_input = '01-31-2025'
+    date_input = '02-02-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
-    plotter.wavelength_frequency(Bristol_path, 1, date, 'wavelength')
+    plotter.wavelength_frequency(Bristol_path, date, 1, 'wavelength')
