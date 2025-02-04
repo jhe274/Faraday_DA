@@ -68,7 +68,7 @@ class Plot:
         for i in self.number_of_runs(run):
             # Linear fit for laser drift
             frequency = [self.consts.c / Lambda[j] for j in range(len(Lambda))]  # [GHz]
-            y_fit, slope, y_mean, y_std = self.ld.drift_fit(B_t[i], frequency[i])
+            y_fit, slope, intercept, y_mean, residuals, y_std = self.ld.drift_fit(B_t[i], frequency[i])
 
             # Filter and trim data for the current run
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
@@ -119,28 +119,39 @@ class Plot:
         timestamp, wavelength, detuning, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, frequency_shift, index = \
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
-        
+
         plot_params = {
             ('CD', 'vapor'): (timestamp[index] / 60, ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
             ('CB', 'vapor'): (timestamp[index] / 60, angle[index], r'$\theta_\text{vapor cell}$'),
-            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta^\text{m2f}$'),
+            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}$'),
             ('absorbance', 'vapor'): (timestamp[index][1:] / 60, alpha_diff_vapor[index], r'$\alpha_--\alpha_+$'),
             ('refractive', 'vapor'): (timestamp[index][1:] / 60, n_diff_vapor[index], r'$n_--n_+$'),
-        }
-
-        # Check if the combination of phytype and material exists in the mapping
+        }# Check if the combination of phytype and material exists in the mapping
         key = (phytype, material)
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, label = plot_params[key]
-            ax.scatter(x, y, color='red', s=70)
-            ax.plot(x, y, color='red', linestyle='-', linewidth=2)
         
-        y_fit, slope, y_mean, y_std = self.ld.drift_fit(x, y)
-        ax.plot(x, y_fit, '--', color='b', 
-            label=fr'Linear fit: $\bar{{\theta}}$={y_mean:.3f} μrad, $\Delta$={y_std:.3f} μrad')
+        y_fit, slope, intercept, y_mean, residuals, y_std = self.ld.drift_fit(x, y)
+
+        # the 1 sigma upper and lower analytic population bounds
+        lower_bound = slope*x + intercept - y_std
+        upper_bound = slope*x + intercept + y_std
+
+        # ax.scatter(x, y, color='C0', s=70)
+        ax.plot(x, y, lw=2, label=label)
+        ax.plot(x, y_fit, '--', color='C0', lw=2, 
+            label=fr'Sample mean')
+        ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'1$\sigma$ range')
         
+        # here we use the where argument to only fill the region where the
+        # walker is above the population 1 sigma boundary
+        ax.fill_between(x, upper_bound, y, where=y > upper_bound, fc='red', alpha=0.5, interpolate=True)
+        ax.fill_between(x, lower_bound, y, where=y < lower_bound, fc='red', alpha=0.5, interpolate=True)
+
         B_ave, B_spread = self.B_field()
+        print('Average measured change of polarization rotation:', y_mean)
+        print('Standard deviation of residuals:', y_std)
         self.plot_settings(run, B_ave, B_spread, frequency_shift, temp, power, date, dtype, phytype)
 
     def two_axes_plot(self, lambda_path, lockin_path, dtype, n, run, temp, power, phytype, material, date):
@@ -189,7 +200,7 @@ class Plot:
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=25)
         plt.grid(False)
         save_path = os.path.join(Plots, date, file_name)
         plt.savefig(save_path)
@@ -204,7 +215,7 @@ class Plot:
         :param dtype: Data type ('X' or 'R')
         :param phytype: Physical quantity type ('CD', 'CB', etc.)
         """
-        plt.xlabel(r'Time (s)', fontsize=25)
+        plt.xlabel(r'Time (min)', fontsize=25)
         plt.xticks(fontsize=25)
         plt.yticks(fontsize=25)
         plt.grid(False)
@@ -296,8 +307,8 @@ class Plot:
             print(f"An error occurred while saving data to the file: {e}")
 
     def B_field(self):
-        B_max = np.array([5.002, 5.002, 5.002, 5.002, 5.001])
-        B_min = np.array([4.964, 4.965, 4.964, 4.966, 4.965])
+        B_max = np.array([5.2934, 5.2915, 5.2932, 5.2927, 5.2935])
+        B_min = np.array([5.2848, 5.2834, 5.2842, 5.2839, 5.2837])
 
         # Compute the average field
         B_avg = np.round(0.5 * (np.mean(B_max) + np.mean(B_min)),3)
@@ -330,12 +341,12 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '02-02-2025'
+    date_input = '01-31-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.raw_plot(Bristol_path, Lockins_path, 'R', 8, 4, 22.84, 250, 'modCB', 'vapor', date)
-    # plotter.two_axes_plot(Bristol_path, Lockins_path, 'R', 8, 4, 22.84, 250, 'absorbance', 'vapor', date)
+    # plotter.raw_plot(Bristol_path, Lockins_path, 'R', 8, 1, 22.75, 270, 'modCB', 'vapor', date)
+    plotter.two_axes_plot(Bristol_path, Lockins_path, 'R', 8, 1, 22.75, 270, 'absorbance', 'vapor', date)
 
 
     FR_file = f'FaradayRotation_{date_input}.csv'

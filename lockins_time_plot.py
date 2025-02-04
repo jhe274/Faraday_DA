@@ -98,8 +98,8 @@ class Plot:
                                   f', $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C, $P$={power} μW')
 
     def B_field(self):
-        B_max = np.array([5.002, 5.002, 5.002, 5.002, 5.001])
-        B_min = np.array([4.964, 4.965, 4.964, 4.966, 4.965])
+        B_max = np.array([5.2934, 5.2915, 5.2932, 5.2927, 5.2935])
+        B_min = np.array([5.2848, 5.2834, 5.2842, 5.2839, 5.2837])
 
         # Compute the average field
         B_avg = np.round(0.5 * (np.mean(B_max) + np.mean(B_min)),3)
@@ -130,8 +130,8 @@ if __name__ == "__main__":
     Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-02-2025'
+    date_input = '01-31-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
     Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(Lockins_path, '1f', 4, 22.84, 250)
+    plotter.XYR_vs_time(Lockins_path, 'm2f', 1, 22.75, 270)

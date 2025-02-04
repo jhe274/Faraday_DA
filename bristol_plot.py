@@ -43,19 +43,19 @@ class LaserDrift:
         residuals = y - y_fit
         y_std = np.std(residuals, ddof=1)
 
-        return y_fit, slope, y_mean, y_std
+        return y_fit, slope, intercept, y_mean, residuals, y_std
     
     def process(self, t, y1, y2, dtype, run):
         if dtype == 'wavelength':
             scale_factor = 1e9  # wavelenght: [nm]
             y = y1 * scale_factor
             x = t / 60  # Convert time to minutes
-            y_fit, slope, y_mean, y_std = self.drift_fit(x, y)
+            y_fit, slope, intercept, y_mean, residuals, y_std = self.drift_fit(x, y)
         elif dtype == 'frequency':
             scale_factor = 1e-9  # frequency: [GHz]
             y = y2 * scale_factor
             x = t / 60  # Convert time to minutes
-            y_fit, slope, y_mean, y_std = self.drift_fit(x, y)
+            y_fit, slope, intercept, y_mean, residuals, y_std = self.drift_fit(x, y)
 
         return x, y, y_fit, slope, y_mean, y_std
     
