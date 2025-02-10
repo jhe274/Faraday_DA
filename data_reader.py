@@ -81,7 +81,7 @@ class DataReader:
             timestamps.append(pd.to_datetime(df['Timestamp']).sub(t0).dt.total_seconds().to_numpy())
             B0s.append(df['MagneticFluxDensity(G)'].to_numpy())
             temps.append(df['Temperature(C)'].to_numpy())
-        print(B0s)
+        
         return timestamps, B0s, temps
 
     def read_tc300(self, path):
@@ -116,7 +116,6 @@ class DataReader:
         para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = [], [], [], [], [], [], [], [], [], []
         
         for file in sorted(path, key=self.sort_key):
-            print(file)
             settings = []
             with open(file, 'r') as f:
                 for line in f:
