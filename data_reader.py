@@ -49,7 +49,7 @@ class DataReader:
     
     def read_bristol(self, path):
         """
-        Reads wavelength measurements from a Bristol 871 wavelength meter.
+        Reads wavelength measurements from Bristol 871 wavelength meter.
         Returns:
             - timestamp: Time array [s]
             - wavelength: Wavelength array [m]
@@ -64,6 +64,25 @@ class DataReader:
             wavelength.append(df['Instrument Wavelength'].to_numpy(dtype=np.float64) * 1e-9)
 
         return timestamp, wavelength
+    
+    def read_gaussmeter(self, path):
+        """
+        Reads magnetic field measurements from Lakeshore 475 DSP Gaussmeter.
+        Returns:
+            - timestamp: Time array [s]
+            - B0s: Magnetic field components [G]
+            - temps: Temperature array [°C]
+        """
+        dfs = self.read_csv_data(path, sep=',', header=None, skiprows=1,
+                                 names=['Timestamp','MagneticFluxDensity(G)','Temperature(C)'])
+        timestamps, B0s, temps = [], [], []
+        for df in dfs:
+            t0 = pd.to_datetime(df['Timestamp']).iloc[0]
+            timestamps.append(pd.to_datetime(df['Timestamp']).sub(t0).dt.total_seconds().to_numpy())
+            B0s.append(df['MagneticFluxDensity(G)'].to_numpy())
+            temps.append(df['Temperature(C)'].to_numpy())
+        print(B0s)
+        return timestamps, B0s, temps
 
     def read_tc300(self, path):
         """
@@ -97,6 +116,7 @@ class DataReader:
         para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = [], [], [], [], [], [], [], [], [], []
         
         for file in sorted(path, key=self.sort_key):
+            print(file)
             settings = []
             with open(file, 'r') as f:
                 for line in f:

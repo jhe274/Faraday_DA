@@ -2,6 +2,7 @@ import numpy as np
 from data_reader import DataReader as Read
 import scipy.special
 from scipy.optimize import curve_fit
+from scipy.stats import linregress
 
 class DataAnalyzer:
 
@@ -128,7 +129,7 @@ class DataAnalyzer:
         t = np.asarray(t)
         x = np.asarray(x)
 
-        x_ubound, x_lbound = 766.701e-9, 766.699e-9
+        x_ubound, x_lbound = 766.711e-9, 766.689e-9
         condition = np.logical_and(x > x_lbound, x < x_ubound)
 
         filtered_t = t[condition]
@@ -202,3 +203,19 @@ class DataAnalyzer:
         """Applies a simple moving average smoothing filter."""
         len_data = len(data)
         return np.array([np.mean(data[max(0, i-width//2):min(i+width//2, len_data)]) for i in range(len_data)])
+    
+    def drift_fit(self, x, y):
+        # Perform linear regression
+        slope, intercept, _, _, _ = linregress(x, y)
+        
+        # Compute fitted values
+        y_fit = slope * x + intercept
+
+        # Compute the mean
+        y_mean = np.mean(y)
+
+        # Compute standard deviation of residuals
+        residuals = y - y_fit
+        y_std = np.std(residuals, ddof=1)
+
+        return y_fit, slope, intercept, y_mean, residuals, y_std

@@ -22,11 +22,12 @@ class Plot:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run)
+        return range(run-1, run+1)
 
     def plot_process(self, t, X, Y, R, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
         for i in self.number_of_runs(run):
+
             if name == '1f':
                 scale_factor = 1e3  # RMS Voltage: [mV]
             elif name == '2f':
@@ -41,27 +42,42 @@ class Plot:
             Y[i] = Y[i] * scale_factor
             R[i] = R[i] * scale_factor
 
-            # Plot X and Y with the appropriate labels
-            label_x = (r'$\text{X}_\text{f}$' if name == '1f' else 
-                    r'$\text{X}_\text{2f}$' if name == '2f' else 
-                    r'$\text{X}_\text{dc}$' if name == 'dc' else
-                    r'$\text{X}_\text{m2f}$')
-            label_y = (r'$\text{Y}_\text{f}$' if name == '1f' else 
-                    r'$\text{Y}_\text{2f}$' if name == '2f' else 
-                    r'$\text{Y}_\text{dc}$' if name == 'dc' else
-                    r'$\text{Y}_\text{m2f}$')
 
-            label_R = (r'$\text{R}_\text{1f}$' if name == '1f' else 
-                    r'$\text{R}_\text{2f}$' if name == '2f' else 
-                    r'$\text{R}_\text{dc}$' if name == 'dc' else
-                    r'$\text{R}_\text{m2f}$')
+            if i == run-1:
+                # Plot X and Y with the appropriate labels
+                label_x = (r'$\text{X}_\text{f}$' if name == '1f' else 
+                        r'$\text{X}_\text{2f}$' if name == '2f' else 
+                        r'$\text{X}_\text{dc}$' if name == 'dc' else
+                        r'$\text{X}_\text{m2f}$')
+                label_y = (r'$\text{Y}_\text{f}$' if name == '1f' else 
+                        r'$\text{Y}_\text{2f}$' if name == '2f' else 
+                        r'$\text{Y}_\text{dc}$' if name == 'dc' else
+                        r'$\text{Y}_\text{m2f}$')
 
-            # ax.scatter(t[i][8:]/60, X[i][8:], label=label_x, color='r', s=30)
-            ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=2)
-            # ax.scatter(t[i][8:]/60, Y[i][8:], label=label_y, color='b', s=30)
-            ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=2)
-            ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
-            # ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1)
+                label_R = (r'$\text{R}_\text{1f}$' if name == '1f' else 
+                        r'$\text{R}_\text{2f}$' if name == '2f' else 
+                        r'$\text{R}_\text{dc}$' if name == 'dc' else
+                        r'$\text{R}_\text{m2f}$')
+
+                # ax.scatter(t[i][8:]/60, X[i][8:], label=label_x, color='r', s=30)
+                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                        marker='^', markersize=10, markevery=200)
+                # ax.scatter(t[i][8:]/60, Y[i][8:], label=label_y, color='b', s=30)
+                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                        marker='^', markersize=10, markevery=200)
+                # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
+                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                        marker='^', markersize=10, markevery=200)
+            else:
+                # ax.scatter(t[i][8:]/60, X[i][8:], label=label_x, color='r', s=30)
+                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                        marker='x', markersize=10, markevery=200)
+                # ax.scatter(t[i][8:]/60, Y[i][8:], label=label_y, color='b', s=30)
+                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                        marker='x', markersize=10, markevery=200)
+                # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
+                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                        marker='x', markersize=10, markevery=200)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -72,30 +88,30 @@ class Plot:
         # plt.grid(True)
         ax.legend(loc='best', fontsize=25)
         plt.title(title, fontsize=25)
-        plt.savefig(os.path.join(Plots, f'{date}', f'{name}_vs_time_{date}_run{run}.png'))
+        plt.savefig(os.path.join(plots, f'{date}', f'{name}_vs_time_{date}_run{run}.png'))
         plt.show()
 
-    def XYR_vs_time(self, lockins_path, name, run, temp, power):
+    def XYR_vs_time(self, lockins_path, name, run, power):
         para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockins_path)
         para, lockins_t, R1f, R2f, Rdc, Rm2f = self.analyzer.R_lockins(lockins_path)
         B_ave, B_variration = self.B_field()
 
         if name == '1f':
             self.plot_process(lockins_t, X1f, Y1f, R1f, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'1f Voltages vs Time, run' + f'{run}' + 
-                                  f', $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C, $P$={power} μW')
+                                  r'Voltage (mV)', r'1f Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  f', $P$={power} μW') #, $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C
         elif name == '2f':
             self.plot_process(lockins_t, X2f, Y2f, R2f, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'2f Voltages vs Time, run' + f'{run}' + 
-                                  f', $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C, $P$={power} μW')
+                                  r'Voltage (mV)', r'2f Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  f', $P$={power} μW')
         elif name == 'dc':
             self.plot_process(lockins_t, Xdc, Ydc, Rdc, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'DC Voltages vs Time, run' + f'{run}' + 
-                                  f', $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C, $P$={power} μW')
+                                  r'Voltage (mV)', r'DC Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  f', $P$={power} μW')
         elif name == 'm2f':
             self.plot_process(lockins_t, Xm2f, Ym2f, Rm2f, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'M2f Voltages vs Time, run' + f'{run}' + 
-                                  f', $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C, $P$={power} μW')
+                                  r'Voltage (mV)', r'M2f Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  f', $P$={power} μW')
 
     def B_field(self):
         B_max = np.array([5.2934, 5.2915, 5.2932, 5.2927, 5.2935])
@@ -125,13 +141,11 @@ if __name__ == "__main__":
     # 'Faraday_rotation_measurements', 
     # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
-    Bristol = os.path.join(K_vapor, 'Bristol_data')
-    Lockins = os.path.join(K_vapor, 'Lockins_data')
-    Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
+    lockins = os.path.join(K_vapor, 'Lockins_data')
+    plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '01-31-2025'
+    date_input = '02-09-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
-    Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
-    Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(Lockins_path, 'm2f', 1, 22.75, 270)
+    lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
+    plotter.XYR_vs_time(lockins_path, 'm2f', 1, 395)

@@ -36,10 +36,12 @@ class Plot:
             para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockin_path)
             epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, X1f, Xdc)
             theta = self.analyzer.angle(lockin_path, X1f, X2f, Xdc)
+            m2f_theta = self.analyzer.modulated_angle(lockin_path, X1f, Xdc, Xm2f)
         elif dtype == 'R':
             para, lockins_t, R1f, R2f, Rdc, Rm2f = self.analyzer.R_lockins(lockin_path)
             epsilon, epsilon_approx = self.analyzer.ellipticity(lockin_path, R1f, Rdc)
             theta = self.analyzer.angle(lockin_path, R1f, R2f, Rdc)
+            m2f_theta = self.analyzer.modulated_angle(lockin_path, R1f, Rdc, Rm2f)
         x, x0, Eps, The = [], [], [], []
         
         for i in self.number_of_runs(run):
@@ -209,18 +211,18 @@ class Plot:
             plt.ylabel(r'Ellipticity (μrad.)', fontsize=25)
             plt.title(f'Ellipticity vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[X]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(plots, f'{date}', f'[X]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
             elif dtype == 'R':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[R]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(plots, f'{date}', f'[R]Ellipticity_vs_Frequency_{date}_run{run}-{run+1}.png'))
         elif phytype == 'CB':
             plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             plt.ylabel(r'Faraday Rotation (μrad.)', fontsize=25)
             plt.title(f'Faraday Rotation vs Frequency, $B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             if dtype == 'X':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[X]FR_vs_Frequency_{date}_run{run}-{run+1}123.png'))
+                plt.savefig(os.path.join(plots, f'{date}', f'[X]FR_vs_Frequency_{date}_run{run}-{run+1}123.png'))
             elif dtype == 'R':
-                plt.savefig(os.path.join(Plots, f'{date}', f'[R]FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
+                plt.savefig(os.path.join(plots, f'{date}', f'[R]FR_vs_Frequency_{date}_run{run}-{run+1}.png'))
         # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=25)
         plt.show()
 
@@ -270,17 +272,17 @@ if __name__ == "__main__":
     # 'Faraday_rotation_measurements', 
     # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
-    Bristol = os.path.join(K_vapor, 'Bristol_data')
-    Lockins = os.path.join(K_vapor, 'Lockins_data')
-    Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
+    wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
+    lockins = os.path.join(K_vapor, 'Lockins_data')
+    plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
     date_input = '05-19-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
-    Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
-    Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
-    plotter.extracted_plot(Bristol_path, Lockins_path, 'X', 5, 13, -5.09, 301.1, 'CD', 'vapor')
+    wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
+    lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
+    plotter.extracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 13, -5.09, 301.1, 'CD', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

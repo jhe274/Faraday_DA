@@ -7,7 +7,6 @@ from constants import Constants as Consts
 from theory_calculations import Theory
 from data_reader import DataReader as Read
 from data_analyzer import DataAnalyzer as Analyze
-from bristol_plot import LaserDrift
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
@@ -23,7 +22,6 @@ class Plot:
         self.theory = Theory()  # Load theoretical models
         self.reader = Read()    # Utilities for reading data
         self.analyzer = Analyze()  # Data analysis utilities
-        self.ld = LaserDrift()  # Data drift analysis utilities
         self.l = (7.5 - 0.159 * 2) * 1e-2  # Optical path length in [m]
 
     def number_of_runs(self, run):
@@ -126,13 +124,14 @@ class Plot:
             ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}$'),
             ('absorbance', 'vapor'): (timestamp[index][1:] / 60, alpha_diff_vapor[index], r'$\alpha_--\alpha_+$'),
             ('refractive', 'vapor'): (timestamp[index][1:] / 60, n_diff_vapor[index], r'$n_--n_+$'),
-        }# Check if the combination of phytype and material exists in the mapping
+        }
+        # Check if the combination of phytype and material exists in the mapping
         key = (phytype, material)
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, label = plot_params[key]
         
-        y_fit, slope, intercept, y_mean, residuals, y_std = self.ld.drift_fit(x, y)
+        y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
 
         # the 1 sigma upper and lower analytic population bounds
         lower_bound = slope*x + intercept - y_std
@@ -141,13 +140,13 @@ class Plot:
         # ax.scatter(x, y, color='C0', s=70)
         ax.plot(x, y, lw=2, label=label)
         ax.plot(x, y_fit, '--', color='C0', lw=2, 
-            label=fr'Sample mean')
+            label=r'Sample mean')
         ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'1$\sigma$ range')
         
         # here we use the where argument to only fill the region where the
         # walker is above the population 1 sigma boundary
-        ax.fill_between(x, upper_bound, y, where=y > upper_bound, fc='red', alpha=0.5, interpolate=True)
-        ax.fill_between(x, lower_bound, y, where=y < lower_bound, fc='red', alpha=0.5, interpolate=True)
+        ax.fill_between(x, upper_bound, y, where=y > upper_bound, fc='red', alpha=0.4, interpolate=True)
+        ax.fill_between(x, lower_bound, y, where=y < lower_bound, fc='red', alpha=0.4, interpolate=True)
 
         B_ave, B_spread = self.B_field()
         print('Average measured change of polarization rotation:', y_mean)
@@ -202,7 +201,7 @@ class Plot:
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=25)
         plt.grid(False)
-        save_path = os.path.join(Plots, date, file_name)
+        save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
 
@@ -241,7 +240,7 @@ class Plot:
             plt.title(plot_titles, fontsize=25)
             
             file_name = file_names[phytype].format(dtype=dtype, date=date, run=run)
-            save_path = os.path.join(Plots, date, file_name)
+            save_path = os.path.join(plots, date, file_name)
             plt.savefig(save_path)
 
         plt.show()
@@ -335,18 +334,18 @@ if __name__ == "__main__":
     # 'Faraday_rotation_measurements', 
     # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
-    Bristol = os.path.join(K_vapor, 'Bristol_data')
-    Lockins = os.path.join(K_vapor, 'Lockins_data')
-    Plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
+    wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
+    lockins = os.path.join(K_vapor, 'Lockins_data')
+    plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '01-31-2025'
+    date_input = '02-09-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
-    Bristol_path = glob.glob(os.path.join(Bristol, date, '*.csv'))
-    Lockins_path = glob.glob(os.path.join(Lockins, date, '*.lvm'))
+    wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
+    lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(Bristol_path, Lockins_path, 'R', 8, 1, 22.75, 270, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(Bristol_path, Lockins_path, 'R', 8, 1, 22.75, 270, 'absorbance', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, 22.75, 395, 'CD', 'vapor', date)
 
 
     FR_file = f'FaradayRotation_{date_input}.csv'
