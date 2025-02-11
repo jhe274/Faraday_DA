@@ -128,24 +128,24 @@ class Plot:
         return B_avg, B_spread
     
 if __name__ == "__main__":
-    dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    'OneDrive', 
-    'Files', 
-    'Graduate_study', 
-    'Research', 
-    'PhD_project', 
-    'Faraday_rotation_measurements'
-    )
-    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
-    # 'Faraday_rotation_measurements', 
+    # dir_path = os.path.join(
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    # 'OneDrive', 
+    # 'Files', 
+    # 'Graduate_study', 
+    # 'Research', 
+    # 'PhD_project', 
+    # 'Faraday_rotation_measurements'
     # )
+    dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    'Faraday_rotation_measurements', 
+    )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     lockins = os.path.join(K_vapor, 'Lockins_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-09-2025'
+    date_input = '01-23-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(lockins_path, 'm2f', 1, 395)
+    plotter.XYR_vs_time(lockins_path, 'dc', 1, 200)

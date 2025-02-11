@@ -46,13 +46,13 @@ class Plot:
                 ax1.tick_params(axis='x', labelsize=25)
                 ax1.tick_params(axis='y', labelsize=25)
 
-                ax2.plot(x[i]/60, y2[i], label=r'$T$, run1', color='black', linestyle='-', linewidth=1, 
+                ax2.plot(x[i]/60, y2[i], label=f'$T$, run{run}', color='black', linestyle='-', linewidth=1, 
                         marker='^', markersize=10, markevery=200)
                 ax2.set_ylabel(ylabel_y2, fontsize=25)
                 ax2.tick_params(axis='y', labelsize=25)
             else:
                 y1_fit, slope, intercept, y1_mean, residuals, y1_std = self.analyzer.drift_fit(x[i]/60, y1[i])
-
+                
                 # ax1.plot(x[i]/60, y1[i], label=r'$B_0$, run2', color='r', alpha=0.4, linestyle='-', linewidth=1, 
                 #         marker='x', markersize=10, markevery=200)
                 # ax1.plot(x[i]/60, y1_fit, label=f'Linear regression: run{run+1}', color='r', linestyle='--', linewidth=1)
@@ -86,24 +86,24 @@ class Plot:
     
 
 if __name__ == "__main__":
-    dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    'OneDrive', 
-    'Files', 
-    'Graduate_study', 
-    'Research', 
-    'PhD_project', 
-    'Faraday_rotation_measurements'
-    )
-    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
-    # 'Faraday_rotation_measurements', 
+    # dir_path = os.path.join(
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    # 'OneDrive', 
+    # 'Files', 
+    # 'Graduate_study', 
+    # 'Research', 
+    # 'PhD_project', 
+    # 'Faraday_rotation_measurements'
     # )
+    dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    'Faraday_rotation_measurements', 
+    )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-09-2025'
+    date_input = '02-11-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
-    plotter.gaussmter_vs_time(gaussmeter_path, 1)
+    plotter.gaussmter_vs_time(gaussmeter_path, 3)

@@ -482,18 +482,18 @@ class Plot:
         return B_mean, T_mean, B_std, T_std, B_fit, B_slope, B_intercept, B_residuals
 
 if __name__ == "__main__":
-    dir_path = os.path.join(
-    os.path.expanduser('~'),  # Expands to your home directory
-    'OneDrive', 
-    'Files', 
-    'Graduate_study', 
-    'Research', 
-    'PhD_project', 
-    'Faraday_rotation_measurements'
-    )
-    # dir_path = os.path.join(os.getcwd(),  
-    # 'Faraday_rotation_measurements', 
+    # dir_path = os.path.join(
+    # os.path.expanduser('~'),  # Expands to your home directory
+    # 'OneDrive', 
+    # 'Files', 
+    # 'Graduate_study', 
+    # 'Research', 
+    # 'PhD_project', 
+    # 'Faraday_rotation_measurements'
     # )
+    dir_path = os.path.join(os.getcwd(),  
+    'Faraday_rotation_measurements', 
+    )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
     gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
@@ -501,17 +501,17 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     # Define the reference date
-    reference_date = datetime.strptime("02-09-2025", "%d-%m-%Y")
+    reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
     
     plotter = Plot()
-    date_input = '05-19-2024'
+    date_input = '01-23-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter , date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
     # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 13, -5.09, 301.1, 'CD', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.06, 200, 'CD', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

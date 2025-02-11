@@ -90,25 +90,25 @@ class LaserDrift:
                             'Time (min)', r'Frequency (GHz)', f'Frequency vs Time, run{run}-{run+1}' + ' @'+ str(date), date)
 
 if __name__ == "__main__":
-    dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    'OneDrive', 
-    'Files', 
-    'Graduate_study', 
-    'Research', 
-    'PhD_project', 
-    'Faraday_rotation_measurements'
-    )
-    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
-    # 'Faraday_rotation_measurements', 
+    # dir_path = os.path.join(
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    # 'OneDrive', 
+    # 'Files', 
+    # 'Graduate_study', 
+    # 'Research', 
+    # 'PhD_project', 
+    # 'Faraday_rotation_measurements'
     # )
+    dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    'Faraday_rotation_measurements', 
+    )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = LaserDrift()
-    date_input = '02-09-2025'
+    date_input = '02-11-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     plotter.wavelength_frequency(wavelengthmeter_path, date, 1, 'frequency')
