@@ -28,24 +28,44 @@ class Plot:
         for i in self.number_of_runs(run):
             if i == run-1:
                 y1_fit, slope, intercept, y1_mean, residuals, y1_std = self.analyzer.drift_fit(x[i]/60, y1[i])
-                ax1.plot(x[i]/60, y1[i], label=r'$B_0$, run1', color='r', alpha=0.4, linestyle='-', linewidth=1, 
-                        marker='^', markersize=10, markevery=200)
-                ax1.plot(x[i]/60, y1_fit, label=f'Linear regression: run{run}', color='r', linestyle='--', linewidth=1)
+
+                # ax1.plot(x[i]/60, y1[i], label=r'$B_0$, run1', color='r', alpha=0.4, linestyle='-', linewidth=1, 
+                #         marker='^', markersize=10, markevery=200)
+                # ax1.plot(x[i]/60, y1_fit, label=f'Linear regression: run{run}', color='r', linestyle='--', linewidth=1)
+                
+                lower_bound = slope*x[i]/60 + intercept - y1_std
+                upper_bound = slope*x[i]/60 + intercept + y1_std
+                ax1.plot(x[i]/60, y1[i], label=f'$B_0$, run{run}', color='b', alpha=0.4)
+                ax1.plot(x[i]/60, y1_fit, '--', label=f'Sample mean: run{run}', color='b', lw=1)
+                ax1.fill_between(x[i]/60, lower_bound, upper_bound, facecolor='b', alpha=0.4)
+                # ax1.fill_between(x[i]/60, upper_bound, y1[i], where=y1[i] > upper_bound, fc='red', alpha=0.4, interpolate=True)
+                # ax1.fill_between(x[i]/60, lower_bound, y1[i], where=y1[i] < lower_bound, fc='red', alpha=0.4, interpolate=True)
+
                 ax1.set_xlabel(xlabel, fontsize=25)
                 ax1.set_ylabel(ylabel_y1, fontsize=25)
                 ax1.tick_params(axis='x', labelsize=25)
                 ax1.tick_params(axis='y', labelsize=25)
 
-                ax2.plot(x[i]/60, y2[i], label=r'$T$, run1', color='b', linestyle='-', linewidth=1, 
+                ax2.plot(x[i]/60, y2[i], label=r'$T$, run1', color='black', linestyle='-', linewidth=1, 
                         marker='^', markersize=10, markevery=200)
                 ax2.set_ylabel(ylabel_y2, fontsize=25)
                 ax2.tick_params(axis='y', labelsize=25)
             else:
                 y1_fit, slope, intercept, y1_mean, residuals, y1_std = self.analyzer.drift_fit(x[i]/60, y1[i])
-                ax1.plot(x[i]/60, y1[i], label=r'$B_0$, run2', color='r', alpha=0.4, linestyle='-', linewidth=1, 
-                        marker='x', markersize=10, markevery=200)
-                ax1.plot(x[i]/60, y1_fit, label=f'Linear regression: run{run+1}', color='r', linestyle='--', linewidth=1)
-                ax2.plot(x[i]/60, y2[i], label=r'$T$, run2', color='b', linestyle='-', linewidth=1, 
+
+                # ax1.plot(x[i]/60, y1[i], label=r'$B_0$, run2', color='r', alpha=0.4, linestyle='-', linewidth=1, 
+                #         marker='x', markersize=10, markevery=200)
+                # ax1.plot(x[i]/60, y1_fit, label=f'Linear regression: run{run+1}', color='r', linestyle='--', linewidth=1)
+
+                lower_bound = slope*x[i]/60 + intercept - y1_std
+                upper_bound = slope*x[i]/60 + intercept + y1_std
+                ax1.plot(x[i]/60, y1[i], label=f'$B_0$, run{run+1}', color='r', alpha=0.4)
+                ax1.plot(x[i]/60, y1_fit, '--', label=f'Sample mean: run{run+1}', color='r', lw=1)
+                ax1.fill_between(x[i]/60, lower_bound, upper_bound, facecolor='r', alpha=0.4)
+                # ax1.fill_between(x[i]/60, upper_bound, y1[i], where=y1[i] > upper_bound, fc='red', alpha=0.4, interpolate=True)
+                # ax1.fill_between(x[i]/60, lower_bound, y1[i], where=y1[i] < lower_bound, fc='red', alpha=0.4, interpolate=True)
+
+                ax2.plot(x[i]/60, y2[i], label=r'$T$, run2', color='black', linestyle='-', linewidth=1, 
                         marker='x', markersize=10, markevery=200)
 
             plt.title(f'run{run}-{run+1}', fontsize=25)

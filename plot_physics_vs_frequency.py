@@ -297,11 +297,11 @@ class Plot:
             ax2.set_ylabel(ylabel_y2, fontsize=25)
             ax2.tick_params(axis='y', labelsize=25)
 
-            if datetime.strptime(date, "%d-%m-%Y") < reference_date:
+            if datetime.strptime(date, "%m-%d-%Y") < reference_date:
                 plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             else:
                 B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
-                plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW', fontsize=25)
+                plt.title(f'$B_z$={round(B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW', fontsize=25)
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
@@ -504,14 +504,14 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%d-%m-%Y")
     
     plotter = Plot()
-    date_input = '02-09-2025'
+    date_input = '05-19-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter , date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
     # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'absorbance', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 13, -5.09, 301.1, 'CD', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
