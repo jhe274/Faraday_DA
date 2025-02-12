@@ -103,7 +103,7 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-11-2025'
+    date_input = '02-12-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
-    plotter.gaussmter_vs_time(gaussmeter_path, 3)
+    plotter.gaussmter_vs_time(gaussmeter_path, 5)

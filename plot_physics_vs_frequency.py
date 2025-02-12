@@ -284,16 +284,17 @@ class Plot:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y1, y2, label_y1, label_y2, ylabel_y1, ylabel_y2, file_name = plot_params[key]
 
-            ax1.scatter(x, y1, color='r', label=label_y1, s=1)
+            ax1.scatter(x*1e3, y1, color='r', label=label_y1, s=1)
             # ax1.plot(x, y1, color='r', linestyle='-', linewidth=1, label=label_y1)
-            ax1.set_xlabel(r'Detuning (GHz)', fontsize=25)
-            ax1.set_xticks(np.arange(-5, 6, 1))
+            ax1.set_xlabel(r'Detuning (MHz)', fontsize=25)
+            # ax1.set_xlim(-150, 250)
+            # ax1.set_xticks(np.arange(-150, 250, 25))
             ax1.set_ylabel(ylabel_y1, fontsize=25)
             ax1.tick_params(axis='x', labelsize=25)
             ax1.tick_params(axis='y', labelsize=25)
 
-            ax2.scatter(x, y2, color='b', label=label_y2, s=1)
-            # ax2.plot(x, y2, color='b', linestyle='-', linewidth=1, label=label_y2)
+            # ax2.scatter(x, y2, color='b', label=label_y2, s=1)
+            ax2.plot(x*1e3, y2, color='b', linestyle='-', linewidth=1, label=label_y2)
             ax2.set_ylabel(ylabel_y2, fontsize=25)
             ax2.tick_params(axis='y', labelsize=25)
 
@@ -306,7 +307,7 @@ class Plot:
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
-        plt.grid(False)
+        # ax1.grid(True)
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
@@ -504,14 +505,14 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
     
     plotter = Plot()
-    date_input = '01-23-2025'
+    date_input = '02-12-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter , date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
     # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.06, 200, 'CD', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 3, -5.06, 250, 'CD', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
