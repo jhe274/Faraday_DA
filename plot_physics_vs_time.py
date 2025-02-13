@@ -66,7 +66,7 @@ class Plot:
         for i in self.number_of_runs(run):
             # Linear fit for laser drift
             frequency = [self.consts.c / Lambda[j] for j in range(len(Lambda))]  # [GHz]
-            y_fit, slope, intercept, y_mean, residuals, y_std = self.ld.drift_fit(B_t[i], frequency[i])
+            y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(B_t[i], frequency[i])
 
             # Filter and trim data for the current run
             B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
@@ -340,12 +340,12 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = Plot()
-    date_input = '02-09-2025'
+    date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(Bristol_path, Lockins_path, 'R', 8, 1, 22.75, 270, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, 22.75, 395, 'CD', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 3, 22.75, 410, 'modCB', 'vapor', date)
 
 
     FR_file = f'FaradayRotation_{date_input}.csv'
