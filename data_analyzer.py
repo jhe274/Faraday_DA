@@ -3,6 +3,8 @@ from data_reader import DataReader as Read
 import scipy.special
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
+from scipy.signal import savgol_filter
+from scipy.ndimage import gaussian_filter1d
 
 class DataAnalyzer:
 
@@ -198,11 +200,6 @@ class DataAnalyzer:
             binned_data = np.append(binned_data, remaining_mean)
 
         return binned_data
-
-    def smooth(self, data, width=100):
-        """Applies a simple moving average smoothing filter."""
-        len_data = len(data)
-        return np.array([np.mean(data[max(0, i-width//2):min(i+width//2, len_data)]) for i in range(len_data)])
     
     def drift_fit(self, x, y):
         # Perform linear regression
@@ -219,3 +216,25 @@ class DataAnalyzer:
         y_std = np.std(residuals, ddof=1)
 
         return y_fit, slope, intercept, y_mean, residuals, y_std
+
+    def moving_average(self, y, window_size):
+        """
+        ✅ Pros: Simple and effective for removing high-frequency noise.
+        ❌ Cons: Can distort peak shapes and shift the spectrum.
+        """
+        return np.convolve(y, np.ones(window_size)/window_size, mode='same')
+    
+    def polynomial_smoothing(self, y, length, order):
+        """"
+        ✅ Pros: Preserves peak shapes and spectral features.
+        ❌ Cons: Not ideal for extremely noisy data or very small datasets.
+        """
+        return savgol_filter(y, window_length=length, polyorder=order)
+    
+    def gaussian_smoothing(self, y, sigma):
+        """
+        ✅ Pros: Good balance between noise reduction and feature preservation.
+        ❌ Cons: Can introduce small artifacts at spectrum edges.
+        """
+        return gaussian_filter1d(y, sigma)
+
