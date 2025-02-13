@@ -61,7 +61,7 @@ class Plot:
             m2f_theta = self.analyzer.modulated_angle(lockin_path, R1f, Rdc, Rm2f)
 
         # Initialize lists for processed data
-        wavelength, detuning, ellipticity, angle, m2f_angle = [], [], [], [], []
+        wavelength, frequency, detuning, ellipticity, angle, m2f_angle = [], [], [], [], [], []
 
         # Process data for each run
         for i in self.number_of_runs(run):
@@ -79,12 +79,13 @@ class Plot:
 
             # Append processed data to the respective lists
             wavelength.append(Lambd)  # [m]
+            frequency.append(self.consts.c / Lambd)  # [Hz]
             detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
             ellipticity.append(ep*1e3)  # [mrad]
             angle.append(th*1e3)  # [mrad]
-            m2f_angle.append(m2f_th*1e6)  # [μrad]
+            m2f_angle.append(m2f_th*1e6)  # [μrad/~MHz]
 
-        return wavelength, detuning, ellipticity, angle, m2f_angle
+        return wavelength, frequency, detuning, ellipticity, angle, m2f_angle
     
     def background_subtraction(self, lambda_path, lockin_path, dtype, n, run):
         """
@@ -97,7 +98,7 @@ class Plot:
         :return: Background-subtracted data
         """
         # Calculate ellipticity and angle for each run
-        wavelength, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
+        wavelength, frequency, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
 
         # Initialize lists to store background-subtracted values
         CD_empty, CD_vapor, CD_K, CB_empty, CB_vapor, CB_K, modCB_vapor = [], [], [], [], [], [], []
@@ -135,7 +136,7 @@ class Plot:
                 self.analyzer.refractive_indices_difference(CB_vapor[i] * 1e6, self.l, wavelength[0][i])
             )
 
-        return wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor
+        return CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor
     
     def raw_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
         """
@@ -150,7 +151,7 @@ class Plot:
         :param phytype: Physical quantity type ('CD' or 'CB')
         :param material: Measurement material ('air', 'empty', 'vapor', etc.)
         """
-        wavelength, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
+        wavelength, frequency, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         # Plot data for each run based on the physical quantity type and material
@@ -196,8 +197,11 @@ class Plot:
         # Create a figure and axes for plotting
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
+        # Import x-axis data
+        wavelength, frequency, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
+
         # Perform background subtraction and retrieve processed data
-        wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor = \
+        CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor = \
             self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
 
         # Define the mapping for plotting parameters based on physical type and material
@@ -244,8 +248,14 @@ class Plot:
         # Create second Y-axis
         ax2 = ax1.twinx()  # Create a second y-axis that shares the same x-axis
 
+        # Import x-axis data
+        wavelength, frequency, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
+
+        # Calculate frequency varaition of the laser Scan during WideScan
+        time, nu, nu_fit, nu_slope, nu_mean, nu_std = self.laser_scan_variation(lambda_path, date, run)
+
         # Perform background subtraction and retrieve processed data
-        wavelength, detuning, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor = \
+        CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor = \
             self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
 
         # Define the mapping for plotting parameters based on physical type and material
@@ -253,17 +263,17 @@ class Plot:
             ('CD', 'empty'): (detuning[0], CD_empty, CB_empty, \
                               r'$\Longleftarrow$$\epsilon_\text{empty cell}-\epsilon_\text{air}$', \
                                 r'$\theta_\text{empty cell}-\theta_\text{air}$$\Longrightarrow$' \
-                                  r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
+                                  r'Ellipticity (mrad)', r'Faraday rotation (mrad)', \
                                     f'[{dtype}]Ellipticity_and_Rotation_empty_{date}_run{run}-{run+1}.png'),
             ('CD', 'vapor'): (detuning[0], CD_vapor, CB_vapor, \
-                              r'$\Longleftarrow$$\epsilon_\text{vapor cell}-\epsilon_\text{air}$', \
-                                r'$\theta_\text{vapor cell}-\theta_\text{air}$$\Longrightarrow$', \
-                                  r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
+                              r'$\Longleftarrow$$\epsilon$', \
+                                r'$\theta$$\Longrightarrow$', \
+                                  r'Ellipticity (mrad)', r'Faraday rotation (mrad)', \
                                     f'[{dtype}]Ellipticity_and_Rotation_vapor_{date}_run{run}-{run+1}.png'),
             ('CD', 'K'): (detuning[1], CD_K, CB_K, \
                           r'$\Longleftarrow$$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', \
                             r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$$\Longrightarrow$', \
-                              r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
+                              r'Ellipticity (mrad)', r'Faraday rotation (mrad)', \
                                 f'[{dtype}]Ellipticity_and_Rotation_K_{date}_run{run}-{run+1}.png'),
 
             ('absorbance', 'vapor'): (detuning[0], alpha_diff_vapor, n_diff_vapor, \
@@ -272,9 +282,9 @@ class Plot:
                                             f'[{dtype}]Absorbance_and_refractive_index_vapor_{date}_run{run}-{run+1}.png'),
 
             ('modCB', 'vapor'): (detuning[0], CB_vapor, modCB_vapor, \
-                                 r'$\Longleftarrow$$\theta_\text{vapor cell}-\theta_\text{air}$', \
-                                  r'$\Delta\theta_\text{vapor cell}-\Delta\theta_\text{air}$$\Longrightarrow$', \
-                                   r'$\theta$ (mrad)', r'$\Delta\theta$ (μrad)', \
+                                 r'$\Longleftarrow$$\theta$', \
+                                  r'$\Delta\theta/\Delta\nu$$\Longrightarrow$', \
+                                   r'$\theta$ (mrad)', r'$\Delta\theta/\Delta\nu$ (μrad/MHz)', \
                                     f'[{dtype}]FR_and_modulatedFR_vapor_{date}_run{run}-{run+1}.png'),
         }
 
@@ -288,26 +298,32 @@ class Plot:
             # ax1.plot(x, y1, color='r', linestyle='-', linewidth=1, label=label_y1)
             ax1.set_xlabel(r'Detuning (MHz)', fontsize=25)
             # ax1.set_xlim(-150, 250)
-            # ax1.set_xticks(np.arange(-150, 250, 25))
-            ax1.set_ylabel(ylabel_y1, fontsize=25)
+            # ax1.set_xticks(np.arange(-5, 6, 1))
+            ax1.set_xticks(np.arange(-1250, 1750, 250))
+            ax1.set_ylabel(ylabel_y1, fontsize=25, color='r')
             ax1.tick_params(axis='x', labelsize=25)
             ax1.tick_params(axis='y', labelsize=25)
-
-            # ax2.scatter(x, y2, color='b', label=label_y2, s=1)
-            ax2.plot(x*1e3, y2, color='b', linestyle='-', linewidth=1, label=label_y2)
-            ax2.set_ylabel(ylabel_y2, fontsize=25)
+            
+            if key == ('modCB', 'vapor'):
+                print(2*nu_std)
+                y2 = np.array(y2) / (2 * nu_std)
+                ax2.plot(x, -y2, color='b', linestyle='-', linewidth=1, label=label_y2)
+            else:
+                # ax2.scatter(x, y2, color='b', label=label_y2, s=1)
+                ax2.plot(x*1e3, y2, color='b', linestyle='-', linewidth=1, label=label_y2)
+            ax2.set_ylabel(ylabel_y2, fontsize=25, color='b')
             ax2.tick_params(axis='y', labelsize=25)
 
             if datetime.strptime(date, "%m-%d-%Y") < reference_date:
                 plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
             else:
                 B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
-                plt.title(f'$B_z$={round(B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW', fontsize=25)
+                plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW', fontsize=25)
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
-        # ax1.grid(True)
+        # ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
+        # ax1.grid()
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
@@ -474,6 +490,22 @@ class Plot:
             # Handle any exceptions that occur during the file writing process
             print(f"An error occurred while saving data to the file: {e}")
 
+    def laser_scan_variation(self, lambda_path, date, run):
+        # Read wavelength data from Bristol wavelength meter
+        timestamp, wavelength = self.reader.read_bristol(wavelengthmeter_path)
+
+        t, wl, nu, x, y, y_fit, slope, y_mean, y_std = [], [], [], [], [], [], [], [], []
+        t, wl = self.analyzer.filter_data(timestamp[run], wavelength[run])
+        nu = np.array([self.consts.c / wl[i] for i in range(len(wl))])  # [GHz]
+
+        # Calculate the frequency variation of the laser Scan during WideScan
+        scale_factor = 1e-6
+        y = nu * scale_factor # frequency: [MHz]
+        x = t / 60 # time: [min]
+        y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
+
+        return x, y, y_fit, slope, y_mean, y_std
+
     def Bfield_and_temperature(self, gaussmeter_path, run):
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
         B_fit, B_slope, B_intercept, B_mean, B_residuals, B_std = self.analyzer.drift_fit(timestamps[run], B0s[run])
@@ -483,18 +515,18 @@ class Plot:
         return B_mean, T_mean, B_std, T_std, B_fit, B_slope, B_intercept, B_residuals
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Expands to your home directory
-    # 'OneDrive', 
-    # 'Files', 
-    # 'Graduate_study', 
-    # 'Research', 
-    # 'PhD_project', 
-    # 'Faraday_rotation_measurements'
-    # )
-    dir_path = os.path.join(os.getcwd(),  
-    'Faraday_rotation_measurements', 
+    dir_path = os.path.join(
+    os.path.expanduser('~'),  # Expands to your home directory
+    'OneDrive', 
+    'Files', 
+    'Graduate_study', 
+    'Research', 
+    'PhD_project', 
+    'Faraday_rotation_measurements'
     )
+    # dir_path = os.path.join(os.getcwd(),  
+    # 'Faraday_rotation_measurements', 
+    # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
     gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
@@ -512,7 +544,7 @@ if __name__ == "__main__":
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
     # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 3, -5.06, 250, 'CD', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 5, -5.06, 240, 'CD', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
