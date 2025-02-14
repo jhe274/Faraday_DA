@@ -1,5 +1,6 @@
 import os, glob
 import datetime as dt
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
@@ -86,7 +87,7 @@ class Plot:
             detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
             ellipticity.append(ep*1e3)  # [mrad]
             angle.append(th*1e3)  # [mrad]
-            m2f_angle.append(m2f_th*1e6)  # [μrad]
+            m2f_angle.append(m2f_th*1e9)  # [μrad]
 
         index = 1 if len(self.number_of_runs(run)) > 1 else 0
         # Initialize lists to store absorbance difference and refractive index difference
@@ -114,14 +115,20 @@ class Plot:
         :param phytype: Physical quantity type ('CD' or 'CB')
         :param material: Measurement material ('air', 'empty', 'vapor', etc.)
         """
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+
+        # Import the processed data
         timestamp, wavelength, detuning, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, frequency_shift, index = \
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
-        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        
+        # Calculate the average magnetic field and its variation
+        B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
 
         plot_params = {
             ('CD', 'vapor'): (timestamp[index] / 60, ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
             ('CB', 'vapor'): (timestamp[index] / 60, angle[index], r'$\theta_\text{vapor cell}$'),
-            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}$'),
+            # ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}$'),
+            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}/2\sigma_{B_z}$'),
             ('absorbance', 'vapor'): (timestamp[index][1:] / 60, alpha_diff_vapor[index], r'$\alpha_--\alpha_+$'),
             ('refractive', 'vapor'): (timestamp[index][1:] / 60, n_diff_vapor[index], r'$n_--n_+$'),
         }
@@ -130,6 +137,8 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, label = plot_params[key]
+            if key == ('modCB', 'vapor'):
+                y =  np.array(y) / (2 * B_std * 1e3) # [nrad/mG]
         
         y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
 
@@ -153,13 +162,26 @@ class Plot:
         print('Standard deviation of residuals:', y_std)
         self.plot_settings(run, B_ave, B_spread, frequency_shift, temp, power, date, dtype, phytype)
 
-    def two_axes_plot(self, lambda_path, lockin_path, dtype, n, run, temp, power, phytype, material, date):
-        timestamp, wavelength, detuning, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, frequency_shift, index = \
-            self.process_physics(lambda_path, lockin_path, dtype, n, run)
+    def two_axes_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
+        """
+        Plot background-subtracted ellipticities and optical rotation angles.
+        :param lambda_path: Path to wavelength data
+        :param lockin_path: Path to lock-in data
+        :param dtype: Data type ('X' or 'R')
+        :param n: Skipping data points equal to n x Time Constant
+        :param run: Current run index
+        :param B: Magnetic field strength [G]
+        :param power: Laser power [μW]
+        :param phytype: Physical quantity type ('CD', 'CB', 'absorbance', 'refractive index')
+        :param material: Measurement material ('air', 'empty', 'vapor', etc.)
+        """
         # Create a figure and axes for plotting
         fig, ax1 = plt.subplots(1, 1, figsize=(25.60, 14.40))
         # Create second Y-axis
         ax2 = ax1.twinx()  # Create a second y-axis that shares the same x-axis
+
+        timestamp, wavelength, detuning, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, frequency_shift, index = \
+            self.process_physics(lambda_path, lockin_path, dtype, n, run)
         
         plot_params = {
             ('CD', 'vapor'): (timestamp[index] / 60, ellipticity[index], angle[index], \
@@ -184,23 +206,29 @@ class Plot:
             ax1.plot(x, y1, color='r', linestyle='-', linewidth=2)
             ax1.set_xlabel(r'Time (min)', fontsize=25)
             # ax1.set_xticks(np.arange(-5, 6, 1))
-            ax1.set_ylabel(ylabel_y1, fontsize=25)
+            ax1.set_ylabel(ylabel_y1, fontsize=25, color='r')
             ax1.tick_params(axis='x', labelsize=25)
             ax1.tick_params(axis='y', labelsize=25)
-            ax1.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.0f'))
+            ax1.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.2f'))
 
             ax2.scatter(x, y2, color='b', label=label_y2, s=70)
             ax2.plot(x, y2, '.', color='b', linestyle='-', linewidth=2)
-            ax2.set_ylabel(ylabel_y2, fontsize=25)
+            ax2.set_ylabel(ylabel_y2, fontsize=25, color='b')
             ax2.tick_params(axis='y', labelsize=25)
-            ax2.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.1f'))
+            ax2.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.2f'))
 
-            plt.title(fr'$B_z$={B_ave:.3f}$\pm${B_spread:.3f} G, $\Delta$={frequency_shift} MHz, $T$={temp:.2f}°C, $P$={power} μW', fontsize=25)
+            if datetime.strptime(date, "%m-%d-%Y") < reference_date:
+                plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+            else:
+                B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
+                plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW', fontsize=25)
+
+            # plt.title(fr'$B_z$={B_ave:.3f}$\pm${B_spread:.3f} G, $\Delta$={frequency_shift} MHz, $T$={temp:.2f}°C, $P$={power} μW', fontsize=25)
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=25)
-        plt.grid(False)
+        # ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=25)
+        # plt.grid()
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
@@ -222,15 +250,19 @@ class Plot:
         plot_labels = {
         'CD': r'Ellipticity (mrad)',
         'CB': r'Faraday Rotation (mrad)',
-        'modCB': r'$\Delta\theta$ (μrad)',
+        # 'modCB': r'$\Delta\theta$ (μrad)',
+        'modCB': r'$\Delta\theta/\Delta B_z$ (nrad/mG)',
         'absorbance': r'$\alpha_--\alpha_+$ (rad/m)',
         'refractive': r'$n_--n_+$ ($\times10^{-6}$)',
         }
-        plot_titles = fr'$B_z$={B_ave:.3f}$\pm${B_variation:.3f} G, $\Delta$={nu_shift} MHz, $T$={temp:.2f}°C, $P$={power} μW'
+        B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
+        plot_titles = f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW'
+        # plot_titles = fr'$B_z$={B_ave:.3f}$\pm${B_variation:.3f} G, $\Delta$={nu_shift} MHz, $T$={temp:.2f}°C, $P$={power} μW'
         file_names = {
             'CD': f'[{dtype}]Ellipticity_vs_Time_{date}_run{run}.png',
             'CB': f'[{dtype}]FR_vs_Time_{date}_run{run}.png',
-            'modCB': f'[{dtype}]Mod_FR_vs_Time_{date}_run{run}.png',
+            # 'modCB': f'[{dtype}]Mod_FR_vs_Time_{date}_run{run}.png',
+            'modCB': f'[{dtype}]Mod_FRnu_vs_Time_{date}_run{run}.png',
             'absorbance': f'[{dtype}]Absorbance_vs_Time_{date}_run{run}.png',
             'refractive': f'[{dtype}]Refractive_index_vs_Time_{date}_run{run}.png',
         }
@@ -245,65 +277,13 @@ class Plot:
 
         plt.show()
 
-    def write(self, lambda_path, lockin_path, folder_path, filename, dtype, n, run, T, B, P):
-        """
-        Write the processed data to a CSV file.
+    def Bfield_and_temperature(self, gaussmeter_path, run):
+        timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
+        B_fit, B_slope, B_intercept, B_mean, B_residuals, B_std = self.analyzer.drift_fit(timestamps[run-1], B0s[run-1])
+        T_mean = np.mean(temps[run-1])
+        T_std = np.std(temps[run-1], ddof=1) / np.sqrt(len(temps[run-1]))
 
-        :param lambda_path: Path to wavelength data
-        :param lockin_path: Path to lock-in data
-        :param folder_path: Path to the folder where the CSV file will be saved
-        :param filename: Name of the output CSV file
-        :param dtype: Data type ('X' or 'R')
-        :param n: Skipping data points equal to n x Time Constant
-        :param run: Current run index
-        :param T: Temperature [°C]
-        :param B: Longitudinal magnetic field [G]
-        :param P: Laser power [μW]
-        """
-        # Extract processed data required for writing to CSV
-        x0, x, CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K = \
-            self.background_subtraction(lambda_path, lockin_path, dtype, n, run)
-        
-        # Data to be written (wavelength, ellipticity, Faraday rotation)
-        data = [x0[0], CD_vapor, CB_vapor]
-
-        try:
-            # Counter for handling duplicate filenames
-            counter = 1
-            original_filename = filename
-
-            # Ensure the folder for saving the file exists
-            folder_path = os.path.join(folder_path, date_input)
-            os.makedirs(folder_path, exist_ok=True)
-
-            # Check if the file already exists and create a new unique filename if necessary
-            while os.path.isfile(os.path.join(folder_path, filename)):
-                filename = f"{original_filename.split('.')[0]}_{counter}.csv"
-                counter += 1
-
-            # Construct the full path for the output file
-            file_path = os.path.join(folder_path, filename)
-
-            # Write data to the CSV file
-            with open(file_path, "w") as file:
-                # Write metadata (date, temperature, field, and power) as the first lines
-                for attribute, value in zip(
-                    ['Date (MM-DD-YYYY)', 'Temperature (°C)', 'Longitudinal magnetic field (G)', 'Power (microW)'],
-                    [date_input, T, B, P]
-                ):
-                    file.write(f'{attribute}, {value}\n')
-
-                # Write the header for the data columns
-                header = 'Wavelength (m), Ellipticity (radian), Faraday rotation (radian)\n'
-                file.write(header)
-
-                # Write the actual data rows
-                for row in list(zip(*data)):
-                    file.write(','.join(map(str, row)) + '\n')
-
-        except Exception as e:
-            # Handle any exceptions that occur during the file writing process
-            print(f"An error occurred while saving data to the file: {e}")
+        return B_mean, T_mean, B_std, T_std, B_fit, B_slope, B_intercept, B_residuals
 
     def B_field(self):
         B_max = np.array([5.2934, 5.2915, 5.2932, 5.2927, 5.2935])
@@ -335,17 +315,21 @@ if __name__ == "__main__":
     # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
+    gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
     lockins = os.path.join(K_vapor, 'Lockins_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
-    
+    # Define the reference date
+    reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
+
     plotter = Plot()
     date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
+    gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # plotter.raw_plot(Bristol_path, Lockins_path, 'R', 8, 1, 22.75, 270, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 3, 22.75, 410, 'modCB', 'vapor', date)
+    # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 6, 7, 22.75, 365, 'modCB', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'R', 7, 6, 22.75, 390, 'CD', 'vapor', date)
 
 
     FR_file = f'FaradayRotation_{date_input}.csv'

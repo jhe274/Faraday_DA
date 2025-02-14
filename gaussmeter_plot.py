@@ -17,7 +17,7 @@ class Plot:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run+1)
+        return range(run-1, run)
     
     def plot_process(self, x, y1, y2, run, xlabel, ylabel_y1, ylabel_y2, title, file_name):
         # Create a figure and axes for plotting
@@ -68,7 +68,7 @@ class Plot:
                 ax2.plot(x[i]/60, y2[i], label=r'$T$, run2', color='black', linestyle='-', linewidth=1, 
                         marker='x', markersize=10, markevery=200)
 
-            plt.title(f'run{run}-{run+1}', fontsize=25)
+            plt.title(f'run{run}', fontsize=25)
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=20)
@@ -81,23 +81,23 @@ class Plot:
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
 
         self.plot_process(timestamps, B0s, temps, run, 'Time (min)',
-                            r'Magnetic flux density (G)', r'Temperature (°C)', f'run{run}-{run+1}', 
-                            f'Magnetic_field_and_temperature_{date}_run{run}-{run+1}.png')
+                            r'Magnetic flux density (G)', r'Temperature (°C)', f'run{run}', 
+                            f'Magnetic_field_and_temperature_{date}_run{run}.png')
     
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    # 'OneDrive', 
-    # 'Files', 
-    # 'Graduate_study', 
-    # 'Research', 
-    # 'PhD_project', 
-    # 'Faraday_rotation_measurements'
-    # )
-    dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
-    'Faraday_rotation_measurements', 
+    dir_path = os.path.join(
+    os.path.expanduser('~'),  # Directory path on personal computer
+    'OneDrive', 
+    'Files', 
+    'Graduate_study', 
+    'Research', 
+    'PhD_project', 
+    'Faraday_rotation_measurements'
     )
+    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    # 'Faraday_rotation_measurements', 
+    # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
@@ -106,4 +106,4 @@ if __name__ == "__main__":
     date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
-    plotter.gaussmter_vs_time(gaussmeter_path, 1)
+    plotter.gaussmter_vs_time(gaussmeter_path, 7)

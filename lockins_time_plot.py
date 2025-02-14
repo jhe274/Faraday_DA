@@ -22,7 +22,7 @@ class Plot:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run+1)
+        return range(run-1, run)
 
     def plot_process(self, t, X, Y, R, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
@@ -59,25 +59,25 @@ class Plot:
                         r'$\text{R}_\text{dc}$' if name == 'dc' else
                         r'$\text{R}_\text{m2f}$')
 
-                # ax.scatter(t[i][8:]/60, X[i][8:], label=label_x, color='r', s=30)
-                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
-                        marker='^', markersize=10, markevery=200)
-                # ax.scatter(t[i][8:]/60, Y[i][8:], label=label_y, color='b', s=30)
-                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
-                        marker='^', markersize=10, markevery=200)
-                # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
-                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
-                        marker='^', markersize=10, markevery=200)
+                ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
+                # ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                #         marker='^', markersize=10, markevery=10)
+                ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
+                # ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                #         marker='^', markersize=10, markevery=10)
+                ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
+                # ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                #         marker='^', markersize=10, markevery=200)
             else:
-                # ax.scatter(t[i][8:]/60, X[i][8:], label=label_x, color='r', s=30)
-                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
-                        marker='x', markersize=10, markevery=200)
-                # ax.scatter(t[i][8:]/60, Y[i][8:], label=label_y, color='b', s=30)
-                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
-                        marker='x', markersize=10, markevery=200)
-                # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
-                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
-                        marker='x', markersize=10, markevery=200)
+                ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
+                # ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                        # marker='x', markersize=10, markevery=10)
+                ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
+                # ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                #         marker='x', markersize=10, markevery=10)
+                ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
+                # ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                #         marker='x', markersize=10, markevery=200)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -98,19 +98,19 @@ class Plot:
 
         if name == '1f':
             self.plot_process(lockins_t, X1f, Y1f, R1f, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'1f Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  r'Voltage (mV)', r'1f Voltages vs Time, run' + f'{run}' + 
                                   f', $P$={power} μW') #, $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C
         elif name == '2f':
             self.plot_process(lockins_t, X2f, Y2f, R2f, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'2f Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  r'Voltage (mV)', r'2f Voltages vs Time, run' + f'{run}' + 
                                   f', $P$={power} μW')
         elif name == 'dc':
             self.plot_process(lockins_t, Xdc, Ydc, Rdc, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'DC Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  r'Voltage (mV)', r'DC Voltages vs Time, run' + f'{run}' + 
                                   f', $P$={power} μW')
         elif name == 'm2f':
             self.plot_process(lockins_t, Xm2f, Ym2f, Rm2f, run, name, 'Time (min)',
-                                  r'Voltage (mV)', r'M2f Voltages vs Time, run' + f'{run}-{run+1}' + 
+                                  r'Voltage (mV)', r'M2f Voltages vs Time, run' + f'{run}' + 
                                   f', $P$={power} μW')
 
     def B_field(self):
@@ -128,18 +128,18 @@ class Plot:
         return B_avg, B_spread
     
 if __name__ == "__main__":
-    # dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    # 'OneDrive', 
-    # 'Files', 
-    # 'Graduate_study', 
-    # 'Research', 
-    # 'PhD_project', 
-    # 'Faraday_rotation_measurements'
-    # )
-    dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
-    'Faraday_rotation_measurements', 
+    dir_path = os.path.join(
+    os.path.expanduser('~'),  # Directory path on personal computer
+    'OneDrive', 
+    'Files', 
+    'Graduate_study', 
+    'Research', 
+    'PhD_project', 
+    'Faraday_rotation_measurements'
     )
+    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    # 'Faraday_rotation_measurements', 
+    # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     lockins = os.path.join(K_vapor, 'Lockins_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
@@ -148,4 +148,4 @@ if __name__ == "__main__":
     date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(lockins_path, '1f', 1, 305)
+    plotter.XYR_vs_time(lockins_path, 'm2f', 7, 365)

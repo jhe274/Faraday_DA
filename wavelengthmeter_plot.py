@@ -27,7 +27,7 @@ class LaserDrift:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run+1)
+        return range(run-1, run)
     
     def process(self, t, y1, y2, dtype, run):
         if dtype == 'wavelength':
@@ -87,21 +87,21 @@ class LaserDrift:
             name = '\\nu'
             unit = 'MHz'
             self.plot_process(timestamp, wavelength, dtype, run, name, unit, 
-                            'Time (min)', r'Frequency (GHz)', f'Frequency vs Time, run{run}-{run+1}' + ' @'+ str(date), date)
+                            'Time (min)', r'Frequency (GHz)', f'Frequency vs Time, run{run}' + ' @'+ str(date), date)
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    # 'OneDrive', 
-    # 'Files', 
-    # 'Graduate_study', 
-    # 'Research', 
-    # 'PhD_project', 
-    # 'Faraday_rotation_measurements'
-    # )
-    dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
-    'Faraday_rotation_measurements', 
+    dir_path = os.path.join(
+    os.path.expanduser('~'),  # Directory path on personal computer
+    'OneDrive', 
+    'Files', 
+    'Graduate_study', 
+    'Research', 
+    'PhD_project', 
+    'Faraday_rotation_measurements'
     )
+    # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
+    # 'Faraday_rotation_measurements', 
+    # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
@@ -111,4 +111,4 @@ if __name__ == "__main__":
     date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
-    plotter.wavelength_frequency(wavelengthmeter_path, date, 1, 'frequency')
+    plotter.wavelength_frequency(wavelengthmeter_path, date, 7, 'frequency')

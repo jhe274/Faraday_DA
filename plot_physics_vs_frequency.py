@@ -284,7 +284,7 @@ class Plot:
             ('modCB', 'vapor'): (detuning[0], CB_vapor, modCB_vapor, \
                                  r'$\Longleftarrow$$\theta$', \
                                   r'$\Delta\theta/\Delta\nu$$\Longrightarrow$', \
-                                   r'$\theta$ (mrad)', r'$\Delta\theta/\Delta\nu$ (μrad/MHz)', \
+                                   r'$\theta$ (mrad)', r'$\Delta\theta$ (μrad)', \
                                     f'[{dtype}]FR_and_modulatedFR_vapor_{date}_run{run}-{run+1}_smoothed.png'),
         }
 
@@ -305,7 +305,7 @@ class Plot:
             ax1.tick_params(axis='y', labelsize=25)
             
             if key == ('modCB', 'vapor'):
-                y2 = np.array(y2) / (2 * 7)
+                # y2 = np.array(y2) / (2 * nu_std)
                 # ax2.plot(x*1e3, y2, color='b', linestyle='-', linewidth=1, label=label_y2)
                 # smooth_y2 = self.analyzer.moving_average(y2, 5)
                 # smooth_y2 = self.analyzer.polynomial_smoothing(y2, 11, 3)
@@ -511,25 +511,25 @@ class Plot:
 
     def Bfield_and_temperature(self, gaussmeter_path, run):
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
-        B_fit, B_slope, B_intercept, B_mean, B_residuals, B_std = self.analyzer.drift_fit(timestamps[run], B0s[run])
-        T_mean = np.mean(temps[run])
-        T_std = np.std(temps[run], ddof=1) / np.sqrt(len(temps[run]))
+        B_fit, B_slope, B_intercept, B_mean, B_residuals, B_std = self.analyzer.drift_fit(timestamps[run-1], B0s[run-1])
+        T_mean = np.mean(temps[run-1])
+        T_std = np.std(temps[run-1], ddof=1) / np.sqrt(len(temps[run-1]))
 
         return B_mean, T_mean, B_std, T_std, B_fit, B_slope, B_intercept, B_residuals
 
 if __name__ == "__main__":
-    # dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Expands to your home directory
-    # 'OneDrive', 
-    # 'Files', 
-    # 'Graduate_study', 
-    # 'Research', 
-    # 'PhD_project', 
-    # 'Faraday_rotation_measurements'
-    # )
-    dir_path = os.path.join(os.getcwd(),  
-    'Faraday_rotation_measurements', 
+    dir_path = os.path.join(
+    os.path.expanduser('~'),  # Expands to your home directory
+    'OneDrive', 
+    'Files', 
+    'Graduate_study', 
+    'Research', 
+    'PhD_project', 
+    'Faraday_rotation_measurements'
     )
+    # dir_path = os.path.join(os.getcwd(),  
+    # 'Faraday_rotation_measurements', 
+    # )
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
     gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
@@ -547,7 +547,7 @@ if __name__ == "__main__":
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
     # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.06, 300, 'CD', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 160, 1, -5.06, 300, 'modCB', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
