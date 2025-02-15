@@ -145,7 +145,7 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-13-2025'
+    date_input = '02-14-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(lockins_path, 'm2f', 7, 365)
+    plotter.XYR_vs_time(lockins_path, 'm2f', 2, 375)

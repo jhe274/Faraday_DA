@@ -84,10 +84,11 @@ class Plot:
             # Append processed data to the respective lists
             timestamp.append(B_t[i][b_idx])  # [s]
             wavelength.append(Lambd)  # [m]
-            detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
             ellipticity.append(ep*1e3)  # [mrad]
             angle.append(th*1e3)  # [mrad]
             m2f_angle.append(m2f_th*1e9)  # [μrad]
+            detuning = y_mean * 1e-6 - self.consts.K39_D2_Hz * 1e-6  # [MHz]
+            detuning_std = y_std * 1e-6  # [MHz]
 
         index = 1 if len(self.number_of_runs(run)) > 1 else 0
         # Initialize lists to store absorbance difference and refractive index difference
@@ -100,7 +101,7 @@ class Plot:
             self.analyzer.refractive_indices_difference(angle[index][1:] * 1e6, self.l, wavelength[index])
             )  # Convert Faraday rotation to nanoradians for refractive index calculation
 
-        return timestamp, wavelength, detuning, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, round(y_mean*1e-6-self.consts.K39_D2_Hz * 1e-6), index
+        return timestamp, wavelength, detuning, detuning_std, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index
     
     def raw_plot(self, lambda_path, lockin_path, dtype, n, run, temp, power, phytype, material, date):
         """
@@ -118,7 +119,7 @@ class Plot:
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         # Import the processed data
-        timestamp, wavelength, detuning, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, frequency_shift, index = \
+        timestamp, wavelength, detuning, detuning_std, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index = \
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
         
         # Calculate the average magnetic field and its variation
@@ -127,8 +128,8 @@ class Plot:
         plot_params = {
             ('CD', 'vapor'): (timestamp[index] / 60, ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
             ('CB', 'vapor'): (timestamp[index] / 60, angle[index], r'$\theta_\text{vapor cell}$'),
-            # ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}$'),
-            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\theta_\text{m2f}/2\sigma_{B_z}$'),
+            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\Delta\theta$'),
+            # ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\Delta\theta/2\sigma_{B_z}$'),
             ('absorbance', 'vapor'): (timestamp[index][1:] / 60, alpha_diff_vapor[index], r'$\alpha_--\alpha_+$'),
             ('refractive', 'vapor'): (timestamp[index][1:] / 60, n_diff_vapor[index], r'$n_--n_+$'),
         }
@@ -137,6 +138,7 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, label = plot_params[key]
+            # calculate Δθ/ΔB
             if key == ('modCB', 'vapor'):
                 y =  np.array(y) / (2 * B_std * 1e3) # [nrad/mG]
         
@@ -145,22 +147,28 @@ class Plot:
         # the 1 sigma upper and lower analytic population bounds
         lower_bound = slope*x + intercept - y_std
         upper_bound = slope*x + intercept + y_std
+        
+        # plot Δθ vs time
+        # ax.plot(x, y, color='C0', lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta}}$={round(y_mean)} μrad')
+        # ax.plot(x, y_fit, '--', color='b', lw=2, 
+        #     label=f'$\\nabla_t{{\\Delta\\theta}}$={round(slope*1e3,2)} nrad/min')
+        # ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std,2)} μrad')
 
-        # ax.scatter(x, y, color='C0', s=70)
-        ax.plot(x, y, lw=2, label=label)
-        ax.plot(x, y_fit, '--', color='C0', lw=2, 
-            label=r'Sample mean')
-        ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'1$\sigma$ range')
+        # plot Δθ/ΔB vs time
+        ax.plot(x, y, color='C0', lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta/\Delta B_z}}$={round(y_mean)} nrad/mG')
+        ax.plot(x, y_fit, '--', color='b', lw=2, 
+            label=fr'$\nabla_t \frac{{\overline{{\Delta\theta}}}}{{\overline{{\Delta B_z}}}} = {round(slope,2)} \,\mathrm{{nrad/(mG\cdot min)}}$')
+        ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std)} nrad/mG')
         
         # here we use the where argument to only fill the region where the
         # walker is above the population 1 sigma boundary
-        ax.fill_between(x, upper_bound, y, where=y > upper_bound, fc='red', alpha=0.4, interpolate=True)
-        ax.fill_between(x, lower_bound, y, where=y < lower_bound, fc='red', alpha=0.4, interpolate=True)
+        ax.fill_between(x, upper_bound, y, where=y > upper_bound, fc='r', alpha=0.4, interpolate=True)
+        ax.fill_between(x, lower_bound, y, where=y < lower_bound, fc='r', alpha=0.4, interpolate=True)
 
         B_ave, B_spread = self.B_field()
         print('Average measured change of polarization rotation:', y_mean)
         print('Standard deviation of residuals:', y_std)
-        self.plot_settings(run, B_ave, B_spread, frequency_shift, temp, power, date, dtype, phytype)
+        self.plot_settings(run, B_ave, B_spread, detuning, detuning_std, temp, power, date, dtype, phytype)
 
     def two_axes_plot(self, lambda_path, lockin_path, dtype, n, run, B, power, phytype, material, date):
         """
@@ -202,17 +210,29 @@ class Plot:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y1, y2, label_y1, label_y2, ylabel_y1, ylabel_y2, file_name = plot_params[key]
 
-            ax1.scatter(x, y1, color='r', label=label_y1, s=70)
-            ax1.plot(x, y1, color='r', linestyle='-', linewidth=2)
+            y1_fit, y1_slope, y1_intercept, y1_mean, y1_residuals, y1_std = self.analyzer.drift_fit(x, y1)
+            y2_fit, y2_slope, y2_intercept, y2_mean, y2_residuals, y2_std = self.analyzer.drift_fit(x, y2)
+
+            y1_lower_bound = y1_slope*x + y1_intercept - y1_std
+            y1_upper_bound = y1_slope*x + y1_intercept + y1_std
+
+            y2_lower_bound = y2_slope*x + y2_intercept - y2_std
+            y2_upper_bound = y2_slope*x + y2_intercept + y2_std
+
+            ax1.plot(x, y1, color='C3', alpha=0.4, linestyle='-', linewidth=2, marker='o', markersize=5)
+            ax1.plot(x, y1_fit, '--', color='r', lw=2, 
+            label=f'$\\overline{{\\epsilon}}$={round(y1_mean,2)} μrad')
+            ax1.fill_between(x, y1_lower_bound, y1_upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma_\epsilon$={round(y1_std,2)} μrad')
             ax1.set_xlabel(r'Time (min)', fontsize=25)
-            # ax1.set_xticks(np.arange(-5, 6, 1))
             ax1.set_ylabel(ylabel_y1, fontsize=25, color='r')
             ax1.tick_params(axis='x', labelsize=25)
             ax1.tick_params(axis='y', labelsize=25)
             ax1.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.2f'))
 
-            ax2.scatter(x, y2, color='b', label=label_y2, s=70)
-            ax2.plot(x, y2, '.', color='b', linestyle='-', linewidth=2)
+            ax2.plot(x, y2, color='C0', alpha=0.4, linestyle='-', linewidth=2, marker='o', markersize=5)
+            ax2.plot(x, y2_fit, '--', color='b', lw=2, 
+            label=f'$\\overline{{\\theta}}$={round(y2_mean,2)} μrad')
+            ax2.fill_between(x, y2_lower_bound, y2_upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma_\\theta$={round(y2_std,2)} μrad')
             ax2.set_ylabel(ylabel_y2, fontsize=25, color='b')
             ax2.tick_params(axis='y', labelsize=25)
             ax2.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.2f'))
@@ -227,13 +247,13 @@ class Plot:
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=25)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
         # plt.grid()
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
 
-    def plot_settings(self, run, B_ave, B_variation, nu_shift, temp, power, date, dtype, phytype):
+    def plot_settings(self, run, B_ave, B_variation, detuning, detuning_std, temp, power, date, dtype, phytype):
         """
         Configure plot settings for consistent visualization.
         :param run: Current run index
@@ -256,13 +276,13 @@ class Plot:
         'refractive': r'$n_--n_+$ ($\times10^{-6}$)',
         }
         B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
-        plot_titles = f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $P$={power} μW'
+        plot_titles = f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $\\Delta$={round(detuning)}±{round(detuning_std,2)} MHz, $P$={power} μW'
         # plot_titles = fr'$B_z$={B_ave:.3f}$\pm${B_variation:.3f} G, $\Delta$={nu_shift} MHz, $T$={temp:.2f}°C, $P$={power} μW'
         file_names = {
             'CD': f'[{dtype}]Ellipticity_vs_Time_{date}_run{run}.png',
             'CB': f'[{dtype}]FR_vs_Time_{date}_run{run}.png',
             # 'modCB': f'[{dtype}]Mod_FR_vs_Time_{date}_run{run}.png',
-            'modCB': f'[{dtype}]Mod_FRnu_vs_Time_{date}_run{run}.png',
+            'modCB': f'[{dtype}]Mod_FR_per_mG_vs_Time_{date}_run{run}.png',
             'absorbance': f'[{dtype}]Absorbance_vs_Time_{date}_run{run}.png',
             'refractive': f'[{dtype}]Refractive_index_vs_Time_{date}_run{run}.png',
         }
@@ -323,13 +343,13 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-13-2025'
+    date_input = '02-15-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 6, 7, 22.75, 365, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'R', 7, 6, 22.75, 390, 'CD', 'vapor', date)
+    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 9, 1, 22.75, 375, 'modCB', 'vapor', date)
+    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 6, 1, 22.75, 375, 'CD', 'vapor', date)
 
 
     FR_file = f'FaradayRotation_{date_input}.csv'
