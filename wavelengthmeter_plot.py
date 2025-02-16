@@ -53,18 +53,34 @@ class LaserDrift:
             upper_bound = slope*x + intercept + y_std
 
             if i == run-1:
-                unitfactor = 1e3
+                unitfactor = 1e3 # frequency: [MHz]
+                # plot functions for WideScan
+                # ax.plot(x, y, color='C3', linestyle='-', linewidth=0.5)
+                # ax.plot(x, y_fit, '--', color='r', 
+                #     label=fr'$\nabla_t{name}$={round(slope/60 * unitfactor,3):.3f} {std_unit}/s')
+                
+                # plot functions for locked laser
                 ax.plot(x, y, color='C3', alpha=0.4, linestyle='-', linewidth=0.5, \
                         label=fr'$\overline{{{name}}}$={round(y_mean,3):.3f} {ave_unit}')
                 ax.plot(x, y_fit, '--', color='r', 
                     label=fr'$\nabla_t{name}$={round(slope * unitfactor,3):.3f} {std_unit}/min')
+
+                # plot 1 sigma error band
                 ax.fill_between(x, lower_bound, upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma$={round(y_std * unitfactor,3):.3f} {std_unit}')
             else:
-                unitfactor = 1e3
+                unitfactor = 1e3 # frequency: [MHz]
+                # plot functions for WideScan
+                # ax.plot(x, y, color='C0', linestyle='-', linewidth=0.5)
+                # ax.plot(x, y_fit, '--', color='b',  
+                #     label=fr'$\nabla_t{name}$={round(slope/60 * unitfactor,3):.3f} {std_unit}/s')
+                
+                # plot functions for locked laser
                 ax.plot(x, y, color='C0', alpha=0.4, linestyle='-', linewidth=0.5, \
-                        label=fr'$\overline{name}$={round(y_mean,3):.3f} {ave_unit}')
+                        label=fr'$\overline{{{name}}}$={round(y_mean,3):.3f} {ave_unit}')
                 ax.plot(x, y_fit, '--', color='b',  
                     label=fr'$\nabla_t{name}$={round(slope * unitfactor,3):.3f} {std_unit}/min')
+
+                # plot 1 sigma error band
                 ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std * unitfactor,3):.3f} {std_unit}')
 
         ax.ticklabel_format(useOffset=False, style='plain')
@@ -115,7 +131,7 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = LaserDrift()
-    date_input = '02-15-2025'
+    date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
-    plotter.wavelength_frequency(wavelengthmeter_path, date, 2, 'frequency')
+    plotter.wavelength_frequency(wavelengthmeter_path, date, 7, 'frequency')

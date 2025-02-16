@@ -40,7 +40,7 @@ class Plot:
                 upper_bound = slope*x[i]/60 + intercept + y1_std
 
                 ax1.plot(x[i]/60, y1[i], color='C0', alpha=0.4, label=f'$\\overline{{B_z}}$={round(y1_mean,3):.3f} G')
-                ax1.plot(x[i]/60, y1_fit, '--', color='b', label=fr'$\nabla_t B_z$={round(slope*1e3,3):.3f} mG/min')
+                ax1.plot(x[i]/60, y1_fit, '--', color='b', label=fr'$\nabla_t B_z$={round(slope*1e3,1):.1f} mG/min')
                 ax1.fill_between(x[i]/60, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y1_std*1e3)} mG')
                 # ax1.fill_between(x[i]/60, upper_bound, y1[i], where=y1[i] > upper_bound, fc='red', alpha=0.4, interpolate=True)
                 # ax1.fill_between(x[i]/60, lower_bound, y1[i], where=y1[i] < lower_bound, fc='red', alpha=0.4, interpolate=True)
@@ -51,7 +51,7 @@ class Plot:
                 ax1.tick_params(axis='y', labelsize=25)
 
                 ax2.plot(x[i]/60, y2[i], label=f'$\\overline{{T}}$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C', color='black', linestyle='-', linewidth=1, 
-                        marker='^', markersize=10, markevery=2000)
+                        marker='^', markersize=10, markevery=500)
                 ax2.set_ylabel(ylabel_y2, fontsize=25)
                 ax2.tick_params(axis='y', labelsize=25)
             else:
@@ -64,19 +64,19 @@ class Plot:
                 lower_bound = slope*x[i]/60 + intercept - y1_std
                 upper_bound = slope*x[i]/60 + intercept + y1_std
 
-                ax1.plot(x[i]/60, y1[i], color='C3', label=f'$\\overline{{B_z}}$={round(y1_mean,3):.3f} G')
+                ax1.plot(x[i]/60, y1[i], color='C3', alpha=0.4, label=f'$\\overline{{B_z}}$={round(y1_mean,3):.3f} G')
                 ax1.plot(x[i]/60, y1_fit, '--', color='r', label=fr'$\nabla_t B_z$={round(slope*1e3,3):.3f} mG/min')
                 ax1.fill_between(x[i]/60, lower_bound, upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma$={round(y1_std*1e3)} mG')
                 # ax1.fill_between(x[i]/60, upper_bound, y1[i], where=y1[i] > upper_bound, fc='r', alpha=0.4, interpolate=True)
                 # ax1.fill_between(x[i]/60, lower_bound, y1[i], where=y1[i] < lower_bound, fc='r', alpha=0.4, interpolate=True)
 
                 ax2.plot(x[i]/60, y2[i], label=f'$\\overline{{T}}$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C', color='black', linestyle='-', linewidth=1, 
-                        marker='x', markersize=10, markevery=1000)
+                        marker='x', markersize=10, markevery=500)
 
             # plt.title(f'run{run}', fontsize=25)
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=20)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", fontsize=20)
         plt.grid(False)
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-15-2025'
+    date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
-    plotter.gaussmter_vs_time(gaussmeter_path, 1)
+    plotter.gaussmter_vs_time(gaussmeter_path, 7)
