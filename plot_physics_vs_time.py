@@ -86,7 +86,7 @@ class Plot:
             wavelength.append(Lambd)  # [m]
             ellipticity.append(ep*1e3)  # [mrad]
             angle.append(th*1e3)  # [mrad]
-            m2f_angle.append(m2f_th*1e9)  # [μrad]
+            m2f_angle.append(m2f_th*1e6)  # [μrad]
             detuning = y_mean * 1e-6 - self.consts.K39_D2_Hz * 1e-6  # [MHz]
             detuning_std = y_std * 1e-6  # [MHz]
 
@@ -140,8 +140,8 @@ class Plot:
             x, y, label = plot_params[key]
 
             # calculate Δθ/ΔB
-            if key == ('modCB', 'vapor'):
-                y =  np.array(y) / (2 * B_std * 1e3) # [nrad/mG]
+            # if key == ('modCB', 'vapor'):
+                # y =  np.array(y) / (2 * B_std * 1e3) # [nrad/mG]
         
         y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
 
@@ -150,16 +150,16 @@ class Plot:
         upper_bound = slope*x + intercept + y_std
         
         # plot Δθ vs time
-        # ax.plot(x, y, color='C0', lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta}}$={round(y_mean,2):.2f} μrad')
-        # ax.plot(x, y_fit, '--', color='b', lw=2, 
-        #     label=f'$\\nabla_t{{\\Delta\\theta}}$={round(slope*1e3,2):.2f} nrad/min')
-        # ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std,2):.2f} μrad')
+        ax.plot(x, y, color='C0', lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta}}$={round(y_mean,2):.2f} μrad')
+        ax.plot(x, y_fit, '--', color='b', lw=2, 
+            label=f'$\\nabla_t{{\\Delta\\theta}}$={round(slope*1e3,2):.2f} nrad/min')
+        ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std,2):.2f} μrad')
 
         # plot Δθ/ΔB vs time
-        ax.plot(x, y, color='C0', lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta/\Delta B_z}}$={round(y_mean)} nrad/mG')
-        ax.plot(x, y_fit, '--', color='b', lw=2, 
-            label=fr'$\nabla_t \frac{{\overline{{\Delta\theta}}}}{{\overline{{\Delta B_z}}}} = {round(slope,2):.2f} \,\mathrm{{nrad/(mG\cdot min)}}$')
-        ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std)} nrad/mG')
+        # ax.plot(x, y, color='C0', lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta/\Delta B_z}}$={round(y_mean)} nrad/mG')
+        # ax.plot(x, y_fit, '--', color='b', lw=2, 
+        #     label=fr'$\nabla_t \frac{{\overline{{\Delta\theta}}}}{{\overline{{\Delta B_z}}}} = {round(slope,2):.2f} \,\mathrm{{nrad/(mG\cdot min)}}$')
+        # ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std)} nrad/mG')
         
         # here we use the where argument to only fill the region where the
         # walker is above the population 1 sigma boundary
@@ -248,7 +248,7 @@ class Plot:
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", fontsize=25)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
         # plt.grid()
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
@@ -271,8 +271,8 @@ class Plot:
         plot_labels = {
         'CD': r'Ellipticity (mrad)',
         'CB': r'Faraday Rotation (mrad)',
-        # 'modCB': r'$\Delta\theta$ (μrad)',
-        'modCB': r'$\Delta\theta/\Delta B_z$ (nrad/mG)',
+        'modCB': r'$\Delta\theta$ (μrad)',
+        # 'modCB': r'$\Delta\theta/\Delta B_z$ (nrad/mG)',
         'absorbance': r'$\alpha_--\alpha_+$ (rad/m)',
         'refractive': r'$n_--n_+$ ($\times10^{-6}$)',
         }
@@ -284,8 +284,8 @@ class Plot:
         file_names = {
             'CD': f'[{dtype}]Ellipticity_vs_Time_{date}_run{run}.png',
             'CB': f'[{dtype}]FR_vs_Time_{date}_run{run}.png',
-            # 'modCB': f'[{dtype}]Mod_FR_vs_Time_{date}_run{run}.png',
-            'modCB': f'[{dtype}]Mod_FR_per_mG_vs_Time_{date}_run{run}.png',
+            'modCB': f'[{dtype}]Mod_FR_vs_Time_{date}_run{run}.png',
+            # 'modCB': f'[{dtype}]Mod_FR_per_mG_vs_Time_{date}_run{run}.png',
             'absorbance': f'[{dtype}]Absorbance_vs_Time_{date}_run{run}.png',
             'refractive': f'[{dtype}]Refractive_index_vs_Time_{date}_run{run}.png',
         }
@@ -351,13 +351,13 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-15-2025'
+    date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 25, 2, 22.75, 375, 'modCB', 'vapor', date)
-    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 1, 22.75, 375, 'CD', 'vapor', date)
+    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 6, 7, 22.75, 365, 'modCB', 'vapor', date)
+    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 12, 7, 22.75, 365, 'CD', 'vapor', date)
 
 
     FR_file = f'FaradayRotation_{date_input}.csv'

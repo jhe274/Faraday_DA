@@ -17,11 +17,11 @@ class Plot:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run)
+        return range(run-1, run+1)
     
     def process_temperature(self, temps, run):
-        T_mean = np.mean(temps[run-1])
-        T_std = np.std(temps[run-1], ddof=1) / np.sqrt(len(temps[run-1]))
+        T_mean = np.mean(temps[run])
+        T_std = np.std(temps[run], ddof=1) / np.sqrt(len(temps[run]))
 
         return T_mean, T_std
     
@@ -30,11 +30,11 @@ class Plot:
         fig, ax1 = plt.subplots(1, 1, figsize=(25.60, 14.40))
         # Create second Y-axis
         ax2 = ax1.twinx()  # Create a second y-axis that shares the same x-axis
-
+        
         for i in self.number_of_runs(run):
             if i == run-1:
                 y1_fit, slope, intercept, y1_mean, residuals, y1_std = self.analyzer.drift_fit(x[i]/60, y1[i])
-                T_mean, T_std = self.process_temperature(y2, run)
+                T_mean, T_std = self.process_temperature(y2, i)
                 
                 lower_bound = slope*x[i]/60 + intercept - y1_std
                 upper_bound = slope*x[i]/60 + intercept + y1_std
@@ -53,13 +53,11 @@ class Plot:
                 ax2.plot(x[i]/60, y2[i], label=f'$\\overline{{T}}$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C', color='black', linestyle='-', linewidth=1, 
                         marker='^', markersize=10, markevery=500)
                 ax2.set_ylabel(ylabel_y2, fontsize=25)
+                # ax2.set_yticks(np.arange(22.06, 22.07, 0.002))
                 ax2.tick_params(axis='y', labelsize=25)
             else:
                 y1_fit, slope, intercept, y1_mean, residuals, y1_std = self.analyzer.drift_fit(x[i]/60, y1[i])
-                
-                # ax1.plot(x[i]/60, y1[i], label=r'$B_0$, run2', color='r', alpha=0.4, linestyle='-', linewidth=1, 
-                #         marker='x', markersize=10, markevery=200)
-                # ax1.plot(x[i]/60, y1_fit, label=f'Linear regression: run{run+1}', color='r', linestyle='--', linewidth=1)
+                T_mean, T_std = self.process_temperature(y2, i)
 
                 lower_bound = slope*x[i]/60 + intercept - y1_std
                 upper_bound = slope*x[i]/60 + intercept + y1_std
@@ -76,7 +74,7 @@ class Plot:
             # plt.title(f'run{run}', fontsize=25)
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", fontsize=20)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=20)
         plt.grid(False)
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
@@ -111,4 +109,4 @@ if __name__ == "__main__":
     date_input = '02-13-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
-    plotter.gaussmter_vs_time(gaussmeter_path, 7)
+    plotter.gaussmter_vs_time(gaussmeter_path, 1)
