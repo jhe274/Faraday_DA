@@ -22,7 +22,7 @@ class Plot:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run)
+        return range(run-1, run+1)
 
     def plot_process(self, t, X, Y, R, run, name, xlabel, ylabel, title):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
@@ -59,25 +59,25 @@ class Plot:
                         r'$\text{R}_\text{dc}$' if name == 'dc' else
                         r'$\text{R}_\text{m2f}$')
 
-                ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
-                # ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
-                #         marker='^', markersize=10, markevery=10)
-                ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
-                # ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
-                #         marker='^', markersize=10, markevery=10)
-                ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
-                # ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
-                #         marker='^', markersize=10, markevery=200)
+                # ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
+                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                        marker='^', markersize=10, markevery=100)
+                # ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
+                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                        marker='^', markersize=10, markevery=100)
+                # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
+                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                        marker='^', markersize=10, markevery=100)
             else:
-                ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
-                # ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
-                        # marker='x', markersize=10, markevery=10)
-                ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
-                # ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
-                #         marker='x', markersize=10, markevery=10)
-                ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
-                # ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
-                #         marker='x', markersize=10, markevery=200)
+                # ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
+                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                        marker='x', markersize=10, markevery=100)
+                # ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
+                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                        marker='x', markersize=10, markevery=100)
+                # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=50)
+                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                        marker='x', markersize=10, markevery=100)
 
         plt.xlabel(xlabel, fontsize=25)
         plt.ylabel(ylabel, fontsize=25)
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-14-2025'
+    date_input = '02-18-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(lockins_path, 'm2f', 2, 375)
+    plotter.XYR_vs_time(lockins_path, 'm2f', 1, 200)

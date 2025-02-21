@@ -1,9 +1,9 @@
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 from data_reader import DataReader as Read
 import scipy.special
-from scipy.optimize import curve_fit
 from scipy.stats import linregress
-from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter, find_peaks
 from scipy.ndimage import gaussian_filter1d
 
 class DataAnalyzer:
@@ -216,6 +216,38 @@ class DataAnalyzer:
         y_std = np.std(residuals, ddof=1)
 
         return y_fit, slope, intercept, y_mean, residuals, y_std
+    
+    def rolling_variance(self, data, window):
+        """
+        Compute the rolling variance of a 1D array, ignoring NaNs.
+
+        Parameters:
+        data (numpy.ndarray): Input data array.
+        window (int): The size of the rolling window.
+
+        Returns:
+        numpy.ndarray: Array of rolling variances.
+        """
+        if window < 1:
+            raise ValueError("Window size must be at least 1.")
+        if window > len(data):
+            raise ValueError("Window size must not be larger than the data length.")
+
+        # Handle NaNs in input data (replace with local mean if needed)
+        data = np.where(np.isnan(data), np.nanmean(data), data)
+
+        # Use sliding_window_view to create rolling windows
+        rolling_windows = sliding_window_view(data, window)
+
+        # Compute variance for each window
+        variances = np.nanvar(rolling_windows, axis=-1, ddof=1)  # ddof=1 for sample variance
+
+        # Pad the result with the median variance instead of NaN
+        pad_width = window - 1
+        median_variance = np.nanmedian(variances)  # Compute median to replace NaNs
+        variances = np.pad(variances, (pad_width, 0), mode='constant', constant_values=median_variance)
+
+        return variances
 
     def moving_average(self, y, window_size):
         """
@@ -237,4 +269,40 @@ class DataAnalyzer:
         ❌ Cons: Can introduce small artifacts at spectrum edges.
         """
         return gaussian_filter1d(y, sigma)
+    
+    def fft_peak(self, x, y):
+        N = len(y)
+        dt = np.mean(np.diff(x))
+        y_fft = np.fft.fft(y)
+        y_fft_freq = np.fft.fftfreq(N, dt)
 
+        # Convert to amplitude spectrum
+        amplitude_spectrum = np.abs(y_fft)/N
+
+        # Find peaks in the FFT spectrum
+        peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.02)  # Adjust threshold if needed
+
+        # Find the closest peak to 0.5 Hz
+        closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
+        dominant_freq = y_fft_freq[peaks][closest_peak_index]
+        print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
+
+        return y_fft_freq, y_fft, dominant_freq, amplitude_spectrum
+
+    def noise_floor(self, x, y):
+        y_fft_freq, y_fft, dominant_freq, amplitude_spectrum = self.fft_peak(x, y)
+        # Compute power spectral density
+        psd = amplitude_spectrum**2
+
+        # Define noise floor as the median power at non-dominant frequencies
+        noise_floor = np.median(psd[y_fft_freq > 0.1])
+
+        # Identify signal-to-noise ratio (SNR)
+        peak_power = psd[np.argmin(np.abs(y_fft_freq - dominant_freq))]
+        snr = peak_power / noise_floor
+
+        print(f"Estimated Noise Floor (dB): {10 * np.log10(noise_floor):.2f}")
+        print(f"Signal Power (dB) at {dominant_freq:.6f} Hz: {10 * np.log10(peak_power):.2f}")
+        print(f"Signal-to-Noise Ratio (dB): {10 * np.log10(snr):.2f}")
+
+        return noise_floor, psd, peak_power

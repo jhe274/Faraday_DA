@@ -144,7 +144,13 @@ class Plot:
                 # y =  np.array(y) / (2 * B_std * 1e3) # [nrad/mG]
         
         y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
-
+        window_size = 10
+        rolling_variance = self.analyzer.rolling_variance(residuals, window_size)
+        print("Rolling variance:", rolling_variance)
+        weights = 1 / rolling_variance[window_size:]
+        y_weighted_mean = np.average(y[window_size:], weights=weights)
+        print("Weighted mean:", y_weighted_mean)
+        
         # the 1 sigma upper and lower analytic population bounds
         lower_bound = slope*x + intercept - y_std
         upper_bound = slope*x + intercept + y_std
@@ -351,12 +357,12 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-13-2025'
+    date_input = '02-18-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 6, 7, 22.75, 365, 'modCB', 'vapor', date)
+    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 90, 3, 22.75, 200, 'modCB', 'vapor', date)
     # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 12, 7, 22.75, 365, 'CD', 'vapor', date)
 
 
