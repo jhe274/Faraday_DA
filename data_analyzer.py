@@ -3,8 +3,10 @@ from numpy.lib.stride_tricks import sliding_window_view
 from data_reader import DataReader as Read
 import scipy.special
 from scipy.stats import linregress
-from scipy.signal import savgol_filter, find_peaks
+from scipy.signal import savgol_filter, find_peaks, butter, filtfilt
 from scipy.ndimage import gaussian_filter1d
+from scipy.optimize import curve_fit
+from lmfit import Model
 
 class DataAnalyzer:
 
@@ -201,21 +203,27 @@ class DataAnalyzer:
 
         return binned_data
     
-    def drift_fit(self, x, y):
+    def drift_fit(self, x, y, window):
         # Perform linear regression
         slope, intercept, _, _, _ = linregress(x, y)
         
         # Compute fitted values
         y_fit = slope * x + intercept
 
-        # Compute the mean
-        y_mean = np.mean(y)
+        # Compute the residuals
+        residuals = y - y_fit
+
+        # Compute the weights
+        residuals_variance = self.rolling_variance(residuals, window)
+        weights = 1 / residuals_variance
+
+        # Compute the weighted mean
+        y_weightedmean = np.average(y, weights=weights)
 
         # Compute standard deviation of residuals
-        residuals = y - y_fit
-        y_std = np.std(residuals, ddof=1)
+        y_residualstd = np.std(residuals, ddof=1)
 
-        return y_fit, slope, intercept, y_mean, residuals, y_std
+        return y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd
     
     def rolling_variance(self, data, window):
         """
@@ -249,12 +257,12 @@ class DataAnalyzer:
 
         return variances
 
-    def moving_average(self, y, window_size):
+    def moving_average(self, y, bin):
         """
         ✅ Pros: Simple and effective for removing high-frequency noise.
         ❌ Cons: Can distort peak shapes and shift the spectrum.
         """
-        return np.convolve(y, np.ones(window_size)/window_size, mode='same')
+        return np.convolve(y, np.ones(bin)/bin, mode='same')
     
     def polynomial_smoothing(self, y, length, order):
         """"
@@ -269,6 +277,14 @@ class DataAnalyzer:
         ❌ Cons: Can introduce small artifacts at spectrum edges.
         """
         return gaussian_filter1d(y, sigma)
+    
+    def bandpass_filter(self, data, lowcut, highcut, fs, order=4):
+        nyquist = 0.5 * fs
+        low = lowcut / nyquist
+        high = highcut / nyquist
+        b, a = butter(order, [low, high], btype='band', analog=False)
+
+        return filtfilt(b, a, data)
     
     def fft_peak(self, x, y):
         N = len(y)
@@ -287,7 +303,7 @@ class DataAnalyzer:
         dominant_freq = y_fft_freq[peaks][closest_peak_index]
         print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
 
-        return y_fft_freq, y_fft, dominant_freq, amplitude_spectrum
+        return y_fft_freq, y_fft, amplitude_spectrum, dominant_freq
 
     def noise_floor(self, x, y):
         y_fft_freq, y_fft, dominant_freq, amplitude_spectrum = self.fft_peak(x, y)
@@ -306,3 +322,66 @@ class DataAnalyzer:
         print(f"Signal-to-Noise Ratio (dB): {10 * np.log10(snr):.2f}")
 
         return noise_floor, psd, peak_power
+
+    def drift_sine_wave(self, t, slope, intercept, amplitude, phase, freq):
+        frequency = freq * 60
+        return intercept + slope * t + amplitude * np.sin(2 * np.pi * frequency * t + phase)
+
+    def line(self, x, a, b):
+        return a * x + b
+    
+    def linear_fit(self, x, y, slope, intercept):
+        """Curve fit using Scipy.optimize.curve_fit"""
+        # initial guess
+        initial_guess = [slope, intercept]
+        # Fit a sine wave to the data
+        popt, pcov = curve_fit(self.line, x, y, p0=initial_guess)
+        # popt, _ = curve_fit(self.sine_wave, x[i]/60, y1_filtered, p0=initial_guess)
+        # Extract the fitted parameters
+        fitted_slope, fitted_intercept = popt
+        slope_uncertainty = np.sqrt(pcov[0, 0])
+        intercept_uncertainty = np.sqrt(pcov[1, 1])
+        # Print the true and fitted parameters
+        print(f"Fitted Parameters:")
+        print(f"Slope = {fitted_slope}")
+        print(f"Intercept = {fitted_intercept}")
+        # Generate the fitted sine wave
+        y_linearfit = self.line(x, *popt)
+        residuals = y - y_linearfit
+        sigma = np.std(residuals, ddof=1)
+        chi2_value = np.sum((residuals / sigma) ** 2)
+        dof = len(y) - len(popt)
+        print(f"Reduced Chi-squared: {chi2_value:.1f}/{dof}")
+
+        return y_linearfit, fitted_slope, fitted_intercept, slope_uncertainty, chi2_value, dof
+    
+    def drift_sine_fit(self, x, y, slope, intercept, amplitude, phase, freq):
+        """Curve fit using Scipy.optimize.curve_fit"""
+        # initial guess
+        initial_guess = [slope, intercept, amplitude, phase, freq]
+        # Fit a sine wave to the data
+        popt, pcov = curve_fit(self.drift_sine_wave, x, y, p0=initial_guess)
+        # popt, _ = curve_fit(self.sine_wave, x[i]/60, y1_filtered, p0=initial_guess)
+        # Extract the fitted parameters
+        fitted_slope, fitted_intercept, fitted_amplitude, fitted_phase, fitted_frequency = popt
+        slope_uncertainty = np.sqrt(pcov[0, 0])
+        intercept_uncertainty = np.sqrt(pcov[1, 1])
+        amplitude_uncertainty = np.sqrt(pcov[2, 2])
+        phase_uncertainty = np.sqrt(pcov[3, 3])
+        frequency_uncertainty = np.sqrt(pcov[4, 4])
+        # Print the true and fitted parameters
+        print(f"Fitted Parameters:")
+        print(f"Slope = {fitted_slope}")
+        print(f"Intercept = {fitted_intercept}")
+        print(f"Amplitude = {fitted_amplitude}")
+        print(f"Phase = {fitted_phase}")
+        print(f"Frequency = {fitted_frequency}")
+        # Generate the fitted sine wave
+        y_sinefit = self.drift_sine_wave(x, *popt)
+        residuals = y - y_sinefit
+        sigma = np.std(residuals, ddof=1)
+        chi2_value = np.sum((residuals / sigma) ** 2)
+        dof = len(y) - len(popt)
+        print(f"Reduced Chi-squared: {chi2_value:.1f}/{dof}")
+
+        return y_sinefit, fitted_slope, fitted_intercept, fitted_amplitude, fitted_phase, fitted_frequency, amplitude_uncertainty, chi2_value, dof

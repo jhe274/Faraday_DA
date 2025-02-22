@@ -3,11 +3,11 @@ import datetime as dt
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 from constants import Constants as Consts
 from theory_calculations import Theory
 from data_reader import DataReader as Read
 from data_analyzer import DataAnalyzer as Analyze
-from scipy.signal import find_peaks
 
 class LaserDrift:
     def __init__(self):
@@ -25,73 +25,135 @@ class LaserDrift:
         :param run: Current run index
         :return: A range of run indices
         """
-        return range(run-1, run+1)
+        return range(run-1, run)
     
     def process(self, t, y1, y2, dtype, run):
         if dtype == 'wavelength':
             scale_factor = 1e9  # wavelenght: [nm]
             y = y1 * scale_factor
             x = t / 60  # Convert time to minutes
-            y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
+            y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd = self.analyzer.drift_fit(x, y, 100)
         elif dtype == 'frequency':
             scale_factor = 1e-9  # frequency: [GHz]
             y = y2 * scale_factor
             x = t / 60  # Convert time to minutes
-            y_fit, slope, intercept, y_mean, residuals, y_std = self.analyzer.drift_fit(x, y)
+            y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd = self.analyzer.drift_fit(x, y, 100)
 
-        return x, y, y_fit, slope, intercept, y_mean, residuals, y_std
+        return x, y, y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd
     
-    def plot_process(self, timestamp, wavelength, dtype, run, name, ave_unit, std_unit, xlabel, ylabel, title, date):
+    def plot_fft(self, timestamp, wavelength, run, xlabel, ylabel, file_name):
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        for i in self.number_of_runs(run):
+            t, wl = self.analyzer.filter_data(timestamp[i], wavelength[i])
+            if i == run-1:
+                freqs, fft_values, amplitude_spectrum = self.analyzer.fft_peak(t, wl)
+                
+                ax.plot(freqs, np.abs(fft_values)/len(wl), color='b', label=f'run{run}')
+            else:
+                freqs, fft_values, amplitude_spectrum = self.analyzer.fft_peak(t, wl)
+                
+                ax.plot(freqs, np.abs(fft_values)/len(wl), color='r', label=f'run{run+1}')
+                ax.set_xlim(0, 20)
+                ax.set_xlabel(xlabel, fontsize=25)
+                ax.set_ylabel(ylabel, fontsize=25)
+                ax.tick_params(axis='x', labelsize=25)
+                ax.tick_params(axis='y', labelsize=25)
+
+        # plt.grid(False)
+        plt.legend(loc='best', fontsize=25)
+        # save_path = os.path.join(plots, date, file_name)
+        # plt.savefig(save_path)
+        plt.show()
+    
+    def plot_process(self, timestamp, wavelength, dtype, run, name, ave_unit, std_unit, xlabel, ylabel, date):
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
         t, wl, nu, x, y, y_fit, slope, y_mean, y_std = [], [], [], [], [], [], [], [], []
         for i in self.number_of_runs(run):
+            # Filter the data and convert wavelength to frequency
             t, wl = self.analyzer.filter_data(timestamp[i], wavelength[i])
             nu = np.array([self.consts.c / wl[j] for j in range(len(wl))])  # [GHz]
-            x, y, y_fit, slope, intercept, y_mean, residuals, y_std = self.process(t, wl, nu, dtype, run)
-
-            lower_bound = slope*x + intercept - y_std
-            upper_bound = slope*x + intercept + y_std
 
             if i == run-1:
                 unitfactor = 1e3 # frequency: [MHz]
-                # plot functions for WideScan
-                ax.plot(x, y, color='C3', linestyle='-', linewidth=0.5)
-                ax.plot(x, y_fit, '--', color='r', 
-                    label=fr'$\nabla_t{name}$={round(slope/60 * unitfactor,3):.3f} {std_unit}/s')
+                x1, y1, y1_fit, y1_slope, y1_intercept, y1_weightedmean, y1_residuals, y1_residualstd = self.process(t, wl, nu, dtype, run)
                 
-                # plot functions for locked laser
-                # ax.plot(x, y, color='C3', alpha=0.4, linestyle='-', linewidth=0.5, \
-                #         label=fr'$\overline{{{name}}}$={round(y_mean,3):.3f} {ave_unit}')
-                # ax.plot(x, y_fit, '--', color='r', 
-                #     label=fr'$\nabla_t{name}$={round(slope * unitfactor,3):.3f} {std_unit}/min')
+                # Fitting Scan with WideScan wavelength/frequency measurements
+                # y1_scanfit, fitted_slope1, fitted_intercept1, fitted_amplitude1, fitted_phase1, fitted_freq1, amplitude_uncertainty1, chi2_value1, dof1 = self.analyzer.drift_sine_fit(x1, y1, y1_slope, min(y1), y1_residualstd, 0, 10)
+                
+                # Fitting locked laser wavelength/frequency measurements
+                y1_linearfit, fitted_slope1, fitted_intercept1, slope_uncertainty1, chi2_value1, dof1 = self.analyzer.linear_fit(x1, y1, y1_slope, y1_intercept)
+                
+                # Calculate the error bounds
+                lower_bound1 = fitted_slope1 * x1 + y1_intercept - y1_residualstd
+                upper_bound1 = fitted_slope1 * x1 + y1_intercept + y1_residualstd
+                
+                # Plot the measured data and fit for WideScan
+                # ax.plot(x1, y1, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, 
+                #         label=fr'$\dot{name}$={round(fitted_slope1/60 * unitfactor,2):.2f} {std_unit}/s')
+                # ax.plot(x1, y1_scanfit, '--', color='r', label=fr'$\Delta\nu$={round(2*np.abs(fitted_amplitude1)*unitfactor,2):.2f}±{round(amplitude_uncertainty1*unitfactor,2):.2f} MHz')
+                
+                # Plot functions for locked laser
+                ax.plot(x1, y1, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, \
+                        label=fr'$\overline{{{name}}}$={round(y1_weightedmean,3):.3f} {ave_unit}')
+                ax.plot(x1, y1_linearfit, '--', color='r', 
+                    label=fr'$\dot{name}$={round(fitted_slope1 * unitfactor,2):.2f} {std_unit}/min')
 
-                # plot 1 sigma error band
-                ax.fill_between(x, lower_bound, upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma$={round(y_std * unitfactor,3):.3f} {std_unit}')
+                # Plot 1 sigma error band
+                ax.fill_between(x1, lower_bound1, upper_bound1, facecolor='C3', alpha=0.4, label=f'$\\sigma$={round(y1_residualstd * unitfactor,2):.2f} {std_unit}')
             else:
                 unitfactor = 1e3 # frequency: [MHz]
-                # plot functions for WideScan
-                ax.plot(x, y, color='C0', linestyle='-', linewidth=0.5)
-                ax.plot(x, y_fit, '--', color='b',  
-                    label=fr'$\nabla_t{name}$={round(slope/60 * unitfactor,3):.3f} {std_unit}/s')
+                x2, y2, y2_fit, y2_slope, y2_intercept, y2_weightedmean, y2_residuals, y2_residualstd = self.process(t, wl, nu, dtype, run)
                 
-                # plot functions for locked laser
-                # ax.plot(x, y, color='C0', alpha=0.4, linestyle='-', linewidth=0.5, \
-                #         label=fr'$\overline{{{name}}}$={round(y_mean,3):.3f} {ave_unit}')
-                # ax.plot(x, y_fit, '--', color='b',  
-                #     label=fr'$\nabla_t{name}$={round(slope * unitfactor,3):.3f} {std_unit}/min')
+                # Fitting Scan with WideScan wavelength/frequency measurements
+                # y2_scanfit, fitted_slope2, fitted_intercept2, fitted_amplitude2, fitted_phase2, fitted_freq2, amplitude_uncertainty2, chi2_value2, dof2 = self.analyzer.drift_sine_fit(x2, y2, y2_slope, min(y2), y2_residualstd, 0, 10)
+                
+                # Calculate the error bounds
+                # lower_bound2 = fitted_slope2 * x2 + y2_intercept - y2_residualstd
+                # upper_bound2 = fitted_slope2 * x2 + y2_intercept + y2_residualstd
 
-                # plot 1 sigma error band
-                ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y_std * unitfactor,3):.3f} {std_unit}')
+                # Plot measured data and fit for WideScan
+                # ax.plot(x2, y2, color='C0', alpha=0.6, linestyle='-', linewidth=0.5, 
+                        # label=fr'$\dot{name}$={round(fitted_slope2/60 * unitfactor,2):.2f} {std_unit}/s')
+                # ax.plot(x2, y2_scanfit, '--', color='b', label=fr'$\Delta\nu$={round(2*np.abs(fitted_amplitude2)*unitfactor,2):.2f}±{round(amplitude_uncertainty2*unitfactor,2):.2f} MHz')
 
+                # Plot 1 sigma error band
+                # ax.fill_between(x2, lower_bound2, upper_bound2, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(y2_residualstd * unitfactor,2):.2f} {std_unit}')
+
+                
+                # --------- Add Inset Zoomed Plot ---------
+                # axins = inset_axes(ax, width="50%", height="50%", 
+                #                    bbox_to_anchor=(0.48, -0.2, 0.5, 0.5),  # Adjust this for placement
+                #                     bbox_transform=ax.transAxes)  # 6x zoom
+                # axins.plot(x1, y1, color='C3', alpha=0.6)  # Same data as main plot
+                # axins.plot(x1, y1_scanfit, '--', color='r')
+                # axins.fill_between(x1, lower_bound1, upper_bound1, facecolor='C3', alpha=0.4)
+                # axins.plot(x2, y2, color='C0', alpha=0.6)  # Same data as main plot
+                # axins.plot(x2, y2_scanfit, '--', color='b')
+                # axins.fill_between(x2, lower_bound2, upper_bound2, facecolor='C0', alpha=0.4)
+
+                # # Define zoomed-in region
+                # x1, x2, y1, y2 = max(x2)-0.01, max(x2), max(y2)-0.03, max(y1)+0.03
+                # axins.set_xlim(x1, x2)
+                # axins.set_ylim(y1, y2)
+
+                # # Customize inset tick labels
+                # axins.yaxis.get_major_locator().set_params(nbins=7)
+                # axins.ticklabel_format(useOffset=False, style='plain')
+                # axins.xaxis.get_major_locator().set_params(nbins=7)
+                # axins.tick_params(labelleft=True, labelbottom=True, labelsize=12)
+
+                # # Mark the zoomed-in area on the main plot
+                # mark_inset(ax, axins, loc1=1, loc2=2, fc="none", ec="black", linestyle="dashed")
+
+        ax.set_title(f'$\chi^2/\\text{{dof}}$={chi2_value1:.1f}/{dof1}', fontsize=25)
         ax.ticklabel_format(useOffset=False, style='plain')
-        plt.xlabel(xlabel, fontsize=25)
+        ax.set_xlabel(xlabel, fontsize=25)
         plt.xticks(fontsize=25)
-        plt.ylabel(ylabel, fontsize=25)
+        ax.set_ylabel(ylabel, fontsize=25)
         plt.yticks(fontsize=25)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(False)
         ax.legend(loc='best', fontsize=25)
-        # plt.title(title, fontsize=25)
         plt.savefig(os.path.join(plots, f'{date}', f'{dtype}_vs_time_{date}_run{run}.png'))
         plt.show()
         
@@ -104,13 +166,19 @@ class LaserDrift:
             ave_unit = r'nm'
             std_unit = r'pm'
             self.plot_process(timestamp, wavelength, dtype, run, name, ave_unit, std_unit, 
-                            r'Time (min)', r'Wavelength (nm)', f'Wavelength vs Time, run{run}' + ' @'+ str(date), date)
+                            r'Time (min)', r'Wavelength (nm)', date)
         elif dtype == 'frequency':
             name = r'\nu'
             ave_unit = r'GHz'
             std_unit = r'MHz'
             self.plot_process(timestamp, wavelength, dtype, run, name, ave_unit, std_unit,  
-                            r'Time (min)', r'Frequency (GHz)', f'Frequency vs Time, run{run}' + ' @'+ str(date), date)
+                            r'Time (min)', r'Frequency (GHz)', date)
+            
+        elif dtype == 'fft':
+            xlabel = r'Frequency (Hz)'
+            ylabel = r'Amplitude'
+            file_name = f'FFT_{date}_run{run}.png'
+            self.plot_fft(timestamp, wavelength, run, xlabel, ylabel, file_name)
 
 if __name__ == "__main__":
     dir_path = os.path.join(
@@ -134,4 +202,4 @@ if __name__ == "__main__":
     date_input = '02-18-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
-    plotter.wavelength_frequency(wavelengthmeter_path, date, 1, 'frequency')
+    plotter.wavelength_frequency(wavelengthmeter_path, date, 3, 'frequency')
