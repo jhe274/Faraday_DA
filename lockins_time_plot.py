@@ -89,7 +89,7 @@ class Plot:
         ax.legend(loc='best', fontsize=25)
         plt.title(title, fontsize=25)
         plt.savefig(os.path.join(plots, f'{date}', f'{name}_vs_time_{date}_run{run}.png'))
-        plt.show()
+        # plt.show()
 
     def XYR_vs_time(self, lockins_path, name, run):
         para, lockins_t, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f = self.reader.read_lockins(lockins_path)
@@ -141,7 +141,8 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-18-2025'
+    date_input = '02-24-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    plotter.XYR_vs_time(lockins_path, '1f', 3)
+    for i in range(1,2):
+        plotter.XYR_vs_time(lockins_path, 'm2f', i)

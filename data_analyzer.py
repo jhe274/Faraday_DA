@@ -2,7 +2,7 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from data_reader import DataReader as Read
 import scipy.special
-from scipy.stats import linregress
+from scipy.stats import linregress, chisquare
 from scipy.signal import savgol_filter, find_peaks, butter, filtfilt
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import curve_fit
@@ -133,7 +133,7 @@ class DataAnalyzer:
         t = np.asarray(t)
         x = np.asarray(x)
 
-        x_ubound, x_lbound = 766.711e-9, 766.689e-9
+        x_ubound, x_lbound = 766.711e-9, 766.6996e-9
         condition = np.logical_and(x > x_lbound, x < x_ubound)
 
         filtered_t = t[condition]
@@ -202,28 +202,6 @@ class DataAnalyzer:
             binned_data = np.append(binned_data, remaining_mean)
 
         return binned_data
-    
-    def drift_fit(self, x, y, window):
-        # Perform linear regression
-        slope, intercept, _, _, _ = linregress(x, y)
-        
-        # Compute fitted values
-        y_fit = slope * x + intercept
-
-        # Compute the residuals
-        residuals = y - y_fit
-
-        # Compute the weights
-        residuals_variance = self.rolling_variance(residuals, window)
-        weights = 1 / residuals_variance
-
-        # Compute the weighted mean
-        y_weightedmean = np.average(y, weights=weights)
-
-        # Compute standard deviation of residuals
-        y_residualstd = np.std(residuals, ddof=1)
-
-        return y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd
     
     def rolling_variance(self, data, window):
         """
@@ -296,8 +274,8 @@ class DataAnalyzer:
         amplitude_spectrum = np.abs(y_fft)/N
 
         # Find peaks in the FFT spectrum
-        peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.02)  # Adjust threshold if needed
-
+        peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.01)  # Adjust threshold if needed
+        
         # Find the closest peak to 0.5 Hz
         closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
         dominant_freq = y_fft_freq[peaks][closest_peak_index]
@@ -322,66 +300,101 @@ class DataAnalyzer:
         print(f"Signal-to-Noise Ratio (dB): {10 * np.log10(snr):.2f}")
 
         return noise_floor, psd, peak_power
+    
+    def bootstrap_errors(self, x, y, func, initial_guess, num_samples=100):
+        """Bootstrap resampling to estimate parameter uncertainties."""
+        fitted_params = []
+        for _ in range(num_samples):
+            resampled_y = y + np.random.normal(0, np.std(y - func(x, *initial_guess)), size=len(y))
+            try:
+                popt, _ = curve_fit(func, x, resampled_y, p0=initial_guess)
+                fitted_params.append(popt)
+            except RuntimeError:
+                continue  # Skip failed fits
 
-    def drift_sine_wave(self, t, slope, intercept, amplitude, phase, freq):
-        frequency = freq * 60
-        return intercept + slope * t + amplitude * np.sin(2 * np.pi * frequency * t + phase)
+        fitted_params = np.array(fitted_params)
+        param_std = np.std(fitted_params, axis=0)  # Standard deviation as error estimate
+        return param_std
+
+    def drift_sine_wave(self, t, k, b, a, phi):
+        freq = 0.5
+        return b + k * t + a * np.sin(2 * np.pi * freq * t + phi)
 
     def line(self, x, a, b):
         return a * x + b
     
-    def linear_fit(self, x, y, slope, intercept):
+    def drift_fit(self, x, y, window):
+        # Perform linear regression
+        slope, intercept, _, _, _ = linregress(x, y)
+        
+        # Compute fitted values
+        y_fit = slope * x + intercept
+
+        # Compute the residuals
+        residuals = y - y_fit
+
+        # Compute the weights
+        residuals_variance = self.rolling_variance(residuals, window)
+        weights = 1 / residuals_variance
+
+        # Compute the weighted mean
+        y_weightedmean = np.average(y, weights=weights)
+
+        # Compute standard deviation of residuals
+        y_residualstd = np.std(residuals, ddof=1)
+
+        return y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd
+
+    def linear_fit(self, x, y, k, b, sigma):
         """Curve fit using Scipy.optimize.curve_fit"""
         # initial guess
-        initial_guess = [slope, intercept]
+        initial_guess = [k, b]
         # Fit a sine wave to the data
         popt, pcov = curve_fit(self.line, x, y, p0=initial_guess)
-        # popt, _ = curve_fit(self.sine_wave, x[i]/60, y1_filtered, p0=initial_guess)
         # Extract the fitted parameters
-        fitted_slope, fitted_intercept = popt
-        slope_uncertainty = np.sqrt(pcov[0, 0])
-        intercept_uncertainty = np.sqrt(pcov[1, 1])
+        fitted_k, fitted_b = popt
+        sigma_k = np.sqrt(pcov[0, 0])
+        sigma_b = np.sqrt(pcov[1, 1])
         # Print the true and fitted parameters
         print(f"Fitted Parameters:")
-        print(f"Slope = {fitted_slope}")
-        print(f"Intercept = {fitted_intercept}")
+        print(f"Slope = {fitted_k}")
+        print(f"Intercept = {fitted_b}")
         # Generate the fitted sine wave
         y_linearfit = self.line(x, *popt)
-        residuals = y - y_linearfit
-        sigma = np.std(residuals, ddof=1)
-        chi2_value = np.sum((residuals / sigma) ** 2)
         dof = len(y) - len(popt)
+        residuals = y - y_linearfit
+        residual_std = np.std(residuals, ddof=1)
+        # sigma = self.bootstrap_errors(x, y, self.line, initial_guess)
+        chi2_value = np.sum((residuals / sigma) ** 2)
         print(f"Reduced Chi-squared: {chi2_value:.1f}/{dof}")
 
-        return y_linearfit, fitted_slope, fitted_intercept, slope_uncertainty, chi2_value, dof
+        return y_linearfit, fitted_k, fitted_b, sigma_k, sigma_b, residuals, residual_std, chi2_value, dof
     
-    def drift_sine_fit(self, x, y, slope, intercept, amplitude, phase, freq):
+    def drift_sine_fit(self, x, y, k, b, a, phi, sigma):
         """Curve fit using Scipy.optimize.curve_fit"""
         # initial guess
-        initial_guess = [slope, intercept, amplitude, phase, freq]
+        initial_guess = [k, b, a, phi]
         # Fit a sine wave to the data
         popt, pcov = curve_fit(self.drift_sine_wave, x, y, p0=initial_guess)
-        # popt, _ = curve_fit(self.sine_wave, x[i]/60, y1_filtered, p0=initial_guess)
         # Extract the fitted parameters
-        fitted_slope, fitted_intercept, fitted_amplitude, fitted_phase, fitted_frequency = popt
-        slope_uncertainty = np.sqrt(pcov[0, 0])
-        intercept_uncertainty = np.sqrt(pcov[1, 1])
-        amplitude_uncertainty = np.sqrt(pcov[2, 2])
-        phase_uncertainty = np.sqrt(pcov[3, 3])
-        frequency_uncertainty = np.sqrt(pcov[4, 4])
+        fitted_k, fitted_b, fitted_a, fitted_phi = popt
+        sigma_k = np.sqrt(pcov[0, 0])
+        sigma_b = np.sqrt(pcov[1, 1])
+        sigma_a = np.sqrt(pcov[2, 2])
+        sigma_phi = np.sqrt(pcov[3, 3])
         # Print the true and fitted parameters
         print(f"Fitted Parameters:")
-        print(f"Slope = {fitted_slope}")
-        print(f"Intercept = {fitted_intercept}")
-        print(f"Amplitude = {fitted_amplitude}")
-        print(f"Phase = {fitted_phase}")
-        print(f"Frequency = {fitted_frequency}")
+        print(f"Slope = {fitted_k}")
+        print(f"Intercept = {fitted_b}")
+        print(f"Amplitude = {fitted_a}")
+        print(f"Phase = {fitted_phi}")
         # Generate the fitted sine wave
         y_sinefit = self.drift_sine_wave(x, *popt)
-        residuals = y - y_sinefit
-        sigma = np.std(residuals, ddof=1)
-        chi2_value = np.sum((residuals / sigma) ** 2)
         dof = len(y) - len(popt)
+        residuals = y - y_sinefit
+        residual_std = np.std(residuals, ddof=1)
+        # sigma = self.bootstrap_errors(x, y, self.drift_sine_wave, initial_guess)
+        chi2_value = np.sum((residuals / sigma) ** 2)
         print(f"Reduced Chi-squared: {chi2_value:.1f}/{dof}")
 
-        return y_sinefit, fitted_slope, fitted_intercept, fitted_amplitude, fitted_phase, fitted_frequency, amplitude_uncertainty, chi2_value, dof
+        return y_sinefit, fitted_k, fitted_b, fitted_a, fitted_phi, sigma_k, sigma_b, sigma_a, sigma_phi, residuals, residual_std, chi2_value, dof
