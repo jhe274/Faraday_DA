@@ -133,7 +133,7 @@ class DataAnalyzer:
         t = np.asarray(t)
         x = np.asarray(x)
 
-        x_ubound, x_lbound = 766.711e-9, 766.6996e-9
+        x_ubound, x_lbound = 766.701e-9, 766.6996e-9
         condition = np.logical_and(x > x_lbound, x < x_ubound)
 
         filtered_t = t[condition]

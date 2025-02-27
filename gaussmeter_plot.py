@@ -73,7 +73,7 @@ class Plot:
         
         for i in self.number_of_runs(run):
             if i == run-1:
-                time_factor = 3600  # Convert time to hours
+                time_factor = 60  # Convert time to min
                 y1[i] = -y1[i]  # Invert the magnetic field data
                 T_mean, T_sem = self.process_temperature(y2, i)
 
@@ -113,7 +113,7 @@ class Plot:
                 upper_bound = y_sinefit + y1_residualstd
 
                 # Plot the magnetic field measurements
-                ax1.plot(x[i]/time_factor, y1[i], color='C0', alpha=0.4, label=fr'$\dot{{B_z}}$={round(fitted_k*1e3*time_factor,2):.2f} mG/h')
+                ax1.plot(x[i]/time_factor, y1[i], color='C0', alpha=0.4, label=fr'$\dot{{B_z}}$={round(fitted_k*1e3*time_factor*60,1):.1f} mG/h')
 
                 # plot the linear fit
                 # ax1.plot(x[i]/time_factor, y_linearfit, '--', color='b', label=fr'$B_z$={round(y1_weightedmean,3):.3f} G ± {round(sigma_mean*1e3,1):.1f} mG')
@@ -133,7 +133,7 @@ class Plot:
                 # ax1.set_title(f'$\chi^2/\\text{{dof}}$={chi2_value:.1f}/{dof}', fontsize=25)
                 # Plot the temperature measurements
                 ax2.plot(x[i]/time_factor, y2[i], label=f'$\\overline{{T}}$={round(T_mean,2):.2f}°C', color='black', linestyle='-', linewidth=1, 
-                        marker='^', markersize=10, markevery=10000)
+                        marker='^', markersize=10, markevery=2000)
 
                 ax2.set_ylabel(ylabel_y2, fontsize=25)
                 # ax2.set_yticks(np.arange(22.06, 22.07, 0.002))
@@ -203,12 +203,12 @@ class Plot:
         plt.grid(False)
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
-        # plt.show()
+        plt.show()
     
     def gaussmter_vs_time(self, gaussmeter_path, run):
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
         
-        self.plot_process(timestamps, B0s, temps, run, 'Time (h)',
+        self.plot_process(timestamps, B0s, temps, run, 'Time (min)',
                             r'Magnetic flux density (G)', r'Temperature (°C)', 
                             f'Magnetic_field_and_temperature_{date}_run{run}.png')
         
@@ -234,8 +234,8 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-24-2025'
+    date_input = '02-26-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
-    for i in range(1,6):
-        plotter.gaussmter_vs_time(gaussmeter_path, i)
+    # for i in range(1,6):
+    plotter.gaussmter_vs_time(gaussmeter_path, 4)

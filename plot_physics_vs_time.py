@@ -362,14 +362,14 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-24-2025'
+    date_input = '02-26-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    for i in range(1,6):
-        plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, i, 22.75, 200, 'modCB', 'vapor', date)
-        plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 6, i, 22.75, 200, 'CD', 'vapor', date)
+    # for i in range(1,6):
+    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, 4, 22.75, 200, 'modCB', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 6, 4, 22.75, 200, 'CD', 'vapor', date)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

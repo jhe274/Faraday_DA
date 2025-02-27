@@ -221,8 +221,8 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = LaserDrift()
-    date_input = '02-24-2025'
+    date_input = '02-26-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
-    for i in range(1,6):
-        plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'frequency')
+    # for i in range(1,6):
+    plotter.wavelength_frequency(wavelengthmeter_path, date, 4, 'frequency')
