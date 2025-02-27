@@ -129,7 +129,7 @@ class Plot:
         plot_params = {
             ('CD', 'vapor'): (timestamp[index] / 3600, ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
             ('CB', 'vapor'): (timestamp[index] / 3600, angle[index], r'$\theta_\text{vapor cell}$'),
-            ('modCB', 'vapor'): (timestamp[index] / 3600, m2f_angle[index], r'$\Delta\theta$'),
+            ('modCB', 'vapor'): (timestamp[index] / 60, m2f_angle[index], r'$\Delta\theta$'),
             # ('modCB', 'vapor'): (timestamp[index] / 3600, m2f_angle[index], r'$\Delta\theta/\Delta B_z$'),
             ('absorbance', 'vapor'): (timestamp[index][1:] / 60, alpha_diff_vapor[index], r'$\alpha_--\alpha_+$'),
             ('refractive', 'vapor'): (timestamp[index][1:] / 60, n_diff_vapor[index], r'$n_--n_+$'),
@@ -156,7 +156,7 @@ class Plot:
         # plot Δθ vs time
         ax.plot(x, y, color='C0', alpha=1, lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta}}$={round(y_weightedmean,2):.2f} μrad ± {round(sem*1e3)} nrad')
         ax.plot(x, y_linearfit, '--', color='b', lw=2, 
-            label=f'$\\dot{{\\Delta\\theta}}$={round(fitted_k,2):.2f} μrad/h')
+            label=f'$\\dot{{\\Delta\\theta}}$={round(fitted_k*1e3)} nrad/min')
         ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(std,2):.2f} μrad')
 
         # plot Δθ/ΔB vs time
@@ -197,12 +197,12 @@ class Plot:
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
         
         plot_params = {
-            ('CD', 'vapor'): (timestamp[index] / 3600, ellipticity[index], angle[index], \
+            ('CD', 'vapor'): (timestamp[index] / 60, ellipticity[index], angle[index], \
                               r'$\Longleftarrow$$\epsilon_\text{vapor cell}$', \
                                 r'$\theta_\text{vapor cell}$$\Longrightarrow$', \
                                   r'Ellipticity (mrad)', r'Faraday Rotation (mrad)', \
                                     f'[{dtype}]Ellipticity_and_Rotation_vapor_{date}_run{run}.png'),
-            ('absorbance', 'vapor'): (timestamp[index][1:] / 3600, alpha_diff_vapor[index], n_diff_vapor[index], \
+            ('absorbance', 'vapor'): (timestamp[index][1:] / 60, alpha_diff_vapor[index], n_diff_vapor[index], \
                                       r'$\Longleftarrow$$\alpha_--\alpha_+$', r'$n_--n_+$$\Longrightarrow$', \
                                         r'Absorbance difference (1/m)', r'Refractive indices difference ($\times10^{-6}$)', \
                                           f'[{dtype}]Absorbance_and_refractive_index_vapor_{date}_run{run}.png'),
@@ -233,9 +233,9 @@ class Plot:
             ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\epsilon}}$={round(y1_weightedmean,2):.2f} mrad ± {round(y1_sem*1e3,2):.2f} μrad')
             ax1.plot(x, y1_fit, '--', color='r', lw=2, \
-                    label=f'$\\dot\\epsilon$={round(fitted_k1*1e3,2):.2f} μrad/h')
+                    label=f'$\\dot\\epsilon$={round(fitted_k1*1e3,2):.2f} μrad/min')
             ax1.fill_between(x, y1_lower_bound, y1_upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma_\epsilon$={round(y1_std*1e3,2):.2f} μrad')
-            ax1.set_xlabel(r'Time (h)', fontsize=25)
+            ax1.set_xlabel(r'Time (min)', fontsize=25)
             ax1.set_ylabel(ylabel_y1, fontsize=25, color='C3')
             ax1.tick_params(axis='x', labelsize=25)
             ax1.tick_params(axis='y', labelsize=25)
@@ -244,7 +244,7 @@ class Plot:
             ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\theta}}$={round(y2_weightedmean,2):.2f} mrad ± {round(y2_sem*1e3,2):.2f} μrad')
             ax2.plot(x, y2_fit, '--', color='b', lw=2, 
-                    label=f'$\\dot\\theta$={round(fitted_k2*1e3,2):.2f} μrad/h')
+                    label=f'$\\dot\\theta$={round(fitted_k2*1e3,2):.2f} μrad/min')
             ax2.fill_between(x, y2_lower_bound, y2_upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma_\\theta$={round(y2_std*1e3,2):.2f} μrad')
             ax2.set_ylabel(ylabel_y2, fontsize=25, color='C0')
             ax2.tick_params(axis='y', labelsize=25)
@@ -276,7 +276,7 @@ class Plot:
         :param dtype: Data type ('X' or 'R')
         :param phytype: Physical quantity type ('CD', 'CB', etc.)
         """
-        plt.xlabel(r'Time (h)', fontsize=25)
+        plt.xlabel(r'Time (min)', fontsize=25)
         plt.xticks(fontsize=25)
         plt.yticks(fontsize=25)
         plt.grid(False)
@@ -341,7 +341,8 @@ class Plot:
 if __name__ == "__main__":
 
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -367,9 +368,9 @@ if __name__ == "__main__":
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(1,6):
-    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, 4, 22.75, 200, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 6, 4, 22.75, 200, 'CD', 'vapor', date)
+    # for i in range(1,8):
+    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, 9, 22.75, 200, 'modCB', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 9, 22.75, 200, 'CD', 'vapor', date)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

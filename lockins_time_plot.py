@@ -125,7 +125,8 @@ class Plot:
     
 if __name__ == "__main__":
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -133,6 +134,7 @@ if __name__ == "__main__":
     'PhD_project', 
     'Faraday_rotation_measurements'
     )
+    print(dir_path)
     # dir_path = os.path.join(os.getcwd(),  # Directory path on Faraday lab computer
     # 'Faraday_rotation_measurements', 
     # )
@@ -144,5 +146,5 @@ if __name__ == "__main__":
     date_input = '02-26-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(1,6):
-    plotter.XYR_vs_time(lockins_path, 'm2f', 4)
+    # for i in range(1,8):
+    plotter.XYR_vs_time(lockins_path, '1f', 9)
