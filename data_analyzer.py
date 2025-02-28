@@ -133,7 +133,7 @@ class DataAnalyzer:
         t = np.asarray(t)
         x = np.asarray(x)
 
-        x_ubound, x_lbound = 766.701e-9, 766.6996e-9
+        x_ubound, x_lbound = 766.701e-9, 766.6997e-9
         condition = np.logical_and(x > x_lbound, x < x_ubound)
 
         filtered_t = t[condition]
@@ -277,9 +277,14 @@ class DataAnalyzer:
         peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.01)  # Adjust threshold if needed
         
         # Find the closest peak to 0.5 Hz
-        closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
+        # closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
+        # dominant_freq = y_fft_freq[peaks][closest_peak_index]
+        # print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
+
+        # Find the closest peak to 0.00083 Hz
+        closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.00083))
         dominant_freq = y_fft_freq[peaks][closest_peak_index]
-        print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
+        print(f"Detected Dominant Frequency Near 0.00083 Hz: {dominant_freq:.6f} Hz")
 
         return y_fft_freq, y_fft, amplitude_spectrum, dominant_freq
 
@@ -317,7 +322,8 @@ class DataAnalyzer:
         return param_std
 
     def drift_sine_wave(self, t, k, b, a, phi):
-        freq = 0.5
+        # freq = 0.5
+        freq = 0.000867 * 60
         return b + k * t + a * np.sin(2 * np.pi * freq * t + phi)
 
     def line(self, x, a, b):

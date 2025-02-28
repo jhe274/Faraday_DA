@@ -109,7 +109,7 @@ class LaserDrift:
                 ax.plot(x1, y1, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, \
                         label=fr'$\overline{{{name}}}$={round(y1_weightedmean,3):.3f} {ave_unit}')
                 ax.plot(x1, y1_linearfit, '--', color='r', 
-                    label=fr'$\dot{name}$={round(fitted_k1 * unitfactor * 1e3)} kHz/min')
+                    label=fr'$\dot{name}$={round(fitted_k1 * unitfactor * 60,1):.1f} MHz/h')
 
                 # Plot 1 sigma error band
                 ax.fill_between(x1, lower_bound1, upper_bound1, facecolor='C3', alpha=0.4, label=f'$\\sigma$={round(std*unitfactor,1):.1f} {std_unit}')
@@ -204,8 +204,8 @@ class LaserDrift:
 
 if __name__ == "__main__":
     dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    'D:',
+    os.path.expanduser('~'),  # Directory path on personal computer
+    # 'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -222,8 +222,8 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     
     plotter = LaserDrift()
-    date_input = '02-26-2025'
+    date_input = '02-25-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     # for i in range(1,8):
-    plotter.wavelength_frequency(wavelengthmeter_path, date, 9, 'frequency')
+    plotter.wavelength_frequency(wavelengthmeter_path, date, 1, 'frequency')

@@ -45,7 +45,7 @@ class Plot:
         """
         # Read wavelength data from Bristol wavelength meter
         B_t, Lambda = self.reader.read_bristol(lambda_path)
-
+        
         # Process data based on the selected dtype
         if dtype == 'X':
             # Extract in-phase components and calculate ellipticity/angle
@@ -65,6 +65,9 @@ class Plot:
 
         # Process data for each run
         for i in self.number_of_runs(run):
+            # Filter data for the current run
+            B_t[i], Lambda[i] = self.analyzer.filter_data(B_t[i], Lambda[i])
+
             # Linear fit for laser drift
             frequency = [self.consts.c / Lambda[j] for j in range(len(Lambda))]  # [GHz]
             y_fit, slope, intercept, y_weightedmean, residuals, y_residualstd = self.analyzer.drift_fit(B_t[i], frequency[i], 100)
@@ -156,7 +159,7 @@ class Plot:
         # plot Δθ vs time
         ax.plot(x, y, color='C0', alpha=1, lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta}}$={round(y_weightedmean,2):.2f} μrad ± {round(sem*1e3)} nrad')
         ax.plot(x, y_linearfit, '--', color='b', lw=2, 
-            label=f'$\\dot{{\\Delta\\theta}}$={round(fitted_k*1e3)} nrad/min')
+            label=f'$\\dot{{\\Delta\\theta}}$={round(fitted_k*60,2):.2f} μrad/h')
         ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(std,2):.2f} μrad')
 
         # plot Δθ/ΔB vs time
@@ -221,6 +224,15 @@ class Plot:
             y1_linearfit, fitted_k1, fitted_b1, sigma_k1, sigma_b1, y1_residuals, y1_std, chi2_value1, dof1 = self.analyzer.linear_fit(x, y1, y1_slope, y1_intercept, y1_residualstd)
             y2_linearfit, fitted_k2, fitted_b2, sigma_k2, sigma_b2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.linear_fit(x, y2, y2_slope, y2_intercept, y2_residualstd)
 
+            # Drift sine fit for Faraday rotation
+            # freqs, fft_values, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x*60, y2)
+            # k0 = y2_slope # slope guess
+            # b0 = y2_intercept # intercept guess
+            # a0 = 0 # amplitude guess
+            # phi0 = 0 # phase guess 
+            # y2_sinefit, fitted_k2, fitted_b2, fitted_a2, fitted_phi2, sigma_k2, sigma_b2, sigma_a2, sigma_phi2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.drift_sine_fit(x, y2, k0, b0, a0, phi0, y2_residualstd)
+
+
             y1_sem = y1_residualstd / np.sqrt(len(y1))
             y2_sem = y2_residualstd / np.sqrt(len(y2))
 
@@ -229,11 +241,13 @@ class Plot:
 
             y2_lower_bound = y2_linearfit - y2_std
             y2_upper_bound = y2_linearfit + y2_std
+            # y2_lower_bound = y2_sinefit - std2
+            # y2_upper_bound = y2_sinefit + std2
 
             ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\epsilon}}$={round(y1_weightedmean,2):.2f} mrad ± {round(y1_sem*1e3,2):.2f} μrad')
             ax1.plot(x, y1_fit, '--', color='r', lw=2, \
-                    label=f'$\\dot\\epsilon$={round(fitted_k1*1e3,2):.2f} μrad/min')
+                    label=f'$\\dot\\epsilon$={round(fitted_k1*1e3*60,2):.2f} μrad/h')
             ax1.fill_between(x, y1_lower_bound, y1_upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma_\epsilon$={round(y1_std*1e3,2):.2f} μrad')
             ax1.set_xlabel(r'Time (min)', fontsize=25)
             ax1.set_ylabel(ylabel_y1, fontsize=25, color='C3')
@@ -243,8 +257,8 @@ class Plot:
 
             ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\theta}}$={round(y2_weightedmean,2):.2f} mrad ± {round(y2_sem*1e3,2):.2f} μrad')
-            ax2.plot(x, y2_fit, '--', color='b', lw=2, 
-                    label=f'$\\dot\\theta$={round(fitted_k2*1e3,2):.2f} μrad/min')
+            ax2.plot(x, y2_linearfit, '--', color='b', lw=2, 
+                    label=f'$\\dot\\theta$={round(fitted_k2*1e3*60,2):.2f} μrad/h')
             ax2.fill_between(x, y2_lower_bound, y2_upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma_\\theta$={round(y2_std*1e3,2):.2f} μrad')
             ax2.set_ylabel(ylabel_y2, fontsize=25, color='C0')
             ax2.tick_params(axis='y', labelsize=25)
@@ -317,6 +331,29 @@ class Plot:
         print("Laser power: ", power)
 
         # plt.show()
+    
+    def plot_fft(self, lambda_path, lockin_path, dtype, n, run):
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        timestamp, wavelength, detuning, detuning_std, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index = \
+            self.process_physics(lambda_path, lockin_path, dtype, n, run)
+        
+        x = timestamp[index]
+        y = angle[index]
+
+        for i in self.number_of_runs(run):
+            if i == run-1:
+                freqs, fft_values, dominant_freq, amplitude_spectrum = self.analyzer.fft_peak(x, y)
+                
+                ax.plot(freqs, np.abs(fft_values)/len(y), label='FFT', color='b')
+                # ax.set_xlim(0, 5)
+                ax.set_xlabel(r'Frequency (Hz)', fontsize=25)
+                ax.set_ylabel(r'FFT Magnitude', fontsize=25)
+                ax.tick_params(axis='x', labelsize=25)
+                ax.tick_params(axis='y', labelsize=25)
+        plt.grid(False)
+        save_path = os.path.join(plots, date, f'FFT_of_Faraday_rotation, run{run}.png')
+        plt.savefig(save_path)
+        plt.show()
 
     def Bfield_and_temperature(self, gaussmeter_path, run):
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
@@ -341,8 +378,8 @@ class Plot:
 if __name__ == "__main__":
 
     dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    'D:',
+    os.path.expanduser('~'),  # Directory path on personal computer
+    # 'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -363,14 +400,15 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-26-2025'
+    date_input = '02-25-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(1,8):
-    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, 9, 22.75, 200, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 9, 22.75, 200, 'CD', 'vapor', date)
+    # for i in range(1,10):
+        # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, i, 22.75, 200, 'modCB', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 1, 22.75, 200, 'CD', 'vapor', date)
+    # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 7, 3)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
