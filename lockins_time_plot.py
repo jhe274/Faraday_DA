@@ -125,8 +125,8 @@ class Plot:
     
 if __name__ == "__main__":
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    # 'D:',
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -143,8 +143,8 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-25-2025'
+    date_input = '02-28-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(1,8):
-    plotter.XYR_vs_time(lockins_path, 'm2f', 1)
+    for i in range(1,9):
+        plotter.XYR_vs_time(lockins_path, 'm2f', i)

@@ -222,15 +222,15 @@ class Plot:
             y2_fit, y2_slope, y2_intercept, y2_weightedmean, residual, y2_residualstd = self.analyzer.drift_fit(x, y2, int(len(y2)*0.1))
 
             y1_linearfit, fitted_k1, fitted_b1, sigma_k1, sigma_b1, y1_residuals, y1_std, chi2_value1, dof1 = self.analyzer.linear_fit(x, y1, y1_slope, y1_intercept, y1_residualstd)
-            y2_linearfit, fitted_k2, fitted_b2, sigma_k2, sigma_b2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.linear_fit(x, y2, y2_slope, y2_intercept, y2_residualstd)
+            # y2_fit, fitted_k2, fitted_b2, sigma_k2, sigma_b2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.linear_fit(x, y2, y2_slope, y2_intercept, y2_residualstd)
 
             # Drift sine fit for Faraday rotation
-            # freqs, fft_values, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x*60, y2)
-            # k0 = y2_slope # slope guess
-            # b0 = y2_intercept # intercept guess
-            # a0 = 0 # amplitude guess
-            # phi0 = 0 # phase guess 
-            # y2_sinefit, fitted_k2, fitted_b2, fitted_a2, fitted_phi2, sigma_k2, sigma_b2, sigma_a2, sigma_phi2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.drift_sine_fit(x, y2, k0, b0, a0, phi0, y2_residualstd)
+            freqs, fft_values, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x*60, y2)
+            k0 = y2_slope # slope guess
+            b0 = y2_intercept # intercept guess
+            a0 = 0 # amplitude guess
+            phi0 = 0 # phase guess 
+            y2_fit, fitted_k2, fitted_b2, fitted_a2, fitted_phi2, sigma_k2, sigma_b2, sigma_a2, sigma_phi2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.drift_sine_fit(x, y2, k0, b0, a0, phi0, y2_residualstd)
 
 
             y1_sem = y1_residualstd / np.sqrt(len(y1))
@@ -239,10 +239,10 @@ class Plot:
             y1_lower_bound = y1_linearfit - y1_std
             y1_upper_bound = y1_linearfit + y1_std
 
-            y2_lower_bound = y2_linearfit - y2_std
-            y2_upper_bound = y2_linearfit + y2_std
-            # y2_lower_bound = y2_sinefit - std2
-            # y2_upper_bound = y2_sinefit + std2
+            # y2_lower_bound = y2_linearfit - y2_std
+            # y2_upper_bound = y2_linearfit + y2_std
+            y2_lower_bound = y2_fit - y2_std
+            y2_upper_bound = y2_fit + y2_std
 
             ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\epsilon}}$={round(y1_weightedmean,2):.2f} mrad ± {round(y1_sem*1e3,2):.2f} μrad')
@@ -257,7 +257,7 @@ class Plot:
 
             ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\theta}}$={round(y2_weightedmean,2):.2f} mrad ± {round(y2_sem*1e3,2):.2f} μrad')
-            ax2.plot(x, y2_linearfit, '--', color='b', lw=2, 
+            ax2.plot(x, y2_fit, '--', color='b', lw=2, 
                     label=f'$\\dot\\theta$={round(fitted_k2*1e3*60,2):.2f} μrad/h')
             ax2.fill_between(x, y2_lower_bound, y2_upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma_\\theta$={round(y2_std*1e3,2):.2f} μrad')
             ax2.set_ylabel(ylabel_y2, fontsize=25, color='C0')
@@ -378,8 +378,8 @@ class Plot:
 if __name__ == "__main__":
 
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    # 'D:',
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -400,14 +400,14 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-25-2025'
+    date_input = '02-28-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(1,10):
-        # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 8, i, 22.75, 200, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 1, 22.75, 200, 'CD', 'vapor', date)
+    for i in range(1,2):
+        plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 8, i, 22.75, 200, 'modCB', 'vapor', date)
+        plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, i, 22.75, 200, 'CD', 'vapor', date)
     # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 7, 3)
 
     FR_file = f'FaradayRotation_{date_input}.csv'
