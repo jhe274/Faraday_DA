@@ -8,8 +8,7 @@ from constants import Constants as Consts
 from theory_calculations import Theory
 from data_reader import DataReader as Read
 from data_analyzer import DataAnalyzer as Analyze
-from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
+import allantools
 
 class Plot:
     """
@@ -222,17 +221,16 @@ class Plot:
             y2_fit, y2_slope, y2_intercept, y2_weightedmean, residual, y2_residualstd = self.analyzer.drift_fit(x, y2, int(len(y2)*0.1))
 
             y1_linearfit, fitted_k1, fitted_b1, sigma_k1, sigma_b1, y1_residuals, y1_std, chi2_value1, dof1 = self.analyzer.linear_fit(x, y1, y1_slope, y1_intercept, y1_residualstd)
-            # y2_fit, fitted_k2, fitted_b2, sigma_k2, sigma_b2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.linear_fit(x, y2, y2_slope, y2_intercept, y2_residualstd)
-
+            y2_linearfit, fitted_k2, fitted_b2, sigma_k2, sigma_b2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.linear_fit(x, y2, y2_slope, y2_intercept, y2_residualstd)
+            
             # Drift sine fit for Faraday rotation
             freqs, fft_values, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x*60, y2)
             k0 = y2_slope # slope guess
             b0 = y2_intercept # intercept guess
             a0 = 0 # amplitude guess
             phi0 = 0 # phase guess 
-            y2_fit, fitted_k2, fitted_b2, fitted_a2, fitted_phi2, sigma_k2, sigma_b2, sigma_a2, sigma_phi2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.drift_sine_fit(x, y2, k0, b0, a0, phi0, y2_residualstd)
-
-
+            y2_sinefit, fitted_k2, fitted_b2, fitted_a2, fitted_phi2, sigma_k2, sigma_b2, sigma_a2, sigma_phi2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.drift_sine_fit(x, y2, k0, b0, a0, phi0, y2_residualstd)
+            
             y1_sem = y1_residualstd / np.sqrt(len(y1))
             y2_sem = y2_residualstd / np.sqrt(len(y2))
 
@@ -257,7 +255,7 @@ class Plot:
 
             ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, marker='o', markersize=5, \
                     label=f'$\\overline{{\\theta}}$={round(y2_weightedmean,2):.2f} mrad ± {round(y2_sem*1e3,2):.2f} μrad')
-            ax2.plot(x, y2_fit, '--', color='b', lw=2, 
+            ax2.plot(x, y2_linearfit, '--', color='b', lw=2, 
                     label=f'$\\dot\\theta$={round(fitted_k2*1e3*60,2):.2f} μrad/h')
             ax2.fill_between(x, y2_lower_bound, y2_upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma_\\theta$={round(y2_std*1e3,2):.2f} μrad')
             ax2.set_ylabel(ylabel_y2, fontsize=25, color='C0')
@@ -333,6 +331,14 @@ class Plot:
         # plt.show()
     
     def plot_fft(self, lambda_path, lockin_path, dtype, n, run):
+        """
+        Plot the Fast Fourier Transform (FFT) of Faraday rotation data.
+        :param lambda_path: Path to wavelength data
+        :param lockin_path: Path to lock-in data
+        :param dtype: Data type ('X' or 'R')
+        :param n: Skipping data points equal to n x Time Constant
+        :param run: Current run index
+        """
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
         timestamp, wavelength, detuning, detuning_std, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index = \
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
@@ -352,6 +358,48 @@ class Plot:
                 ax.tick_params(axis='y', labelsize=25)
         plt.grid(False)
         save_path = os.path.join(plots, date, f'FFT_of_Faraday_rotation, run{run}.png')
+        plt.savefig(save_path)
+        plt.show()
+
+    def allan_deviation(self, lambda_path, lockin_path, dtype, n, run, phytype, material):
+        """
+        Calculate the Allan deviation of Faraday rotation data.
+        :param lambda_path: Path to wavelength data
+        :param lockin_path: Path to lock-in data
+        :param
+        """
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+
+        # Import the processed data
+        timestamp, wavelength, detuning, detuning_sem, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index = \
+            self.process_physics(lambda_path, lockin_path, dtype, n, run)
+
+        plot_params = {
+            ('CD', 'vapor'): (timestamp[index] / 3600, ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
+            ('CB', 'vapor'): (timestamp[index] / 3600, angle[index], r'$\theta_\text{vapor cell}$'),
+            ('modCB', 'vapor'): (timestamp[index], m2f_angle[index], r'Averaging Time, τ (s)', r'Allan Deviation (μrad)', 
+                                 f'[{dtype}]Allan_Deviation_of_Modulated_FR_vapor_{date}_run{run}.png'),
+        
+        }
+        # Check if the combination of phytype and material exists in the mapping
+        key = (phytype, material)
+        if key in plot_params:
+            # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
+            x, y, xlabel, ylabel, file_name = plot_params[key]
+        
+        # Compute Allan deviation
+        taus, adev, _, _ = allantools.oadev(y, rate=len(y)/x[-1], data_type="phase")
+        print(taus)
+        # Plot the Allan deviation
+        ax.loglog(taus, adev, marker="o", linestyle="-", color="C0", label="Allan Deviation")
+        ax.axvline(x=x[-1]/len(y), color='r', linestyle=":", label="Sampling Interval")
+        ax.set_xlabel(xlabel, fontsize=25)
+        ax.set_ylabel(ylabel, fontsize=25)
+        ax.tick_params(axis='x', labelsize=25)
+        ax.tick_params(axis='y', labelsize=25)
+        ax.grid(which="both", linestyle="--")
+        ax.legend(loc="best", fontsize=25)
+        save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
 
@@ -378,8 +426,8 @@ class Plot:
 if __name__ == "__main__":
 
     dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    'D:',
+    os.path.expanduser('~'),  # Directory path on personal computer
+    # 'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -400,15 +448,16 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-28-2025'
+    date_input = '03-02-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    for i in range(1,2):
-        plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 8, i, 22.75, 200, 'modCB', 'vapor', date)
-        plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, i, 22.75, 200, 'CD', 'vapor', date)
+    # for i in range(7,8):
+    # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 8, 8, 22.75, 200, 'modCB', 'vapor', date)
+    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 8, 22.75, 200, 'CD', 'vapor', date)
     # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 7, 3)
+    plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'R', 8, 4, 'modCB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

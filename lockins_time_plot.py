@@ -59,24 +59,24 @@ class Plot:
                         r'$\text{R}_\text{dc}$' if name == 'dc' else
                         r'$\text{R}_\text{m2f}$')
 
-                ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
+                ax.plot(t[i][8:]/3600, X[i][8:], label=label_x, color='r')
                 # ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
                 #         marker='^', markersize=10, markevery=20)
-                ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
+                ax.plot(t[i][8:]/3600, Y[i][8:], label=label_y, color='b')
                 # ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
                 #         marker='^', markersize=10, markevery=20)
-                ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=20)
+                ax.scatter(t[i][8:]/3600, R[i][8:], label=label_R, color='black', s=20)
                 # ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
                 #         marker='^', markersize=10, markevery=20)
             else:
                 # ax.plot(t[i][8:]/60, X[i][8:], label=label_x, color='r')
-                ax.plot(t[i][8:]/60, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
+                ax.plot(t[i][8:]/3600, X[i][8:],  label=label_x, color='r', linestyle='-', linewidth=1, 
                         marker='x', markersize=10, markevery=20)
                 # ax.plot(t[i][8:]/60, Y[i][8:], label=label_y, color='b')
-                ax.plot(t[i][8:]/60, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
+                ax.plot(t[i][8:]/3600, Y[i][8:],  label=label_y, color='b', linestyle='-', linewidth=1, 
                         marker='x', markersize=10, markevery=20)
                 # ax.scatter(t[i][8:]/60, R[i][8:], label=label_R, color='black', s=20)
-                ax.plot(t[i][8:]/60, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
+                ax.plot(t[i][8:]/3600, R[i][8:], label=label_R, color='black', linestyle='-', linewidth=1, 
                         marker='x', markersize=10, markevery=20)
 
         plt.xlabel(xlabel, fontsize=25)
@@ -97,16 +97,16 @@ class Plot:
         B_ave, B_variration = self.B_field()
 
         if name == '1f':
-            self.plot_process(lockins_t, X1f, Y1f, R1f, run, name, 'Time (min)',
+            self.plot_process(lockins_t, X1f, Y1f, R1f, run, name, 'Time (h)',
                                   r'Voltage (mV)', r'1f Voltages vs Time, run' + f'{run}') #, $B_z$={B_ave:.3f}$\pm${B_variration:.3f} G, $T$={temp}°C
         elif name == '2f':
-            self.plot_process(lockins_t, X2f, Y2f, R2f, run, name, 'Time (min)',
+            self.plot_process(lockins_t, X2f, Y2f, R2f, run, name, 'Time (h)',
                                   r'Voltage (mV)', r'2f Voltages vs Time, run' + f'{run}')
         elif name == 'dc':
-            self.plot_process(lockins_t, Xdc, Ydc, Rdc, run, name, 'Time (min)',
+            self.plot_process(lockins_t, Xdc, Ydc, Rdc, run, name, 'Time (h)',
                                   r'Voltage (mV)', r'DC Voltages vs Time, run' + f'{run}')
         elif name == 'm2f':
-            self.plot_process(lockins_t, Xm2f, Ym2f, Rm2f, run, name, 'Time (min)',
+            self.plot_process(lockins_t, Xm2f, Ym2f, Rm2f, run, name, 'Time (h)',
                                   r'Voltage (mV)', r'M2f Voltages vs Time, run' + f'{run}')
 
     def B_field(self):
@@ -125,8 +125,8 @@ class Plot:
     
 if __name__ == "__main__":
     dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    'D:',
+    os.path.expanduser('~'),  # Directory path on personal computer
+    # 'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -143,8 +143,8 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '02-28-2025'
+    date_input = '03-02-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    for i in range(1,9):
-        plotter.XYR_vs_time(lockins_path, 'm2f', i)
+    for i in range(8,14):
+        plotter.XYR_vs_time(lockins_path, 'dc', i)

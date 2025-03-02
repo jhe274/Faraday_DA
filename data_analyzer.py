@@ -133,11 +133,14 @@ class DataAnalyzer:
         t = np.asarray(t)
         x = np.asarray(x)
 
-        x_ubound, x_lbound = 766.701e-9, 766.6997e-9
-        condition = np.logical_and(x > x_lbound, x < x_ubound)
+        # x_ubound, x_lbound = 766.701e-9, 766.6997e-9
+        # condition = np.logical_and(x > x_lbound, x < x_ubound)
 
-        filtered_t = t[condition]
-        filtered_x = x[condition]
+        # filtered_t = t[condition]
+        # filtered_x = x[condition]
+
+        filtered_t = t
+        filtered_x = x
 
         if filtered_x.size == 0:
             raise ValueError("No values found within the specified bounds.")
@@ -274,17 +277,17 @@ class DataAnalyzer:
         amplitude_spectrum = np.abs(y_fft)/N
 
         # Find peaks in the FFT spectrum
-        peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.01)  # Adjust threshold if needed
+        peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.001)  # Adjust threshold if needed
         
         # Find the closest peak to 0.5 Hz
-        # closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
-        # dominant_freq = y_fft_freq[peaks][closest_peak_index]
-        # print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
-
-        # Find the closest peak to 0.00083 Hz
-        closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.00083))
+        closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
         dominant_freq = y_fft_freq[peaks][closest_peak_index]
-        print(f"Detected Dominant Frequency Near 0.00083 Hz: {dominant_freq:.6f} Hz")
+        print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
+
+        # Find the closest peak to 0.00086 Hz
+        # closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.00086))
+        # dominant_freq = y_fft_freq[peaks][closest_peak_index]
+        # print(f"Detected Dominant Frequency Near 0.00086 Hz: {dominant_freq:.6f} Hz")
 
         return y_fft_freq, y_fft, amplitude_spectrum, dominant_freq
 
@@ -322,8 +325,8 @@ class DataAnalyzer:
         return param_std
 
     def drift_sine_wave(self, t, k, b, a, phi):
-        # freq = 0.5
-        freq = 0.000867 * 60
+        freq = 0.5
+        # freq = 0.000867 * 60
         return b + k * t + a * np.sin(2 * np.pi * freq * t + phi)
 
     def line(self, x, a, b):
@@ -369,7 +372,7 @@ class DataAnalyzer:
         y_linearfit = self.line(x, *popt)
         dof = len(y) - len(popt)
         residuals = y - y_linearfit
-        residual_std = np.std(residuals, ddof=1)
+        residual_std = np.std(residuals, ddof=len(popt))
         # sigma = self.bootstrap_errors(x, y, self.line, initial_guess)
         chi2_value = np.sum((residuals / sigma) ** 2)
         print(f"Reduced Chi-squared: {chi2_value:.1f}/{dof}")
@@ -398,7 +401,7 @@ class DataAnalyzer:
         y_sinefit = self.drift_sine_wave(x, *popt)
         dof = len(y) - len(popt)
         residuals = y - y_sinefit
-        residual_std = np.std(residuals, ddof=1)
+        residual_std = np.std(residuals, ddof=len(popt))
         # sigma = self.bootstrap_errors(x, y, self.drift_sine_wave, initial_guess)
         chi2_value = np.sum((residuals / sigma) ** 2)
         print(f"Reduced Chi-squared: {chi2_value:.1f}/{dof}")
