@@ -8,6 +8,8 @@ from constants import Constants as Consts
 from theory_calculations import Theory
 from data_reader import DataReader as Read
 from data_analyzer import DataAnalyzer as Analyze
+import allantools
+from scipy.ndimage import uniform_filter1d
 
 class LaserDrift:
     def __init__(self):
@@ -83,7 +85,7 @@ class LaserDrift:
                 unitfactor = 1e3 # frequency: [MHz]
                 
                 x1, y1, y1_fit, y1_slope, y1_intercept, y1_weightedmean, y1_residuals, y1_residualstd = self.process(t, wl, nu, dtype, run)
-                
+                y1_smoothed = uniform_filter1d(y1, size=int(0.32 * 100))  # τ = 0.3s, 100 Hz sampling
                 # Fitting Scan with WideScan wavelength/frequency measurements
                 # k0 = y1_slope # slope guess
                 # b0 = min(y1) # intercept guess
@@ -105,9 +107,15 @@ class LaserDrift:
                 #         label=fr'$\dot{name}$={round(fitted_k1*unitfactor,1):.1f} ± {round(sigma_drift*unitfactor,1):.1f} {std_unit}/s')
                 # ax.plot(x1, y1_scanfit, '--', color='r', label=fr'$\Delta\nu$={round(2*np.abs(fitted_a1)*unitfactor,1):.1f} ± {round(sigma_a1*unitfactor,1):.1f} MHz')
                 
-                # Plot functions for locked laser
-                ax.plot(x1, y1, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, \
+                # Plot the measured data for locked laser
+                # ax.plot(x1, y1, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, \
+                #         label=fr'$\overline{{{name}}}$={round(y1_weightedmean,3):.3f} {ave_unit}')
+                
+                # Plot the smoothened data
+                ax.plot(x1, y1_smoothed, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, \
                         label=fr'$\overline{{{name}}}$={round(y1_weightedmean,3):.3f} {ave_unit}')
+                
+                # Plot the linear fit
                 ax.plot(x1, y1_linearfit, '--', color='r', 
                     label=fr'$\dot{name}$={round(fitted_k1 * unitfactor * 60,1):.1f} MHz/h')
 
@@ -178,6 +186,45 @@ class LaserDrift:
         ax.legend(loc='best', fontsize=25)
         plt.savefig(os.path.join(plots, f'{date}', f'{dtype}_vs_time_{date}_run{run}.png'))
         # plt.show()
+
+    def allan_deviation(self, timestamp, wavelength, run, name, xlabel, ylabel, date):
+        """
+        Calculate the Allan deviation of the measured wavelength/frequency.
+        :param timestamp: Time data from the wavelengthmeter
+        :param wavelength: Wavelength data from the wavelengthmeter
+        :param run: Current run index
+        :param name: Name of the measured quantity
+        :param ave_unit: Average unit
+        :param std_unit: Standard deviation unit
+        :param xlabel: X-axis label
+        :param ylabel: Y-axis label
+        :param date: Date of the measurement
+        """
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        x, wl, y = [], [], []
+
+        for i in self.number_of_runs(run):
+            # Filter the data and convert wavelength to frequency
+            x, wl = self.analyzer.filter_data(timestamp[i], wavelength[i]) # [s]
+            y = np.array([self.consts.c / wl[j] for j in range(len(wl))]) # [GHz]
+            
+            # Compute Allan deviation
+            taus, adev, err, _ = allantools.oadev(y, rate=len(y)/x[-1], data_type="freq")
+            print(taus)
+            # Plot the Allan deviation
+            ax.loglog(taus, adev, linestyle="-", color="C0", label="Allan Deviation")
+            ax.errorbar(taus, adev, yerr=err, fmt="o", color="C0", capsize=5, capthick=2)
+            ax.axvline(x=x[-1]/len(y), color='r', linestyle=":", label="Sampling Interval")
+
+        ax.set_xlabel(xlabel, fontsize=25)
+        ax.tick_params(axis='x', labelsize=25)
+        ax.set_ylabel(ylabel, fontsize=25)
+        ax.set_ylim(1e5, 1e7)
+        # ax.set_yticks([])
+        ax.legend(loc='best', fontsize=25)
+        ax.grid(which="both", linestyle="--")
+        plt.savefig(os.path.join(plots, f'{date}', f'{name}_allan_deviation_{date}_run{run}.png'))
+        # plt.show()
         
     def wavelength_frequency(self, wavelengthmeter_path, date, run, dtype):
         # Read wavelength data from Bristol wavelength meter
@@ -202,6 +249,12 @@ class LaserDrift:
             file_name = f'FFT_{date}_run{run}.png'
             self.plot_fft(timestamp, wavelength, run, xlabel, ylabel, file_name)
 
+        elif dtype == 'allan':
+            name = r'Laser_frequency'
+            xlabel = r'Averaging Time, τ (s)'
+            ylabel = r'Allan Deviation'
+            self.allan_deviation(timestamp, wavelength, run, name, xlabel, ylabel, date)
+
 if __name__ == "__main__":
     dir_path = os.path.join(
     os.path.expanduser('~'),  # Directory path on personal computer
@@ -225,5 +278,6 @@ if __name__ == "__main__":
     date_input = '03-02-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
-    # for i in range(5,8):
-    plotter.wavelength_frequency(wavelengthmeter_path, date, 8, 'frequency')
+    for i in range(13, 19):
+        plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'frequency')
+        # plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'allan')

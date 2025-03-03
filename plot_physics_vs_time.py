@@ -375,8 +375,8 @@ class Plot:
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
 
         plot_params = {
-            ('CD', 'vapor'): (timestamp[index] / 3600, ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
-            ('CB', 'vapor'): (timestamp[index] / 3600, angle[index], r'$\theta_\text{vapor cell}$'),
+            ('CD', 'vapor'): (timestamp[index], ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
+            ('CB', 'vapor'): (timestamp[index], angle[index], r'$\theta_\text{vapor cell}$'),
             ('modCB', 'vapor'): (timestamp[index], m2f_angle[index], r'Averaging Time, τ (s)', r'Allan Deviation (μrad)', 
                                  f'[{dtype}]Allan_Deviation_of_Modulated_FR_vapor_{date}_run{run}.png'),
         
@@ -386,13 +386,16 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, xlabel, ylabel, file_name = plot_params[key]
-        
+
+        tc = 100  # Time constant in [s]
+
         # Compute Allan deviation
-        taus, adev, _, _ = allantools.oadev(y, rate=len(y)/x[-1], data_type="phase")
-        print(taus)
+        taus, adev, _, _ = allantools.oadev(y, rate=1/tc, data_type="phase")
+        
         # Plot the Allan deviation
         ax.loglog(taus, adev, marker="o", linestyle="-", color="C0", label="Allan Deviation")
-        ax.axvline(x=x[-1]/len(y), color='r', linestyle=":", label="Sampling Interval")
+        # ax.loglog(tau_values, allan_dev, marker="o", linestyle="--", color="C1", label="Allan Deviation")
+        ax.axvline(x=tc, color='r', linestyle=":", label="Sampling Interval")
         ax.set_xlabel(xlabel, fontsize=25)
         ax.set_ylabel(ylabel, fontsize=25)
         ax.tick_params(axis='x', labelsize=25)
@@ -448,16 +451,16 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '03-02-2025'
+    date_input = '02-22-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(7,8):
-    # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 8, 8, 22.75, 200, 'modCB', 'vapor', date)
-    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, 8, 22.75, 200, 'CD', 'vapor', date)
-    # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 7, 3)
-    plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'R', 8, 4, 'modCB', 'vapor')
+    # for i in range(13,19):
+        # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 8, i, 22.75, 200, 'modCB', 'vapor', date)
+        # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, i, 22.75, 200, 'CD', 'vapor', date)
+        # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 7, 3)
+    plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'R', 10, 1, 'modCB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

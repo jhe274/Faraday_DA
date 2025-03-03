@@ -98,7 +98,7 @@ class Plot:
                 freqs, fft_values, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x[i], y1[i])
                 k0 = slope # slope guess
                 b0 = intercept # intercept guess
-                a0 = y1_residualstd * 1e-3 # amplitude guess
+                a0 = 45 * 1e-3 # amplitude guess
                 phi0 = 0 # phase guess  
                 y_sinefit, fitted_k, fitted_b, fitted_a, fitted_phi, sigma_k, sigma_b, sigma_a, sigma_phi, residuals, std, chi2_value, dof = self.analyzer.drift_sine_fit(x[i], y1[i], k0, b0, a0, phi0, sigma_mean)
                 sigma_drift = max(sigma_k, y1_weightedmean * instrument_uncertainty / max(x[i]))
@@ -141,7 +141,7 @@ class Plot:
 
                 # --------- Add Inset Zoomed Plot ---------
                 axins = inset_axes(ax1, width="50%", height="50%", 
-                                   bbox_to_anchor=(-0.18, 0.5, 0.5, 0.5),  # Adjust this for placement
+                                   bbox_to_anchor=(-0.18, -0.2, 0.5, 0.5),  # Adjust this for placement
                                     bbox_transform=ax1.transAxes)  # 6x zoom
                 axins.plot(x[i]/time_factor, y1[i], color='C0', alpha=0.6)  # Same data as main plot
                 axins.plot(x[i]/time_factor, y_sinefit, '--', color='b')
@@ -158,7 +158,7 @@ class Plot:
                 axins.tick_params(labelleft=True, labelbottom=True, labelsize=12)
 
                 # Mark the zoomed-in area on the main plot
-                mark_inset(ax1, axins, loc1=2, loc2=4, fc="none", ec="black", linestyle="dashed")
+                mark_inset(ax1, axins, loc1=1, loc2=3, fc="none", ec="black", linestyle="dashed")
             else:
                 time_factor = 60  # Convert time to hours
                 y1[i] = -y1[i]  # Invert the magnetic field data
@@ -199,7 +199,7 @@ class Plot:
         # plt.title(f'$\chi^2/\\text{{dof}}$={chi2_value:.1f}/{dof}', fontsize=25)
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower right", fontsize=20)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=20)
         plt.grid(False)
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
@@ -239,4 +239,4 @@ if __name__ == "__main__":
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     # for i in range(5,8):
-    plotter.gaussmter_vs_time(gaussmeter_path, 8)
+    plotter.gaussmter_vs_time(gaussmeter_path, 15)

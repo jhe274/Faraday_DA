@@ -146,5 +146,5 @@ if __name__ == "__main__":
     date_input = '03-02-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    for i in range(8,14):
-        plotter.XYR_vs_time(lockins_path, 'dc', i)
+    for i in range(13, 19):
+        plotter.XYR_vs_time(lockins_path, 'm2f', i)
