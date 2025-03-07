@@ -273,23 +273,50 @@ class DataAnalyzer:
         y_fft = np.fft.fft(y)
         y_fft_freq = np.fft.fftfreq(N, dt)
 
-        # Convert to amplitude spectrum
-        amplitude_spectrum = np.abs(y_fft)/N
+         # Take only positive frequencies
+        half_N = N // 2  # Half-point index
+        positive_freqs = y_fft_freq[:half_N]
+        fft_magnitudes = np.abs(y_fft[:half_N])
+
+        # Correct normalization for amplitude spectrum
+        amplitude_spectrum = fft_magnitudes / N  # Normalization
+        amplitude_spectrum[1:] *= 2  # Double non-DC components
 
         # Find peaks in the FFT spectrum
-        peaks, properties = find_peaks(amplitude_spectrum[:N//2], height=0.001)  # Adjust threshold if needed
+        peaks, properties = find_peaks(amplitude_spectrum, height=0.001)  # Adjust threshold if needed
+
+        if len(peaks) > 0:
+            # Find the closest peak to 0.5 Hz
+            closest_peak_index = np.argmin(np.abs(positive_freqs[peaks] - 0.5))
+            dominant_freq = positive_freqs[peaks][closest_peak_index]
+            print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
+
+            # Find the closest peak to 0.00086 Hz
+            # closest_peak_index = np.argmin(np.abs(positive_freqs[peaks] - 0.00086))
+            # dominant_freq = positive_freqs[peaks][closest_peak_index]
+            # print(f"Detected Dominant Frequency Near 0.00086 Hz: {dominant_freq:.6f} Hz")
+        else:
+            dominant_freq = None
+            print("No peaks detected in the specified range.")
         
-        # Find the closest peak to 0.5 Hz
-        closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.5))
-        dominant_freq = y_fft_freq[peaks][closest_peak_index]
-        print(f"Detected Dominant Frequency Near 0.5 Hz: {dominant_freq:.6f} Hz")
+        return positive_freqs, fft_magnitudes, amplitude_spectrum, dominant_freq
+    
+    def noise_spectral_density(self, x, y):
+        N = len(y)
+        dt = np.mean(np.diff(x))
+        y_fft = np.fft.fft(y)
+        y_fft_freq = np.fft.fftfreq(N, dt)
 
-        # Find the closest peak to 0.00086 Hz
-        # closest_peak_index = np.argmin(np.abs(y_fft_freq[peaks] - 0.00086))
-        # dominant_freq = y_fft_freq[peaks][closest_peak_index]
-        # print(f"Detected Dominant Frequency Near 0.00086 Hz: {dominant_freq:.6f} Hz")
+        positive_freqs = y_fft_freq[y_fft_freq >= 0]
+        fft_magnitudes = np.abs(y_fft)[y_fft_freq >= 0]
 
-        return y_fft_freq, y_fft, amplitude_spectrum, dominant_freq
+        # Apply single-sided scaling (×2 for non-DC components)
+        non_dc_mask = positive_freqs > 0     # Mask to exclude DC (0 Hz)
+        nsd = fft_magnitudes.copy()
+        nsd[non_dc_mask] *= 2                # Double non-DC amplitudes
+        nsd /= np.sqrt(N / dt)               # Normalize to 1/√Hz
+
+        return positive_freqs, nsd
 
     def noise_floor(self, x, y):
         y_fft_freq, y_fft, dominant_freq, amplitude_spectrum = self.fft_peak(x, y)

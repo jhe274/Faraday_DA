@@ -148,16 +148,20 @@ class DataReader:
             
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
             df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()
-
-            timestamp.append(df['Timestamp'].to_numpy())
-            X1f.append(df['X_1f'].to_numpy())
-            Y1f.append(df['Y_1f'].to_numpy())
-            X2f.append(df['X_2f'].to_numpy())
-            Y2f.append(df['Y_2f'].to_numpy())
-            Xdc.append(df['X_dc'].to_numpy())
-            Ydc.append(df['Y_dc'].to_numpy())
-            Xm2f.append(df['X_m2f'].to_numpy())
-            Ym2f.append(df['Y_m2f'].to_numpy())
+            
+            # Compute step size for downsampling
+            step_size = int(5)  # take every 5th point
+            
+            # Apply downsampling
+            timestamp.append(df['Timestamp'].iloc[::step_size].to_numpy())
+            X1f.append(df['X_1f'].iloc[::step_size].to_numpy())
+            Y1f.append(df['Y_1f'].iloc[::step_size].to_numpy())
+            X2f.append(df['X_2f'].iloc[::step_size].to_numpy())
+            Y2f.append(df['Y_2f'].iloc[::step_size].to_numpy())
+            Xdc.append(df['X_dc'].iloc[::step_size].to_numpy())
+            Ydc.append(df['Y_dc'].iloc[::step_size].to_numpy())
+            Xm2f.append(df['X_m2f'].iloc[::step_size].to_numpy())
+            Ym2f.append(df['Y_m2f'].iloc[::step_size].to_numpy())
 
         return para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f
     

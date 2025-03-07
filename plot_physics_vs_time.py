@@ -343,30 +343,63 @@ class Plot:
         timestamp, wavelength, detuning, detuning_std, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index = \
             self.process_physics(lambda_path, lockin_path, dtype, n, run)
         
-        x = timestamp[index]
-        y = angle[index]
+        x = timestamp[index]    # [s]
+        y1 = angle[index]   # [mrad]
+        y2 = m2f_angle[index]   # [μrad]
 
         for i in self.number_of_runs(run):
             if i == run-1:
-                freqs, fft_values, dominant_freq, amplitude_spectrum = self.analyzer.fft_peak(x, y)
+                # freqs, fft, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x, y1)
+                # ax.plot(freqs, amplitude_spectrum, label='FFT', color='C0')
                 
-                ax.plot(freqs, np.abs(fft_values)/len(y), label='FFT', color='b')
+                freqs, fft, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x, y2)
+                ax.plot(freqs, amplitude_spectrum, label='FFT', color='C0')
+
                 # ax.set_xlim(0, 5)
                 ax.set_xlabel(r'Frequency (Hz)', fontsize=25)
-                ax.set_ylabel(r'FFT Magnitude', fontsize=25)
+                ax.set_ylabel(r'FFT Magnitude (μrad)', fontsize=25)
                 ax.tick_params(axis='x', labelsize=25)
                 ax.tick_params(axis='y', labelsize=25)
         plt.grid(False)
-        save_path = os.path.join(plots, date, f'FFT_of_Faraday_rotation, run{run}.png')
+        save_path = os.path.join(plots, date, f'FFT_of_Faraday_rotation_run{run}.png')
         plt.savefig(save_path)
-        plt.show()
+        # plt.show()
+
+    def plt_nsd(self, lambda_path, lockin_path, dtype, n, run):
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+        timestamp, wavelength, detuning, detuning_std, ellipticity, angle, m2f_angle, alpha_diff_vapor, n_diff_vapor, index = \
+            self.process_physics(lambda_path, lockin_path, dtype, n, run)
+        
+        x = timestamp[index]    # [s]
+        y1 = angle[index]   # [mrad]
+        y2 = m2f_angle[index]   # [μrad]
+
+        for i in self.number_of_runs(run):
+            if i == run-1:
+                freqs, nsd = self.analyzer.noise_spectral_density(x, y2)
+
+                ax.plot(freqs, nsd, label='NSD', color='C0')
+
+                ax.set_xlabel(r'Frequency (Hz)', fontsize=25)
+                ax.set_ylabel(r'Noise Spectral Density (μrad$/\sqrt{\text{Hz}}$)', fontsize=25)
+                ax.tick_params(axis='x', labelsize=25)
+                ax.tick_params(axis='y', labelsize=25)
+        plt.grid(False)
+        save_path = os.path.join(plots, date, f'NSD_of_Faraday_rotation_run{run}.png')
+        plt.savefig(save_path)
+        # plt.show()
 
     def allan_deviation(self, lambda_path, lockin_path, dtype, n, run, phytype, material):
         """
-        Calculate the Allan deviation of Faraday rotation data.
+        Calculate the Allan deviation of Faraday rotation data and plot a log-log graph with vertical error bars.
+
         :param lambda_path: Path to wavelength data
         :param lockin_path: Path to lock-in data
-        :param
+        :param dtype: Data type identifier
+        :param n: Run number
+        :param run: Run identifier
+        :param phytype: Physical type (e.g., 'CD', 'CB', 'modCB')
+        :param material: Measurement material (e.g., 'vapor')
         """
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
@@ -377,7 +410,7 @@ class Plot:
         plot_params = {
             ('CD', 'vapor'): (timestamp[index], ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
             ('CB', 'vapor'): (timestamp[index], angle[index], r'$\theta_\text{vapor cell}$'),
-            ('modCB', 'vapor'): (timestamp[index], m2f_angle[index], r'Averaging Time, τ (s)', r'Allan Deviation (μrad)', 
+            ('modCB', 'vapor'): (timestamp[index], m2f_angle[index], r'Averaging Time, τ (s)', r'Allan Deviation, $\sigma_\theta$', 
                                  f'[{dtype}]Allan_Deviation_of_Modulated_FR_vapor_{date}_run{run}.png'),
         
         }
@@ -386,16 +419,26 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, xlabel, ylabel, file_name = plot_params[key]
-
-        tc = 100  # Time constant in [s]
+        
+        tc = 100 # Time constant in [s]
+        sample_interval = 5 * tc  # Sample interval in [s]
+        corrected_y = y / (2 * np.pi * 0.5)
 
         # Compute Allan deviation
-        taus, adev, _, _ = allantools.oadev(y, rate=1/tc, data_type="phase")
-        
-        # Plot the Allan deviation
-        ax.loglog(taus, adev, marker="o", linestyle="-", color="C0", label="Allan Deviation")
-        # ax.loglog(tau_values, allan_dev, marker="o", linestyle="--", color="C1", label="Allan Deviation")
-        ax.axvline(x=tc, color='r', linestyle=":", label="Sampling Interval")
+        taus, adev, errors, _ = allantools.oadev(corrected_y, data_type="phase", taus='all', rate=1/sample_interval)
+        print("Optimal averaging time: ", taus[np.argmin(adev)])
+
+        # Plot Allan deviation with error bars
+        ax.errorbar(taus, adev, yerr=errors, fmt="o", linestyle="-", color="C0", label="Allan Deviation", capsize=5)
+
+        # Indicate the sampling interval
+        ax.axvline(x=sample_interval, color='r', linestyle=":", label="Sampling Interval")
+
+        # Set logarithmic scale for both axes
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+
+        # Set axis labels
         ax.set_xlabel(xlabel, fontsize=25)
         ax.set_ylabel(ylabel, fontsize=25)
         ax.tick_params(axis='x', labelsize=25)
@@ -404,7 +447,7 @@ class Plot:
         ax.legend(loc="best", fontsize=25)
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
-        plt.show()
+        # plt.show()
 
     def Bfield_and_temperature(self, gaussmeter_path, run):
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
@@ -429,8 +472,8 @@ class Plot:
 if __name__ == "__main__":
 
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    # 'D:',
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -456,11 +499,12 @@ if __name__ == "__main__":
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    # for i in range(13,19):
-        # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'R', 8, i, 22.75, 200, 'modCB', 'vapor', date)
+    for i in range(1, 6):
+    # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 10, 1, 22.75, 200, 'modCB', 'vapor', date)
         # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, i, 22.75, 200, 'CD', 'vapor', date)
-        # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 7, 3)
-    plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'R', 10, 1, 'modCB', 'vapor')
+        # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 8, i)
+        # plotter.plt_nsd(wavelengthmeter_path, lockins_path, 'R', 8, i)
+        plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'X', 10, i, 'modCB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

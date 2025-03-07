@@ -112,7 +112,7 @@ class LaserDrift:
                 #         label=fr'$\overline{{{name}}}$={round(y1_weightedmean,3):.3f} {ave_unit}')
                 
                 # Plot the smoothened data
-                ax.plot(x1, y1_smoothed, color='C3', alpha=0.6, linestyle='-', linewidth=0.5, \
+                ax.plot(x1, y1_smoothed, color='C3', alpha=1, linestyle='-', linewidth=1, \
                         label=fr'$\overline{{{name}}}$={round(y1_weightedmean,3):.3f} {ave_unit}')
                 
                 # Plot the linear fit
@@ -201,25 +201,37 @@ class LaserDrift:
         :param date: Date of the measurement
         """
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
-        x, wl, y = [], [], []
+        x, wl, nu = [], [], []
 
         for i in self.number_of_runs(run):
             # Filter the data and convert wavelength to frequency
-            x, wl = self.analyzer.filter_data(timestamp[i], wavelength[i]) # [s]
-            y = np.array([self.consts.c / wl[j] for j in range(len(wl))]) # [GHz]
-            
-            # Compute Allan deviation
-            taus, adev, err, _ = allantools.oadev(y, rate=len(y)/x[-1], data_type="freq")
-            print(taus)
+            x, wl = self.analyzer.filter_data(timestamp[i], wavelength[i])  # [s]
+            nu = np.array([self.consts.c / wl[j] for j in range(len(wl))], dtype=np.float64)  # Enforce float64
+        
+            # # Compute weighted mean in high precision
+            # y_weightedmean = np.mean(nu, dtype=np.float64)
+
+            # # Improve numerical precision by centering or rescaling
+            # y = (nu - y_weightedmean) / y_weightedmean + 1  # Centering approach
+            # # y = (nu - y_weightedmean) * 1e9  # Hz scale approach (alternative)
+            y = nu
+            sample_interval = np.float64(x[-1] / len(y))  # Ensure high precision
+
+            # Compute Allan deviation with improved stability
+            taus, adev, err, _ = allantools.oadev(y, data_type="freq", taus="all", rate=1/sample_interval)
+
             # Plot the Allan deviation
-            ax.loglog(taus, adev, linestyle="-", color="C0", label="Allan Deviation")
-            ax.errorbar(taus, adev, yerr=err, fmt="o", color="C0", capsize=5, capthick=2)
-            ax.axvline(x=x[-1]/len(y), color='r', linestyle=":", label="Sampling Interval")
+            ax.errorbar(taus, adev, yerr=err, fmt="o", color="C0", label="Allan Deviation", capsize=5)
+            ax.axvline(x=sample_interval, color='r', linestyle=":", label="Sampling Interval")
+
+        # Set logarithmic scale for both axes
+        ax.set_xscale('log')
+        ax.set_yscale('log')
 
         ax.set_xlabel(xlabel, fontsize=25)
-        ax.tick_params(axis='x', labelsize=25)
         ax.set_ylabel(ylabel, fontsize=25)
-        ax.set_ylim(1e5, 1e7)
+        ax.tick_params(axis='x', labelsize=25)
+        # ax.set_ylim(1e5, 1e7)
         # ax.set_yticks([])
         ax.legend(loc='best', fontsize=25)
         ax.grid(which="both", linestyle="--")
@@ -250,15 +262,15 @@ class LaserDrift:
             self.plot_fft(timestamp, wavelength, run, xlabel, ylabel, file_name)
 
         elif dtype == 'allan':
-            name = r'Laser_frequency'
+            name = r'Frequency'
             xlabel = r'Averaging Time, τ (s)'
             ylabel = r'Allan Deviation'
             self.allan_deviation(timestamp, wavelength, run, name, xlabel, ylabel, date)
 
 if __name__ == "__main__":
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Directory path on personal computer
-    # 'D:',
+    # os.path.expanduser('~'),  # Directory path on personal computer
+    'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -278,6 +290,6 @@ if __name__ == "__main__":
     date_input = '03-02-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
-    for i in range(13, 19):
-        plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'frequency')
-        # plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'allan')
+    for i in range(13, 18):
+        # plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'frequency')
+        plotter.wavelength_frequency(wavelengthmeter_path, date, i, 'allan')
