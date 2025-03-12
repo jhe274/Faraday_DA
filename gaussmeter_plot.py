@@ -98,7 +98,7 @@ class Plot:
                 freqs, fft_values, amplitude_spectrum, dominant_freq = self.analyzer.fft_peak(x[i], y1[i])
                 k0 = slope # slope guess
                 b0 = intercept # intercept guess
-                a0 = 45 * 1e-3 # amplitude guess
+                a0 = y1_residualstd * 1e-3 # amplitude guess
                 phi0 = 0 # phase guess  
                 y_sinefit, fitted_k, fitted_b, fitted_a, fitted_phi, sigma_k, sigma_b, sigma_a, sigma_phi, residuals, std, chi2_value, dof = self.analyzer.drift_sine_fit(x[i], y1[i], k0, b0, a0, phi0, sigma_mean)
                 sigma_drift = max(sigma_k, y1_weightedmean * instrument_uncertainty / max(x[i]))
@@ -113,7 +113,7 @@ class Plot:
                 upper_bound = y_sinefit + y1_residualstd
 
                 # Plot the magnetic field measurements
-                ax1.plot(x[i]/time_factor, y1[i], color='C0', alpha=0.4, label=fr'$\dot{{B_z}}$={round(fitted_k*1e3*time_factor*60,1):.1f} mG/h')
+                ax1.plot(x[i]/time_factor, y1[i], color='C0', alpha=0.6, label=fr'$\dot{{B_z}}$={round(fitted_k*1e3*time_factor*60,1):.1f} mG/h')
 
                 # plot the linear fit
                 # ax1.plot(x[i]/time_factor, y_linearfit, '--', color='b', label=fr'$B_z$={round(y1_weightedmean,3):.3f} G ± {round(sigma_mean*1e3,1):.1f} mG')
@@ -235,8 +235,8 @@ if __name__ == "__main__":
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
 
     plotter = Plot()
-    date_input = '03-02-2025'
+    date_input = '02-28-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     # for i in range(5,8):
-    plotter.gaussmter_vs_time(gaussmeter_path, 15)
+    plotter.gaussmter_vs_time(gaussmeter_path, 5)

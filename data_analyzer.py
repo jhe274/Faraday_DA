@@ -133,14 +133,15 @@ class DataAnalyzer:
         t = np.asarray(t)
         x = np.asarray(x)
 
-        # x_ubound, x_lbound = 766.701e-9, 766.6997e-9
-        # condition = np.logical_and(x > x_lbound, x < x_ubound)
+        # x_ubound, x_lbound = 766.701e-9, 766.6996e-9
+        x_ubound, x_lbound = 766.711e-9, 766.690e-9
+        condition = np.logical_and(x > x_lbound, x < x_ubound)
 
-        # filtered_t = t[condition]
-        # filtered_x = x[condition]
+        filtered_t = t[condition]
+        filtered_x = x[condition]
 
-        filtered_t = t
-        filtered_x = x
+        # filtered_t = t
+        # filtered_x = x
 
         if filtered_x.size == 0:
             raise ValueError("No values found within the specified bounds.")
@@ -158,9 +159,13 @@ class DataAnalyzer:
             return x1, y1, x2[:idx+1], y2[:idx+1]
 
     def calculate_interval_and_indices(self, x1, x2, TC, n):
-        """Matches timestamps between lock-ins and Bristol data."""
-        if TC > 200e-3:
-            interval = np.arange(TC * n, x2[-1] + TC, TC)
+        """
+        Matches timestamps between lock-ins and Bristol data.
+        parameters: n is the settling time in units of time constant.
+        """
+
+        if TC > 50e-3:
+            interval = np.arange(TC * n, x2[-1] + TC, TC * n)
             x2_idx = np.searchsorted(x2, interval, side='left')[:-1]
         else:
             x2_idx = np.arange(n, len(x2) - 1, 1)
@@ -371,7 +376,7 @@ class DataAnalyzer:
 
         # Compute the weights
         residuals_variance = self.rolling_variance(residuals, window)
-        weights = 1 / residuals_variance
+        weights = 1 / np.sqrt(residuals_variance)
 
         # Compute the weighted mean
         y_weightedmean = np.average(y, weights=weights)

@@ -3,6 +3,7 @@ import datetime as dt
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from matplotlib.ticker import ScalarFormatter
 from constants import Constants as Consts
 from theory_calculations import Theory
@@ -78,7 +79,7 @@ class Plot:
             B_t[i], Lambda[i], lockins_t[i], m2f_theta_trimmed = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], m2f_theta[i])
 
             # Calculate intervals and averages
-            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(B_t[i], lockins_t[i], para[i][2], n)
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(B_t[i], lockins_t[i], para[i][0], n)
             Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon_trimmed[l_idx])
             Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta_trimmed[l_idx])
             Lambd, m2f_th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], m2f_theta_trimmed[l_idx])
@@ -91,7 +92,7 @@ class Plot:
             m2f_angle.append(m2f_th*1e6)  # [μrad]
             detuning = y_weightedmean * 1e-6 - self.consts.K39_D2_Hz * 1e-6  # [MHz]
             detuning_std = y_residualstd * 1e-6  # [MHz]
-            detuning_sem = detuning_std / np.sqrt(len(Lambd)) # [MHz]
+            detuning_sem = detuning_std / np.sqrt(len(frequency[i])) # [MHz]
             
         index = 1 if len(self.number_of_runs(run)) > 1 else 0
         # Initialize lists to store absorbance difference and refractive index difference
@@ -147,7 +148,7 @@ class Plot:
                 # y =  np.array(y) / (2 * B_std * 1e3) # [nrad/mG]
 
         # Fitting the data to a linear model
-        y_fit, slope, intercept, y_weightedmean, residual, y_residualstd = self.analyzer.drift_fit(x, y, int(len(y)*0.1))
+        y_fit, slope, intercept, y_weightedmean, residual, y_residualstd = self.analyzer.drift_fit(x, y, 3)
         y_linearfit, fitted_k, fitted_b, sigma_k, sigma_b, residuals, std, chi2_value, dof = self.analyzer.linear_fit(x, y, slope, intercept, y_residualstd)
         sem = std / np.sqrt(len(y))
 
@@ -156,7 +157,7 @@ class Plot:
         upper_bound = y_linearfit + std
         
         # plot Δθ vs time
-        ax.plot(x, y, color='C0', alpha=1, lw=2, marker='o', markersize=5, label=f'$\\overline{{\\Delta\\theta}}$={round(y_weightedmean,2):.2f} μrad ± {round(sem*1e3)} nrad')
+        ax.plot(x, y, color='C0', alpha=1, lw=2, marker='o', markersize=10, label=f'$\\overline{{\\Delta\\theta}}$={round(y_weightedmean,2):.2f} μrad ± {round(sem*1e3)} nrad')
         ax.plot(x, y_linearfit, '--', color='b', lw=2, 
             label=f'$\\dot{{\\Delta\\theta}}$={round(fitted_k*60,2):.2f} μrad/h')
         ax.fill_between(x, lower_bound, upper_bound, facecolor='C0', alpha=0.4, label=f'$\\sigma$={round(std,2):.2f} μrad')
@@ -217,8 +218,8 @@ class Plot:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y1, y2, label_y1, label_y2, ylabel_y1, ylabel_y2, file_name = plot_params[key]
 
-            y1_fit, y1_slope, y1_intercept, y1_weightedmean, residual, y1_residualstd = self.analyzer.drift_fit(x, y1, int(len(y1)*0.1))
-            y2_fit, y2_slope, y2_intercept, y2_weightedmean, residual, y2_residualstd = self.analyzer.drift_fit(x, y2, int(len(y2)*0.1))
+            y1_fit, y1_slope, y1_intercept, y1_weightedmean, residual, y1_residualstd = self.analyzer.drift_fit(x, y1, 3)
+            y2_fit, y2_slope, y2_intercept, y2_weightedmean, residual, y2_residualstd = self.analyzer.drift_fit(x, y2, 3)
 
             y1_linearfit, fitted_k1, fitted_b1, sigma_k1, sigma_b1, y1_residuals, y1_std, chi2_value1, dof1 = self.analyzer.linear_fit(x, y1, y1_slope, y1_intercept, y1_residualstd)
             y2_linearfit, fitted_k2, fitted_b2, sigma_k2, sigma_b2, y2_residuals, y2_std, chi2_value2, dof2 = self.analyzer.linear_fit(x, y2, y2_slope, y2_intercept, y2_residualstd)
@@ -242,7 +243,7 @@ class Plot:
             y2_lower_bound = y2_fit - y2_std
             y2_upper_bound = y2_fit + y2_std
 
-            ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, marker='o', markersize=5, \
+            ax1.plot(x, y1, color='C3', linestyle='-', lw=2, marker='o', markersize=10, \
                     label=f'$\\overline{{\\epsilon}}$={round(y1_weightedmean,2):.2f} mrad ± {round(y1_sem*1e3,2):.2f} μrad')
             ax1.plot(x, y1_fit, '--', color='r', lw=2, \
                     label=f'$\\dot\\epsilon$={round(fitted_k1*1e3*60,2):.2f} μrad/h')
@@ -253,7 +254,7 @@ class Plot:
             ax1.tick_params(axis='y', labelsize=25)
             # ax1.get_yaxis().set_major_formatter(plt.FormatStrFormatter('%.2f'))
 
-            ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, marker='o', markersize=5, \
+            ax2.plot(x, y2, color='C0', linestyle='-', lw=2, marker='o', markersize=10, \
                     label=f'$\\overline{{\\theta}}$={round(y2_weightedmean,2):.2f} mrad ± {round(y2_sem*1e3,2):.2f} μrad')
             ax2.plot(x, y2_linearfit, '--', color='b', lw=2, 
                     label=f'$\\dot\\theta$={round(fitted_k2*1e3*60,2):.2f} μrad/h')
@@ -410,8 +411,8 @@ class Plot:
         plot_params = {
             ('CD', 'vapor'): (timestamp[index], ellipticity[index], r'$\epsilon_\text{vapor cell}$'),
             ('CB', 'vapor'): (timestamp[index], angle[index], r'$\theta_\text{vapor cell}$'),
-            ('modCB', 'vapor'): (timestamp[index], m2f_angle[index], r'Averaging Time, τ (s)', r'Allan Deviation, $\sigma_\theta$', 
-                                 f'[{dtype}]Allan_Deviation_of_Modulated_FR_vapor_{date}_run{run}.png'),
+            ('modCB', 'vapor'): (timestamp[index], m2f_angle[index], r'Averaging Time, τ (s)', r'Allan Deviation, $\sigma_\theta(\tau)$', 
+                                 f'[{dtype}]Allan_Deviation_oadev_ModFR_{date}_run{run}.png'),
         
         }
         # Check if the combination of phytype and material exists in the mapping
@@ -420,8 +421,8 @@ class Plot:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, xlabel, ylabel, file_name = plot_params[key]
         
-        tc = 100 # Time constant in [s]
-        sample_interval = 5 * tc  # Sample interval in [s]
+        tc = 20 # Time constant in [s]
+        sample_interval = 10 * tc  # Sample interval in [s]
         corrected_y = y / (2 * np.pi * 0.5)
 
         # Compute Allan deviation
@@ -431,18 +432,25 @@ class Plot:
         # Plot Allan deviation with error bars
         ax.errorbar(taus, adev, yerr=errors, fmt="o", linestyle="-", color="C0", label="Allan Deviation", capsize=5)
 
-        # Indicate the sampling interval
-        ax.axvline(x=sample_interval, color='r', linestyle=":", label="Sampling Interval")
-
-        # Set logarithmic scale for both axes
+        # # Set logarithmic scale for both axes
         ax.set_xscale('log')
         ax.set_yscale('log')
 
         # Set axis labels
         ax.set_xlabel(xlabel, fontsize=25)
         ax.set_ylabel(ylabel, fontsize=25)
-        ax.tick_params(axis='x', labelsize=25)
-        ax.tick_params(axis='y', labelsize=25)
+
+        # Set tick parameters for both major and minor ticks
+        ax.tick_params(axis='both', which='major', labelsize=25)
+        ax.tick_params(axis='both', which='minor', labelsize=25)  # Ensure minor ticks have the same font size
+
+        # Apply scientific notation to y-axis
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        formatter.set_scientific(True)
+        formatter.set_powerlimits((-3, 3))  # Use scientific notation if the value is beyond 10^3 or below 10^-3
+        ax.yaxis.set_major_formatter(formatter)
+        ax.yaxis.get_offset_text().set_fontsize(25)
+
         ax.grid(which="both", linestyle="--")
         ax.legend(loc="best", fontsize=25)
         save_path = os.path.join(plots, date, file_name)
@@ -472,8 +480,8 @@ class Plot:
 if __name__ == "__main__":
 
     dir_path = os.path.join(
-    # os.path.expanduser('~'),  # Directory path on personal computer
-    'D:',
+    os.path.expanduser('~'),  # Directory path on personal computer
+    # 'D:',
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -494,17 +502,17 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-22-2025'
+    date_input = '02-26-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter, date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
-    for i in range(1, 6):
-    # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 10, 1, 22.75, 200, 'modCB', 'vapor', date)
-        # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 7, i, 22.75, 200, 'CD', 'vapor', date)
+    # for i in range(1, 10):
+    plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 10, 3, 22.75, 200, 'modCB', 'vapor', date)
+        # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 10, i, 22.75, 200, 'CD', 'vapor', date)
         # plotter.plot_fft(wavelengthmeter_path, lockins_path, 'X', 8, i)
         # plotter.plt_nsd(wavelengthmeter_path, lockins_path, 'R', 8, i)
-        plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'X', 10, i, 'modCB', 'vapor')
+        # plotter.allan_deviation(wavelengthmeter_path, lockins_path, 'X', 10, i, 'modCB', 'vapor')
 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

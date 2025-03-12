@@ -82,7 +82,7 @@ class Plot:
             frequency.append(self.consts.c / Lambd)  # [Hz]
             detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
             ellipticity.append(ep*1e3)  # [mrad]
-            angle.append(th*1e3)  # [mrad]
+            angle.append(th*1e3)  # [μrad]
             m2f_angle.append(m2f_th*1e6)  # [μrad/~MHz]
 
         return wavelength, frequency, detuning, ellipticity, angle, m2f_angle
@@ -222,7 +222,7 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y, label = plot_params[key]
-            ax.plot(x, y, '.', color='red', label=label, markersize=2)
+            ax.plot(x, y, '.', label=label, markersize=2)
 
         # Optionally plot peaks and valleys (commented out in the current implementation)
         # self.peaks_valleys_plot(x[0], CB_vapor)
@@ -252,7 +252,7 @@ class Plot:
         wavelength, frequency, detuning, ellipticity, angle, m2f_angle = self.ellipticity_and_angle(lambda_path, lockin_path, dtype, n, run)
 
         # Calculate frequency varaition of the laser Scan during WideScan
-        time, nu, nu_fit, nu_slope, nu_mean, nu_std = self.laser_scan_variation(lambda_path, date, run)
+        # time, nu, nu_fit, nu_slope, nu_mean, nu_std = self.laser_scan_variation(lambda_path, date, run)
 
         # Perform background subtraction and retrieve processed data
         CD_empty, CB_empty, CD_vapor, CB_vapor, CD_K, CB_K, modCB_vapor, alpha_diff_vapor, n_diff_vapor = \
@@ -309,12 +309,12 @@ class Plot:
             # ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
 
             # plot smoothed data
-            ax1.plot(x*1e3, smooth_y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
+            ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
 
-            ax1.set_xlabel(r'Detuning (MHz)', fontsize=25)
+            ax1.set_xlabel(r'Detuning (GHz)', fontsize=25)
             # ax1.set_xlim(-150, 250)
-            # ax1.set_xticks(np.arange(-5, 6, 1))
-            ax1.set_xticks(np.arange(-2500, 3000, 500))
+            ax1.set_xticks(np.arange(-5, 6, 1))
+            # ax1.set_xticks(np.arange(-2500, 3000, 500))
             ax1.set_ylabel(ylabel_y1, fontsize=25, color='C3')
             ax1.tick_params(axis='x', labelsize=25)
             ax1.tick_params(axis='y', labelsize=25)
@@ -330,7 +330,7 @@ class Plot:
                 ax2.plot(x*1e3, smooth_y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
             else:
                 # plot unsmoothed data
-                ax2.plot(x*1e3, y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
+                ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
 
                 # plot smoothed data
                 # ax2.plot(x*1e3, smooth_y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
@@ -418,7 +418,7 @@ class Plot:
         # plt.legend(loc='best', fontsize=25)
         plot_labels = {
         'CD': r'Ellipticity (mrad)',
-        'CB': r'Faraday Rotation (mrad)',
+        'CB': r'Faraday Rotation (μrad)',
         'modCB': r'$\Delta\theta$ (μrad)',
         'absorbance': r'$\alpha_--\alpha_+$ (1/mm)',
         'refractive index': r'$n_--n_+$ ($\times10^{-9}$)',
@@ -563,14 +563,14 @@ if __name__ == "__main__":
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
     
     plotter = Plot()
-    date_input = '02-18-2025'
+    date_input = '05-07-2024'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter , date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
-    # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 5, 1, -5.09, 395, 'modCB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 330, 1, -5.06, 200, 'modCB', 'vapor', date)
+    plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 10, 1, -5.12, 0.54, 'CB', 'vapor', date)
+    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 10, 13, -5.09, 301.01, 'CD', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

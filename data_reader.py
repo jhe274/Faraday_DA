@@ -150,7 +150,7 @@ class DataReader:
             df['Timestamp'] = (df['Timestamp'] - df['Timestamp'].iloc[0]).dt.total_seconds()
             
             # Compute step size for downsampling
-            step_size = int(5)  # take every 5th point
+            step_size = int(1)  # take every point
             
             # Apply downsampling
             timestamp.append(df['Timestamp'].iloc[::step_size].to_numpy())
@@ -165,7 +165,7 @@ class DataReader:
 
         return para, timestamp, X1f, Y1f, X2f, Y2f, Xdc, Ydc, Xm2f, Ym2f
     
-    def read_processed_da(self, path):
+    def read_processed_data(self, path):
         """
         Reads processed data analysis files containing wavelength, ellipticity, and Faraday rotation.
         Returns:
