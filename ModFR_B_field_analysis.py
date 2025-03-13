@@ -177,11 +177,25 @@ class FaradayRotation:
         x_err_list = []
         y_avg_list = []
         y_err_list = []
+        detun_list = []
+        freq_err_list = []
 
         # Process each group
         for i in range(num_groups-1):
             group = df.iloc[i*group_size : (i+1)*group_size]
-            
+
+            # Frequency (x-axis) calculations
+            freq_vals = group['Frequency (Hz)'].values
+            freq_sem = group['Frequency_sem (Hz)'].values
+
+            # Calculate frequency statistics
+            f_unitfactor = 1e-6 # Convert Hz to MHz
+            freq_avg = np.mean(freq_vals * f_unitfactor)
+            var_between_freq = np.std(freq_vals * f_unitfactor, ddof=1)**2
+            avg_within_var_freq = np.mean((freq_sem * f_unitfactor)**2)
+            total_var_freq = (var_between_freq + avg_within_var_freq) / group_size
+            f_err = np.sqrt(total_var_freq)
+
             # Magnetic field (x-axis) calculations
             b_vals = group['Magnetic_field_modualtion_amplitude (G)'].values
             b_sem = group['Magnetic_field_sem (G)'].values
@@ -207,40 +221,56 @@ class FaradayRotation:
             y_err = np.sqrt(total_var_y)
             
             # Store results
-            y_avg_list.append(x_avg)
-            y_err_list.append(x_err)
-            x_avg_list.append(y_avg)
-            x_err_list.append(y_err)
+            x_avg_list.append(x_avg)
+            x_err_list.append(x_err)
+            y_avg_list.append(y_avg)
+            y_err_list.append(y_err)
+            detun_list.append(freq_avg - self.consts.K39_D2_Hz * 1e-6)
+            freq_err_list.append(f_err)
 
         # Convert to numpy arrays
         x_data = np.array(x_avg_list)
         x_err = np.array(x_err_list)
         y_data = np.array(y_avg_list)
         y_err = np.array(y_err_list)
+        detun_data = np.array(detun_list)
+        freq_err = np.array(freq_err_list)
 
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
         y_fit, slope, intercept, y_weightedmean, residual, y_residualstd = self.analyzer.drift_fit(x_data, y_data, 3)
         y_linearfit, fitted_k, fitted_b, sigma_k, sigma_b, residuals, std, chi_value, dof = self.analyzer.linear_fit(x_data, y_data, slope, intercept, y_residualstd)
 
+        # Shot-noise-limited angular sensitivity
+        spectral_responsivity = 0.56 # A/W
+        QE = spectral_responsivity * self.consts.h * self.consts.c / (self.consts.e * 766.7e-9) # Quantum efficiency
+        snl_sensitivity = np.sqrt(self.consts.h * self.consts.c / (2 * QE * 766.7e-9 * 62.5e-6)) # [rad/sqrt(Hz)]
+        print('Shot-noise-limited sensitivity = {:.2f} x 1e-8 G/sqrt(Hz)'.format(snl_sensitivity*1e8))
+
         # Calculate the x-axis intercept
         x_intercept = -fitted_b / fitted_k
-        print('Minimum detectable magnetic field variation:', x_intercept, 'mG')
         x_fit = np.linspace(x_intercept, max(x_data), 100)
         y_fit = fitted_k * x_fit + fitted_b
         chi2 = np.sum((residuals / y_err)**2)  # Raw chi-squared
+        print('Average ferquency detuning = {:.2f} MHz'.format(np.mean(detun_list)))
+        print('Detuning error = {:.2f} MHz'.format(np.mean(freq_err)))
+        print('Slope = {:.2f} μrad/mG'.format(fitted_k))
+        print('Intercept = {:.2f} μrad'.format(fitted_b))
+        print('Minimum detectable magnetic field variation:', x_intercept, 'mG')
+        print('Chi-squared / dof:', chi2, '/', dof)
 
         ax.errorbar(x_data, y_data, xerr=x_err, yerr=y_err, fmt='.', capsize=5, color='b', label='Measured Faraday Rotation')
-        ax.plot(x_fit, y_fit, 'r--', label=f'Linear Fit: $\Delta B_z$ = {fitted_k:.2f}$\Delta \\theta$ + {fitted_b:.2f}')
+        ax.plot(x_fit, y_fit, 'r--', label=f'Linear Fit')
 
-        ax.set_ylabel(r'Longitudinal Magnetic Field Variation, $\Delta B_z$ (mG)', fontsize=25)
-        ax.set_xlabel(r'Faraday Rotation Variation, $\Delta\theta$ (μrad)', fontsize=25)
-        ax.tick_params(axis='both', which='major', labelsize=25)
-        ax.tick_params(axis='both', which='minor', labelsize=25)
+        ax.set_xlabel(r'Longitudinal Magnetic Field Variation, $\Delta B_z$ (mG)', fontsize=30)
+        ax.set_ylabel(r'Faraday Rotation Variation, $\Delta\theta$ (μrad)', fontsize=30)
+        ax.tick_params(axis='both', which='major', labelsize=30)
+        ax.tick_params(axis='both', which='minor', labelsize=30)
         # ax.set_title(f'$\chi^2/\\text{{dof}}$={chi2:.1f}/{dof}', fontsize=25)
         # ax.grid(True, alpha=0.3)
-        ax.legend(loc="best", fontsize=25)
-        save_path = os.path.join(plots, "Magnetic_field_modulation_vs_Faraday_rotation.png")
+        ax.legend(loc="best", fontsize=30)
+        plt.tight_layout()
+        save_path = os.path.join(plots, "Faraday_rotation_vs_magnetic_field_modulation(tightlayout).png")
         plt.savefig(save_path)
         plt.show()
 
