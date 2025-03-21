@@ -25,16 +25,15 @@ class Plot:
         self.theory = Theory()  # Load theoretical models
         self.reader = Read()    # Utilities for reading data
         self.analyzer = Analyze()  # Data analysis utilities
-        self.theory = Theory()
         self.l = (7.5 - 0.159 * 2) * 1e-2  # Optical path length in meters
 
     def convert_to_float(self, data_tuple):
         """Convert a tuple of lists of strings into a tuple of lists of floats."""
         return tuple([np.array([float(item.strip()) for item in sublist]) for sublist in data_tuple])
     
-    def find_closest_indices(self, arrays, power, n):
+    def find_closest_indices(self, arrays, parameter, n):
         arrays = [np.asarray(subarray, dtype=np.float64) for subarray in arrays]
-        diffs = [np.abs(subarray - power) for subarray in arrays]
+        diffs = [np.abs(subarray - parameter) for subarray in arrays]
         
         # Create a structured array to keep track of subarray index, element index, value, and difference
         all_closest = np.array([(sub_idx, idx, subarray[idx], diff[idx])
@@ -91,7 +90,7 @@ class Plot:
             # ax.plot(detune[i], fitted_y * 1e6, '--', color=color[i], label=rf'[K]={fit_Kn:.2f}$\times10^{{8}}$ cm$^{{-3}}$', linewidth=2)
 
         ax.set_xlabel(r'Frequency Detuning, $\nu$ (GHz)', fontsize=30)
-        ax.set_ylabel(r'Faraday Rotation, $\theta$ (mrad)', fontsize=30)
+        ax.set_ylabel(r'Faraday Rotation, $\theta$ (rad)', fontsize=30)
         ax.set_xticks(np.arange(-5, 6, 1))
         ax.tick_params(axis='both', which='major', labelsize=30)
         # ax.legend(loc='best', fontsize=30)
@@ -110,7 +109,7 @@ class Plot:
                 handler_map={line: HandlerLineMarker() for line in lines})  # Use custom handler
 
         plt.tight_layout()
-        save_path = os.path.join(plots, 'FR_300microW_3inputs(tightlayout).png')
+        save_path = os.path.join(plots, 'Atomic_density_fit(tightlayout).png')
         plt.savefig(save_path)
         plt.show()
         
@@ -119,6 +118,67 @@ class Plot:
         fitted_y = self.theory.resonant_FR(x, params[0], params[1], params[2], params[3], params[4], params[5], params[6])
 
         return fitted_y, params[0], params[1], params[2], params[3], params[4], params[5], params[6]
+    
+    def plot_power_dependence(self, dates, Bz, n):
+        # Read the data from the specified path
+        results = [self.reader.read_processed_data(glob.glob(os.path.join(processed_path, date, '*.csv'))) for date in dates]
+        temps, Bzs, powers, x1, y1, y2 = zip(*[(res[1], res[2], res[3], res[4], res[5], res[6]) for res in results])
+
+        # Convert to float
+        temps, Bzs, powers = map(self.convert_to_float, [temps, Bzs, powers])
+
+        # Find closest indices
+        result = self.find_closest_indices(Bzs, Bz, n)
+
+        fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
+
+        temp, Bz, power, freq, detune, theta = [], [], [], [], [], []
+        for sub_idx, idx, value in result:
+            step = 1
+            nu = self.consts.c / x1[sub_idx][idx][::step]
+            detuning = (nu - self.consts.K39_D2_Hz) * 1e-9
+
+            temp.append(temps[sub_idx][idx]) # [°C]
+            Bz.append(Bzs[sub_idx][idx]) # [G]
+            power.append(powers[sub_idx][idx]) # [µW]
+            freq.append(nu) # [Hz]
+            detune.append(detuning) # [GHz]
+            theta.append(y2[sub_idx][idx][::step] * 2) # [rad]
+
+        # indices_4G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 24]
+        indices_6G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 23]
+        lines = []
+        for i in indices_6G:
+            intensity = power[i] * 1e-3 / (np.pi * (0.22/2) ** 2)
+            label = f'$I$={intensity:.3f} mW/cm$^2$'
+            label = f'$P$={power[i]:.1f} µW'
+            line, = ax.plot(detune[i], theta[i] * 1e3, '.', alpha=1, markersize=2, label=label)
+            lines.append(line)  # Store handles for legend
+
+        ax.set_xlabel(r'Frequency Detuning, $\nu$ (GHz)', fontsize=30)
+        ax.set_ylabel(r'Faraday Rotation, $\theta$ (rad)', fontsize=30)
+        ax.set_xticks(np.arange(-5, 6, 1))
+        ax.tick_params(axis='both', which='major', labelsize=30)
+        # ax.legend(loc='best', fontsize=30)
+
+        # Define a custom legend handler that increases only the marker size
+        class HandlerLineMarker(HandlerLine2D):
+            def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
+                # Increase the marker size for the legend without changing the plot markers
+                line = super().create_artists(legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans)
+                for l in line:
+                    l.set_markersize(20)  # Set a larger marker size in the legend
+                return line
+
+        # Customizing legend marker size
+        ax.legend(handles=lines, fontsize=30, loc="best",
+                handler_map={line: HandlerLineMarker() for line in lines})  # Use custom handler
+
+        plt.tight_layout()
+        save_path = os.path.join(plots, 'FR_power_dependence_6G(tightlayout).png')
+        plt.savefig(save_path)
+        plt.show()
+        
 
     def plot_slope(self, dates, power, n):
         # Read the data from the specified path
@@ -192,7 +252,7 @@ class Plot:
         spectral_responsivity = 0.56 # A/W
         QE = spectral_responsivity * self.consts.h * self.consts.c / (self.consts.e * 766.7e-9) # Quantum efficiency
         snl_sensitivity = np.sqrt(self.consts.h * self.consts.c / (2 * QE * 766.7e-9 * 54.52e-6)) # [rad/sqrt(Hz)]
-        print('Shot-noise-limited sensitivity = {:.2f} x 1e-8 G/sqrt(Hz)'.format(snl_sensitivity*1e8))
+        print('Shot-noise-limited angular sensitivity = {:.2f} x 1e-8 G/sqrt(Hz)'.format(snl_sensitivity*1e8))
 
         fig, ax = plt.subplots(1, 1, figsize=(25.60, 14.40))
 
@@ -215,7 +275,7 @@ class Plot:
             label = f'$B_z$={Bz[i]:.2f} G, $T$={temp[i]:.2f} °C'
             line, = ax.plot(detune[i], np.abs(Bz[i]) * snl_sensitivity * 1e4 / theta[i], '.', c=color[i], alpha=1, markersize=5, label=label)
             lines.append(line)  # Store handles for legend
-            print(min(np.abs(Bz[i]/theta[i])))
+            print("Minimum ∂B_z/∂θ = {:.2f} G/rad".format(min(np.abs(Bz[i]/theta[i]))))
         ax.set_xlabel(r'Frequency Detuning, $\nu$ (GHz)', fontsize=30)
         ax.set_ylabel(r'Sensitivity, $\delta B_z$ ($10^{-4}$ G/$\sqrt{\text{Hz}}$)', fontsize=30)
         # ax.set_xticks(np.arange(-5, 6, 1))
@@ -239,7 +299,7 @@ class Plot:
 
         plt.tight_layout()
         save_path = os.path.join(plots, 'Sensitivity_300microW_2inputs(tightlayout).png')
-        plt.savefig(save_path)
+        # plt.savefig(save_path)
         plt.show()
 
 if __name__ == "__main__":
@@ -264,7 +324,8 @@ if __name__ == "__main__":
                 '05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024',
                 '05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
     # plotter.plot_number_density_fit(dates, 0.5, 3)
+    plotter.plot_power_dependence(dates, 6, 24)
     # plotter.plot_slope(dates, 300, 3)
-    plotter.plot_sensitivity(dates, 300, 3)
+    # plotter.plot_sensitivity(dates, 300, 3)
 
 

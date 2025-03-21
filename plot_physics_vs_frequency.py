@@ -72,7 +72,7 @@ class Plot:
             B_t[i], Lambda[i], lockins_t[i], m2f_theta_trimmed = self.analyzer.trim_data(B_t[i], Lambda[i], lockins_t[i], m2f_theta[i])
 
             # Calculate intervals and averages for ellipticity and angle
-            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(B_t[i], lockins_t[i], para[i][2], n)
+            l_idx, b_idx = self.analyzer.calculate_interval_and_indices(B_t[i], lockins_t[i], para[i][0], n)
             Lambd, ep = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], epsilon_trimmed[l_idx])
             Lambd, th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], theta_trimmed[l_idx])
             Lambd, m2f_th = self.analyzer.calculate_averages(b_idx, Lambda[i], Lambda[i][b_idx], m2f_theta_trimmed[l_idx])
@@ -80,10 +80,10 @@ class Plot:
             # Append processed data to the respective lists
             wavelength.append(Lambd)  # [m]
             frequency.append(self.consts.c / Lambd)  # [Hz]
-            detuning.append(self.consts.c / wavelength[i-run+1] * 1e-9 - self.consts.K39_D2_Hz * 1e-9)  # [GHz]
+            detuning.append((self.consts.c / wavelength[i-run+1] - self.consts.K39_D2_Hz) * 1e-9)  # [GHz]
             ellipticity.append(ep*1e3)  # [mrad]
             angle.append(th*1e3)  # [μrad]
-            m2f_angle.append(m2f_th*1e6)  # [μrad/~MHz]
+            m2f_angle.append(m2f_th)  # [μrad/~MHz]
 
         return wavelength, frequency, detuning, ellipticity, angle, m2f_angle
     
@@ -282,12 +282,12 @@ class Plot:
                                             f'[{dtype}]Absorbance_and_refractive_index_vapor_{date}_run{run}-{run+1}.png'),
 
             ('modCB', 'vapor'): (detuning[0], CB_vapor, modCB_vapor, \
-                                 r'$\Longleftarrow$$\theta$', \
-                                  r'$\Delta\theta/\Delta\nu$$\Longrightarrow$', \
-                                   r'$\theta$ (mrad)', r'$\Delta\theta$ (μrad)', \
-                                #    r'$\theta$ (mrad)', r'$\Delta\theta/\delta$ (μrad/MHz)', \
-                                      f'[{dtype}]FR_and_modulatedFR_vapor_{date}_run{run}-{run+1}_smoothed.png'),
-                                    #   f'[{dtype}]FR_and_modulatedFR_per_scan_vapor_{date}_run{run}-{run+1}_smoothed.png'),
+                                 r'$\theta$', \
+                                  r'$\partial\theta/\partial\nu$', \
+                                #    r'$\theta$ (mrad)', r'$\Delta\theta$ (μrad)', \
+                                   r'Faraday Rotation, $\theta$ (mrad)', r'Slope, $\partial\theta/\partial\nu$ ($10^{-12}$ rad/Hz)', \
+                                    #   f'[{dtype}]FR_and_modulatedFR_vapor_{date}_run{run}-{run+1}_smoothed.png'),
+                                      f'[{dtype}]FR_and_modulatedFR_per_scan_vapor_{date}_run{run}-{run+1}(tightlayout).png'),
         }
 
         # Check if the combination of phytype and material exists in the mapping
@@ -295,7 +295,7 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y1, y2, label_y1, label_y2, ylabel_y1, ylabel_y2, file_name = plot_params[key]
-            x, y1, y2 = np.array(x), np.array(y1), np.array(y2)
+            x, y1, y2 = np.array(x[60:]), np.array(y1[60:]), np.array(y2[60:])
             
             # smoothing methods and plot smoothed data
             # smooth_y1 = self.analyzer.moving_average(y1, 5)
@@ -306,28 +306,29 @@ class Plot:
             smooth_y2 = self.analyzer.gaussian_smoothing(y2, 2)
 
             # plot unsmoothed data
-            # ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
+            # ax1.plot(x*1e3, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
 
             # plot smoothed data
-            ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
+            ax1.plot(x*1e3, smooth_y1, color='r', linestyle='-', linewidth=2, label=label_y1)
 
-            ax1.set_xlabel(r'Detuning (GHz)', fontsize=25)
+            ax1.set_xlabel(r'Frequency Detuning, $\nu$ (MHz)', fontsize=30)
             # ax1.set_xlim(-150, 250)
-            ax1.set_xticks(np.arange(-5, 6, 1))
-            # ax1.set_xticks(np.arange(-2500, 3000, 500))
-            ax1.set_ylabel(ylabel_y1, fontsize=25, color='C3')
-            ax1.tick_params(axis='x', labelsize=25)
-            ax1.tick_params(axis='y', labelsize=25)
+            # ax1.set_xticks(np.arange(-5, 6, 1))
+            ax1.set_xticks(np.arange(-1250, 1750, 250))
+            ax1.set_ylabel(ylabel_y1, color='r', fontsize=30)
+            ax1.tick_params(axis='x', labelsize=30)
+            ax1.tick_params(axis='y', labelsize=30)
             
             if key == ('modCB', 'vapor'):
                 # calculate Δθ/Δν
-                # y2 = np.array(smooth_y2) / (2 * nu_std)
+                y2 = np.array(smooth_y2) / (16.27e-6)
+                # y2 = y2 / 16.27
 
                 # plot unsmoothed data
-                # ax2.plot(x, -y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
+                ax2.plot(x*1e3, y2, color='b', linestyle='-', linewidth=2, label=label_y2)
 
                 # plot smoothed data
-                ax2.plot(x*1e3, smooth_y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
+                # ax2.plot(x*1e3, smooth_y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
             else:
                 # plot unsmoothed data
                 ax2.plot(x, y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
@@ -335,19 +336,20 @@ class Plot:
                 # plot smoothed data
                 # ax2.plot(x*1e3, smooth_y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
 
-            ax2.set_ylabel(ylabel_y2, fontsize=25, color='C0')
-            ax2.tick_params(axis='y', labelsize=25)
+            ax2.set_ylabel(ylabel_y2, color='b', fontsize=30)
+            ax2.tick_params(axis='y', labelsize=30)
 
             if datetime.strptime(date, "%m-%d-%Y") < reference_date:
-                plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+                plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=30)
             else:
                 B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
-                # plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $\delta$=6.97 MHz, $P$={power} μW', fontsize=25)
+                # plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $\delta$=6.97 MHz, $P$={power} μW', fontsize=30)
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=25)
+        # ax1.legend(lines1 + lines2, labels1 + labels2, loc="best", fontsize=30)
         # ax1.grid()
+        plt.tight_layout()
         save_path = os.path.join(plots, date, file_name)
         plt.savefig(save_path)
         plt.show()
@@ -408,14 +410,14 @@ class Plot:
         :param dtype: Data type ('X' or 'R')
         :param phytype: Physical quantity type ('CD', 'CB', etc.)
         """
-        plt.xlabel(r'Frequency (GHz)', fontsize=25)
-        plt.xticks(np.arange(-5, 6, 1), fontsize=25)
-        # plt.xticks(np.arange(-.8, 1.2, .1), fontsize=25)
-        plt.yticks(fontsize=25)
+        plt.xlabel(r'Frequency (GHz)', fontsize=30)
+        plt.xticks(np.arange(-5, 6, 1), fontsize=30)
+        # plt.xticks(np.arange(-.8, 1.2, .1), fontsize=30)
+        plt.yticks(fontsize=30)
         # plt.ylim(400,-650)
         # ax.get_xaxis().set_major_formatter(plt.FormatStrFormatter('%.3f'))
         plt.grid(False)
-        # plt.legend(loc='best', fontsize=25)
+        # plt.legend(loc='best', fontsize=30)
         plot_labels = {
         'CD': r'Ellipticity (mrad)',
         'CB': r'Faraday Rotation (μrad)',
@@ -441,17 +443,17 @@ class Plot:
         }
 
         if phytype in plot_labels:
-            plt.ylabel(plot_labels[phytype], fontsize=25)
+            plt.ylabel(plot_labels[phytype], fontsize=30)
             if datetime.strptime(date, "%d-%m-%Y") < reference_date:
-                plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=25)
+                plt.title(f'$B_z$={B} G, $P$={power} μW @{date}', fontsize=30)
             else:
                 B_mean, T_mean, B_std, T_std, _, _, _, _ = self.Bfield_and_temperature(gaussmeter_path, run)
-            # plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $\delta$=6.97 MHz, $P$={power} μW', fontsize=25)
+            # plt.title(f'$B_z$={round(-B_mean,3):.3f}±{round(B_std,3):.3f} G, $T$={round(T_mean,2):.2f}±{round(T_std,2):.2f}°C, $\delta$=6.97 MHz, $P$={power} μW', fontsize=30)
             file_name = file_names[phytype].format(dtype=dtype, date=date, run=run)
             save_path = os.path.join(plots, date, file_name)
             plt.savefig(save_path)
 
-        # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=25)
+        # plt.title(rf'$n={Kn}\times10^{{14}}\text{{m}}^3$, $T={T}^\circ$C, $B_z={Bz}$G, $P=.2\%$, $\theta_\text{{offset}}={const}μ\text{{rad}}$', fontsize=30)
         plt.show()
 
     def write(self, lambda_path, lockin_path, folder_path, filename, dtype, n, run, T, B, P):
@@ -534,7 +536,7 @@ class Plot:
         # set run = run if measurement is a WideScan
         # set run = run-1 if meausrement is NOT a WideScan
         timestamps, B0s, temps = self.reader.read_gaussmeter(gaussmeter_path)
-        B_fit, B_slope, B_intercept, B_mean, B_residuals, B_std = self.analyzer.drift_fit(timestamps[run], B0s[run])
+        B_fit, B_slope, B_intercept, B_mean, B_residuals, B_std = self.analyzer.drift_fit(timestamps[run], B0s[run], 100)
         T_mean = np.mean(temps[run])
         T_std = np.std(temps[run], ddof=1) / np.sqrt(len(temps[run]))
 
@@ -561,16 +563,16 @@ if __name__ == "__main__":
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
     # Define the reference date
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
-    
+
     plotter = Plot()
-    date_input = '05-07-2024'
+    date_input = '02-12-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter , date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
-    plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 10, 1, -5.12, 0.54, 'CB', 'vapor', date)
-    # plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 10, 13, -5.09, 301.01, 'CD', 'vapor', date)
+    # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 10, 1, -5.12, 0.54, 'CB', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 1, 5, -5.09, 301.01, 'modCB', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)

@@ -245,11 +245,11 @@ class FaradayRotation:
         spectral_responsivity = 0.56 # A/W
         QE = spectral_responsivity * self.consts.h * self.consts.c / (self.consts.e * 766.7e-9) # Quantum efficiency
         snl_sensitivity = np.sqrt(self.consts.h * self.consts.c / (2 * QE * 766.7e-9 * 62.5e-6)) # [rad/sqrt(Hz)]
-        print('Shot-noise-limited sensitivity = {:.2f} x 1e-8 G/sqrt(Hz)'.format(snl_sensitivity*1e8))
+        print('Shot-noise-limited angular sensitivity = {:.2f} x 1e-8 rad/sqrt(Hz)'.format(snl_sensitivity*1e8))
 
         # Calculate the x-axis intercept
         x_intercept = -fitted_b / fitted_k
-        x_fit = np.linspace(x_intercept, max(x_data), 100)
+        x_fit = np.linspace(x_intercept, max(x_data), 6)
         y_fit = fitted_k * x_fit + fitted_b
         chi2 = np.sum((residuals / y_err)**2)  # Raw chi-squared
         print('Average ferquency detuning = {:.2f} MHz'.format(np.mean(detun_list)))
@@ -259,9 +259,12 @@ class FaradayRotation:
         print('Minimum detectable magnetic field variation:', x_intercept, 'mG')
         print('Chi-squared / dof:', chi2, '/', dof)
 
+        y_lower_bound = y_fit - std
+        y_upper_bound = y_fit + std
+
         ax.errorbar(x_data, y_data, xerr=x_err, yerr=y_err, fmt='.', capsize=5, color='b', label='Measured Faraday Rotation')
         ax.plot(x_fit, y_fit, 'r--', label=f'Linear Fit')
-
+        ax.fill_between(x_fit, y_lower_bound, y_upper_bound, facecolor='C3', alpha=0.4, label=f'$\\sigma$={round(std,2):.2f} μrad')
         ax.set_xlabel(r'Longitudinal Magnetic Field Variation, $\Delta B_z$ (mG)', fontsize=30)
         ax.set_ylabel(r'Faraday Rotation Variation, $\Delta\theta$ (μrad)', fontsize=30)
         ax.tick_params(axis='both', which='major', labelsize=30)

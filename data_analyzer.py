@@ -163,7 +163,6 @@ class DataAnalyzer:
         Matches timestamps between lock-ins and Bristol data.
         parameters: n is the settling time in units of time constant.
         """
-
         if TC > 50e-3:
             interval = np.arange(TC * n, x2[-1] + TC, TC * n)
             x2_idx = np.searchsorted(x2, interval, side='left')[:-1]
