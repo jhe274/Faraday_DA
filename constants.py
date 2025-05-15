@@ -36,6 +36,20 @@ class Constants:
     K41_D2_C_Hz: float = 391016.79394e9  # [Hz] |F=1> -> |F'=2,1,0> in vacuum
     K41_D2_B_Hz: float = (K41_D2_A_Hz + K41_D2_C_Hz) / 2  # Ground state crossover [Hz]
 
+    # Rubidium-85 properties (D1/D2 lines) in SI units
+    Rb85_D1_Hz: float = 377.107385690e12 # [Hz] D1 line frequency in vacuum
+    Rb85_D2_Hz: float = 384.230406373e12 # [Hz] D2 line frequency in vacuum
+    Rb85_D1_m: float = c / Rb85_D1_Hz    # [m] D1 line wavelength in vacuum
+    Rb85_D2_m: float = c / Rb85_D2_Hz    # [m] D2 line wavelength in vacuum
+
+    # Rubidium-87 properties (D1/D2 lines) in SI units
+    Rb87_D1_Hz: float = 377.10746380e12   # [Hz] D1 line frequency in vacuum
+    Rb87_D2_Hz: float = 384.2304844685e12 # [Hz] D2 line frequency in vacuum
+    Rb87_D1_m: float = c / Rb87_D1_Hz     # [m] D1 line wavelength in vacuum
+    Rb87_D2_m: float = c / Rb87_D2_Hz     # [m] D2 line wavelength in vacuum
+
+
+
     # Electronic g-factors
     g_factors: dict = field(default_factory=lambda: {
         "D1": 2/3, 
