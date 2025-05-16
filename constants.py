@@ -48,8 +48,6 @@ class Constants:
     Rb87_D1_m: float = c / Rb87_D1_Hz     # [m] D1 line wavelength in vacuum
     Rb87_D2_m: float = c / Rb87_D2_Hz     # [m] D2 line wavelength in vacuum
 
-
-
     # Electronic g-factors
     g_factors: dict = field(default_factory=lambda: {
         "D1": 2/3, 
