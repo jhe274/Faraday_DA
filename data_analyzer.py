@@ -132,9 +132,10 @@ class DataAnalyzer:
         """
         t = np.asarray(t)
         x = np.asarray(x)
-
+        print(t,x)
         # x_ubound, x_lbound = 766.701e-9, 766.6996e-9
-        x_ubound, x_lbound = 766.711e-9, 766.690e-9
+        # x_ubound, x_lbound = 766.711e-9, 766.690e-9
+        x_ubound, x_lbound = 780.250e-9, 780.230e-9
         condition = np.logical_and(x > x_lbound, x < x_ubound)
 
         filtered_t = t[condition]

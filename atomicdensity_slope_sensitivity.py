@@ -146,9 +146,9 @@ class Plot:
             theta.append(y2[sub_idx][idx][::step] * 2) # [rad]
 
         # indices_4G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 24]
-        indices_6G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 23]
+        # indices_6G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 23]
         lines = []
-        for i in indices_6G:
+        for i in range(len(power)):
             intensity = power[i] * 1e-3 / (np.pi * (0.22/2) ** 2)
             label = f'$I$={intensity:.3f} mW/cm$^2$'
             label = f'$P$={power[i]:.1f} µW'
@@ -156,7 +156,7 @@ class Plot:
             lines.append(line)  # Store handles for legend
 
         ax.set_xlabel(r'Frequency Detuning, $\nu$ (GHz)', fontsize=30)
-        ax.set_ylabel(r'Faraday Rotation, $\theta$ (rad)', fontsize=30)
+        ax.set_ylabel(r'Faraday Rotation, $\theta$ (mrad)', fontsize=30)
         ax.set_xticks(np.arange(-5, 6, 1))
         ax.tick_params(axis='both', which='major', labelsize=30)
         # ax.legend(loc='best', fontsize=30)
@@ -171,11 +171,11 @@ class Plot:
                 return line
 
         # Customizing legend marker size
-        ax.legend(handles=lines, fontsize=30, loc="best",
+        ax.legend(handles=lines, fontsize=15, loc="best",
                 handler_map={line: HandlerLineMarker() for line in lines})  # Use custom handler
 
-        plt.tight_layout()
-        save_path = os.path.join(plots, 'FR_power_dependence_6G(tightlayout).png')
+        # plt.tight_layout()
+        save_path = os.path.join(plots, 'FR_power_dependence_6G.png')
         plt.savefig(save_path)
         plt.show()
         

@@ -80,9 +80,9 @@ class Plot:
             # Append processed data to the respective lists
             wavelength.append(Lambd)  # [m]
             frequency.append(self.consts.c / Lambd)  # [Hz]
-            detuning.append((self.consts.c / wavelength[i-run+1] - self.consts.K39_D2_Hz) * 1e-9)  # [GHz]
+            detuning.append((self.consts.c / wavelength[i-run+1] - self.consts.Rb85_D2_Hz) * 1e-9)  # [GHz]
             ellipticity.append(ep*1e3)  # [mrad]
-            angle.append(th*1e3)  # [μrad]
+            angle.append(th*1e3)  # [mrad]
             m2f_angle.append(m2f_th)  # [μrad/~MHz]
 
         return wavelength, frequency, detuning, ellipticity, angle, m2f_angle
@@ -269,7 +269,7 @@ class Plot:
                               r'$\Longleftarrow$$\epsilon$', \
                                 r'$\theta$$\Longrightarrow$', \
                                   r'Ellipticity (mrad)', r'Faraday rotation (mrad)', \
-                                    f'[{dtype}]Ellipticity_and_Rotation_vapor_{date}_run{run}-{run+1}_smoothed.png'),
+                                    f'[{dtype}]Ellipticity_and_Rotation_vapor_{date}_run{run}-{run+1}.png'),
             ('CD', 'K'): (detuning[1], CD_K, CB_K, \
                           r'$\Longleftarrow$$\epsilon_\text{vapor cell}-\epsilon_\text{empty cell}$', \
                             r'$\theta_\text{vapor cell}-\theta_\text{empty cell}$$\Longrightarrow$', \
@@ -295,8 +295,8 @@ class Plot:
         if key in plot_params:
             # Retrieve plotting data (x-axis, y-axis, label) and plot on the axes
             x, y1, y2, label_y1, label_y2, ylabel_y1, ylabel_y2, file_name = plot_params[key]
-            x, y1, y2 = np.array(x[60:]), np.array(y1[60:]), np.array(y2[60:])
-            
+            x, y1, y2 = np.array(x), np.array(y1), np.array(y2)
+            print(x)
             # smoothing methods and plot smoothed data
             # smooth_y1 = self.analyzer.moving_average(y1, 5)
             # smooth_y1 = self.analyzer.polynomial_smoothing(y1, 11, 3)
@@ -306,16 +306,16 @@ class Plot:
             smooth_y2 = self.analyzer.gaussian_smoothing(y2, 2)
 
             # plot unsmoothed data
-            # ax1.plot(x*1e3, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
+            ax1.plot(x, y1, color='C3', linestyle='-', linewidth=1, label=label_y1)
 
             # plot smoothed data
-            ax1.plot(x*1e3, smooth_y1, color='r', linestyle='-', linewidth=2, label=label_y1)
+            # ax1.plot(x*1e3, smooth_y1, color='r', linestyle='-', linewidth=2, label=label_y1)
 
-            ax1.set_xlabel(r'Frequency Detuning, $\nu$ (MHz)', fontsize=30)
+            ax1.set_xlabel(r'Frequency Detuning, $\nu$ (GHz)', fontsize=30)
             # ax1.set_xlim(-150, 250)
-            # ax1.set_xticks(np.arange(-5, 6, 1))
-            ax1.set_xticks(np.arange(-1250, 1750, 250))
-            ax1.set_ylabel(ylabel_y1, color='r', fontsize=30)
+            ax1.set_xticks(np.arange(-5, 6, 1))
+            # ax1.set_xticks(np.arange(-1250, 1750, 250))
+            ax1.set_ylabel(ylabel_y1, color='C3', fontsize=30)
             ax1.tick_params(axis='x', labelsize=30)
             ax1.tick_params(axis='y', labelsize=30)
             
@@ -336,7 +336,7 @@ class Plot:
                 # plot smoothed data
                 # ax2.plot(x*1e3, smooth_y2, color='C0', linestyle='-', linewidth=1, label=label_y2)
 
-            ax2.set_ylabel(ylabel_y2, color='b', fontsize=30)
+            ax2.set_ylabel(ylabel_y2, color='C0', fontsize=30)
             ax2.tick_params(axis='y', labelsize=30)
 
             if datetime.strptime(date, "%m-%d-%Y") < reference_date:
@@ -555,24 +555,35 @@ if __name__ == "__main__":
     # dir_path = os.path.join(os.getcwd(),  
     # 'Faraday_rotation_measurements', 
     # )
-    K_vapor = os.path.join(dir_path, 'K_vapor_cell')
-    wavelengthmeter = os.path.join(K_vapor, 'Wavelengthmeter_data')
-    gaussmeter = os.path.join(K_vapor, 'Gaussmeter_data')
-    lockins = os.path.join(K_vapor, 'Lockins_data')
+    cell_paths = {
+        'K_vapor': os.path.join(dir_path, 'K_vapor_cell'),
+        'Rb_vapor': os.path.join(dir_path, 'Rb_vapor_cell'),
+        'Vivian': os.path.join(dir_path, 'Vivian'),
+    }
+
+    cell_name = 'Rb_vapor'
+    if cell_name not in cell_paths:
+        raise ValueError(f"Invalid cell name: {cell_name}. Available options are: {list(cell_paths.keys())}")
+    
+    base_path = cell_paths[cell_name]
+    wavelengthmeter = os.path.join(base_path, 'Wavelengthmeter_data')
+    gaussmeter = os.path.join(base_path, 'Gaussmeter_data')
+    lockins = os.path.join(base_path, 'Lockins_data')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
+
     # Define the reference date
     reference_date = datetime.strptime("02-09-2025", "%m-%d-%Y")
 
     plotter = Plot()
-    date_input = '02-12-2025'
+    date_input = '05-16-2025'
     date = dt.datetime.strptime(date_input, '%m-%d-%Y').strftime('%m-%d-%Y')
     wavelengthmeter_path = glob.glob(os.path.join(wavelengthmeter , date, '*.csv'))
     gaussmeter_path = glob.glob(os.path.join(gaussmeter, date, '*.csv'))
     lockins_path = glob.glob(os.path.join(lockins, date, '*.lvm'))
     # plotter.raw_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -6.105, 0.5, 'CD', 'air')
     # plotter.background_subtracted_plot(wavelengthmeter_path, lockins_path, 'X', 10, 1, -5.12, 0.54, 'CB', 'vapor', date)
-    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 1, 5, -5.09, 301.01, 'modCB', 'vapor', date)
+    plotter.two_axes_plot(wavelengthmeter_path, lockins_path, 'X', 5, 11, -5.09, 502, 'CD', 'vapor', date)
 # 
     FR_file = f'FaradayRotation_{date_input}.csv'
     # plotter.write(Bristol_path, Lockins_path, processed_path, FR_file, 'X', 5, 3, 22.00, 0.005, 41.0)
