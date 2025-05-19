@@ -145,13 +145,13 @@ class Plot:
             detune.append(detuning) # [GHz]
             theta.append(y2[sub_idx][idx][::step] * 2) # [rad]
 
-        # indices_4G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 24]
+        indices_4G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 24]
         # indices_6G = [6, 9, 10, 14, 16, 18, 19, 20, 22, 23]
         lines = []
-        for i in range(len(power)):
+        for i in indices_4G:
             intensity = power[i] * 1e-3 / (np.pi * (0.22/2) ** 2)
             label = f'$I$={intensity:.3f} mW/cm$^2$'
-            label = f'$P$={power[i]:.1f} µW'
+            # label = f'$P$={power[i]:.1f} µW'
             line, = ax.plot(detune[i], theta[i] * 1e3, '.', alpha=1, markersize=2, label=label)
             lines.append(line)  # Store handles for legend
 
@@ -171,11 +171,11 @@ class Plot:
                 return line
 
         # Customizing legend marker size
-        ax.legend(handles=lines, fontsize=15, loc="best",
+        ax.legend(handles=lines, fontsize=30, loc="best",
                 handler_map={line: HandlerLineMarker() for line in lines})  # Use custom handler
 
-        # plt.tight_layout()
-        save_path = os.path.join(plots, 'FR_power_dependence_6G.png')
+        plt.tight_layout()
+        save_path = os.path.join(plots, 'FR_power_dependence_4G.png')
         plt.savefig(save_path)
         plt.show()
         
@@ -304,7 +304,7 @@ class Plot:
 
 if __name__ == "__main__":
     dir_path = os.path.join(
-    os.path.expanduser('~'),  # Expands to your home directory
+    'D:\\',  # Expands to your home directory
     'OneDrive', 
     'Files', 
     'Graduate_study', 
@@ -318,13 +318,13 @@ if __name__ == "__main__":
     K_vapor = os.path.join(dir_path, 'K_vapor_cell')
     plots = os.path.join(dir_path, 'Data_analysis', 'Plots')
     processed_path = os.path.join(dir_path, 'Data_analysis', 'Processed_data')
-    
+
     plotter = Plot()
     dates = ['06-18-2024', '06-24-2024', '06-25-2024', '06-26-2024', '06-27-2024', '07-01-2024',
                 '05-07-2024', '05-09-2024', '05-15-2024', '05-19-2024',
                 '05-23-2024', '05-29-2024', '05-31-2024', '06-05-2024', '06-07-2024']
     # plotter.plot_number_density_fit(dates, 0.5, 3)
-    plotter.plot_power_dependence(dates, 6, 24)
+    plotter.plot_power_dependence(dates, 4, 25)
     # plotter.plot_slope(dates, 300, 3)
     # plotter.plot_sensitivity(dates, 300, 3)
 
